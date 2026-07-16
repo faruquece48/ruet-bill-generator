@@ -75,7 +75,14 @@ export function buildBlocks(text: string): SectionBlock[] {
 
     const content = text.substring(start, end);
 
-    blocks.push({
+console.log("==================================");
+console.log("BLOCK TITLE:", current.title);
+console.log("BLOCK TYPE:", current.type);
+console.log("BLOCK CONTENT:");
+console.log(content);
+console.log("==================================");
+
+blocks.push({
 
       id: i + 1,
 

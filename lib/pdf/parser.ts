@@ -3,15 +3,14 @@ import { buildPages } from "@/lib/builder/pageBuilder";
 import { buildSections } from "@/lib/builder/sectionBuilder";
 import { buildBlocks } from "@/lib/builder/blockBuilder";
 import { extractDutyRecords } from "@/lib/extractor/dutyExtractor";
+import { buildDocument } from "@/lib/builder/documentBuilder";
 
 import type { DutyRecord } from "@/types/duty";
 
 export function parsePDF(rawText: string): DutyRecord[] {
 
-  // Step 1: Clean extracted PDF text
   const cleaned = cleanText(rawText);
 
-  // Step 2: Split into logical pages
   const pages = buildPages(cleaned);
 
   console.log("================================");
@@ -19,13 +18,12 @@ export function parsePDF(rawText: string): DutyRecord[] {
   console.log("================================");
 
   console.table(
-    pages.map((page) => ({
+    pages.map(page => ({
       page: page.pageNumber,
       characters: page.text.length,
     }))
   );
 
-  // Step 3: Detect sections
   const sections = buildSections(pages);
 
   console.log("================================");
@@ -33,7 +31,7 @@ export function parsePDF(rawText: string): DutyRecord[] {
   console.log("================================");
 
   console.table(
-    sections.map((section) => ({
+    sections.map(section => ({
       id: section.id,
       page: section.pageNumber,
       title: section.title,
@@ -41,7 +39,6 @@ export function parsePDF(rawText: string): DutyRecord[] {
     }))
   );
 
-  // Step 4: Build blocks
   const blocks = buildBlocks(cleaned);
 
   console.log("================================");
@@ -49,14 +46,13 @@ export function parsePDF(rawText: string): DutyRecord[] {
   console.log("================================");
 
   console.table(
-    blocks.map((block) => ({
+    blocks.map(block => ({
       page: block.pageNumber,
       title: block.title,
       length: block.content.length,
     }))
   );
 
-  // Step 5: Extract duty records
   const duties = extractDutyRecords(blocks);
 
   console.log("================================");
@@ -65,5 +61,15 @@ export function parsePDF(rawText: string): DutyRecord[] {
 
   console.table(duties);
 
-  return duties;
+  const document = buildDocument(
+    blocks,
+    duties
+  );
+
+  console.log("==============================");
+  console.log("DOCUMENT");
+  console.log("==============================");
+  console.log(document);
+
+  return document.duties;
 }
