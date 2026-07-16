@@ -1,9 +1,39 @@
 "use client";
 
 import { useState } from "react";
+import { readPDF } from "@/lib/pdf/reader";
+import { parsePDF } from "@/lib/pdf/parser";
 
 export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [pageCount, setPageCount] = useState(0);
+  const [rawText, setRawText] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  
+  const handleProcessPDF = async () => {
+  if (!selectedFile) return;
+
+  try {
+    setLoading(true);
+
+    const result = await readPDF(selectedFile);
+
+    setPageCount(result.pageCount);
+    setRawText(result.rawText);
+    parsePDF(result.rawText);
+  } catch (error) {
+    console.error("PDF Read Error:", error);
+
+    if (error instanceof Error) {
+      alert(error.message);
+    } else {
+      alert(String(error));
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleFileChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -103,7 +133,8 @@ export default function Home() {
             )}
 
             <button
-              disabled={!selectedFile}
+              onClick={handleProcessPDF}
+              disabled={!selectedFile || loading}
               className={`
                 mt-8
                 px-8
@@ -114,13 +145,13 @@ export default function Home() {
                 transition
 
                 ${
-                  selectedFile
+                  selectedFile && !loading
                     ? "bg-green-600 hover:bg-green-700"
                     : "bg-gray-400 cursor-not-allowed"
                 }
               `}
             >
-              Process PDF
+              {loading ? "Reading PDF..." : "Process PDF"}
             </button>
 
           </div>
@@ -154,7 +185,7 @@ export default function Home() {
             </p>
 
             <h3 className="text-3xl font-bold mt-2">
-              0
+              {pageCount}
             </h3>
 
           </div>
@@ -232,8 +263,7 @@ export default function Home() {
             <div>
               <span className="font-medium">
                 Pages :
-              </span>{" "}
-              —
+              </span>{" "}{pageCount || "—"}              
             </div>
 
             <div>
@@ -253,6 +283,21 @@ export default function Home() {
           </div>
 
         </section>
+        <section className="bg-white rounded-xl shadow-md p-8">
+
+        <h2 className="text-2xl font-semibold mb-5">
+          Raw PDF Text
+        </h2>
+
+        <div className="border rounded-lg bg-gray-50 p-5 h-[500px] overflow-auto">
+
+          <pre className="whitespace-pre-wrap text-sm">
+            {rawText || "PDF text will appear here after processing."}
+          </pre>
+
+        </div>
+
+      </section>
 
         {/* Teacher Information */}
 

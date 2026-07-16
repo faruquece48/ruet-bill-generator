@@ -8,11 +8,13 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 ).toString();
 
 export async function readPDF(file: File): Promise<PDFReadResult> {
-  const buffer = await file.arrayBuffer();
+  const arrayBuffer = await file.arrayBuffer();
 
-  const pdf = await pdfjsLib.getDocument({
-    data: buffer,
-  }).promise;
+  const loadingTask = pdfjsLib.getDocument({
+    data: arrayBuffer,
+  });
+
+  const pdf = await loadingTask.promise;
 
   let rawText = "";
 
@@ -22,12 +24,7 @@ export async function readPDF(file: File): Promise<PDFReadResult> {
     const textContent = await page.getTextContent();
 
     const pageText = textContent.items
-      .map((item) => {
-        if ("str" in item) {
-          return item.str;
-        }
-        return "";
-      })
+      .map((item) => ("str" in item ? item.str : ""))
       .join(" ");
 
     rawText += `\n\n========== PAGE ${pageNumber} ==========\n\n`;
