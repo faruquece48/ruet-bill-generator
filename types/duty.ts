@@ -1,30 +1,15 @@
-export type DutyType =
-  | "committee"
-  | "paperSetterExaminer"
-  | "tabulation"
-  | "gradePreparation"
-  | "gradeVerification"
-  | "boardViva"
-  | "courseAdviser";
-
 export interface DutyRecord {
-  dutyType: DutyType;
+  dutyType: string;
 
   teacherName: string;
-
   designation: string;
-
   department: string;
 
-  courseCode?: string;
+  courseCode: string;
+  courseTitle: string;
 
-  courseTitle?: string;
-
-  paperSet?: number;
-
-  scripts?: number;
-
-  students?: number;
+  paperSet: number;
+  scripts: number;
 
   pageNumber: number;
 }

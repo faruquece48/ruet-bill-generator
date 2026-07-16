@@ -1,6 +1,7 @@
-import { Section } from "./section";
-import { Teacher } from "./teacher";
-import { DutyRecord } from "./duty";
+import type { Section } from "./section";
+import type { Teacher } from "./teacher";
+import type { DutyRecord } from "./duty";
+import type { SectionBlock } from "./block";
 
 export interface DocumentMetadata {
   examination: string;
@@ -11,8 +12,26 @@ export interface DocumentMetadata {
 }
 
 export interface BillDocument {
+
+  // Original extracted text
+  rawText: string;
+
+  // Cleaned text
+  cleanedText: string;
+
+  // Basic document information
   metadata: DocumentMetadata;
+
+  // Logical document blocks
+  blocks: SectionBlock[];
+
+  // Optional (for debugging)
   sections: Section[];
+
+  // Parsed duty records
   duties: DutyRecord[];
+
+  // Final grouped teachers
   teachers: Teacher[];
+
 }

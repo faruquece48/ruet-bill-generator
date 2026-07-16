@@ -1,35 +1,45 @@
-import type { Page } from "@/types/page";
+import type { SectionBlock } from "@/types/block";
 import type { DutyRecord } from "@/types/duty";
 
+import { parsePaperSetter } from "./paperSetter";
+import { parseTabulation } from "./tabulation";
+import { parseGradePreparation } from "./gradePreparation";
+import { parseGradeVerification } from "./gradeVerification";
+import { parseBoardViva } from "./boardViva";
+
 export function extractDutyRecords(
-  pages: Page[]
+  blocks: SectionBlock[]
 ): DutyRecord[] {
 
   const duties: DutyRecord[] = [];
 
-  // Teacher name prefixes commonly found in RUET bills
-  const teacherRegex =
-    /(Mr\.|Mrs\.|Ms\.|Dr\.)\s+[A-Za-z.\s]+?(?=,)/g;
+  blocks.forEach((block) => {
 
-  pages.forEach((page) => {
+    switch (block.type) {
 
-    console.log(`========== PAGE ${page.pageNumber} ==========`);
+      case "paperSetterExaminer":
+        duties.push(...parsePaperSetter(block));
+        break;
 
-    const matches = [...page.text.matchAll(teacherRegex)];
+      case "tabulation":
+        duties.push(...parseTabulation(block));
+        break;
 
-    matches.forEach(match => {
+      case "gradePreparation":
+        duties.push(...parseGradePreparation(block));
+        break;
 
-      console.log(match[0]);
+      case "gradeVerification":
+        duties.push(...parseGradeVerification(block));
+        break;
 
-      duties.push({
-        dutyType: "committee",   // Temporary
-        teacherName: match[0].trim(),
-        designation: "",
-        department: "",
-        pageNumber: page.pageNumber,
-      });
+      case "boardViva":
+        duties.push(...parseBoardViva(block));
+        break;
 
-    });
+      default:
+        break;
+    }
 
   });
 
