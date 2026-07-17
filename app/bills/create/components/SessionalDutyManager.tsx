@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -36,8 +35,20 @@ const defaultStudent: StudentCount = {
   boardViva: "",
 };
 
-export default function SessionalDutyManager() {
-  const [courses, setCourses] = useState<SessionalCourse[]>([]);
+interface Props {
+  sessionalDuties: SessionalCourse[];
+  setSessionalDuties: (data: SessionalCourse[]) => void;
+}
+
+export default function SessionalDutyManager({
+  sessionalDuties,
+  setSessionalDuties,
+}: Props) {
+  const courses = sessionalDuties;
+
+  const setCourses = (data: SessionalCourse[]) => {
+    setSessionalDuties(data);
+  };
 
   const addCourse = () => {
     setCourses([
@@ -118,12 +129,48 @@ export default function SessionalDutyManager() {
     setCourses(updated);
   };
 
+  const updateAdditionalTeacher = (
+    courseIndex: number,
+    field: "name" | "designation",
+    value: string
+  ) => {
+    const updated = [...courses];
+
+    if (!updated[courseIndex].additionalTeachers.length) return;
+
+    if (field === "name") {
+      updated[courseIndex].additionalTeachers[0].name = value;
+    } else {
+      updated[courseIndex].additionalTeachers[0].designation =
+        value as Designation;
+    }
+
+    setCourses(updated);
+  };
+
+  const updateAdditionalStudent = (
+    courseIndex: number,
+    duty: keyof StudentCount,
+    value: string
+  ) => {
+    const updated = [...courses];
+
+    if (!updated[courseIndex].additionalTeachers.length) return;
+
+    updated[courseIndex].additionalTeachers[0].students[duty] =
+      value === "" ? "" : Number(value);
+
+    setCourses(updated);
+  };
+
   return (
     <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
       <h2 className="text-xl font-bold">
         4. List of Teachers Associated with Sessional Courses
       </h2>
-      <Button onClick={addCourse}>+ Add Sessional Course</Button>
+      <Button type="button" onClick={addCourse}>
+        + Add Sessional Course
+      </Button>
 
       {courses.map((course, cIndex) => (
         <div
@@ -225,21 +272,15 @@ export default function SessionalDutyManager() {
                 <Input
                   placeholder="Teacher Name"
                   value={course.additionalTeachers[0].name}
-                  onChange={(e) => {
-                    const updated = [...courses];
-                    updated[cIndex].additionalTeachers[0].name =
-                      e.target.value;
-                    setCourses(updated);
-                  }}
+                  onChange={(e) =>
+                    updateAdditionalTeacher(cIndex, "name", e.target.value)
+                  }
                 />
                 <Select
                   value={course.additionalTeachers[0].designation}
-                  onValueChange={(value) => {
-                    const updated = [...courses];
-                    updated[cIndex].additionalTeachers[0].designation =
-                      value as Designation;
-                    setCourses(updated);
-                  }}
+                  onValueChange={(value) =>
+                    updateAdditionalTeacher(cIndex, "designation", value)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -290,12 +331,9 @@ export default function SessionalDutyManager() {
                         type="number"
                         placeholder={`${duty.replace(/([A-Z])/g, " $1")} Students`}
                         value={course.additionalTeachers[0].students[duty]}
-                        onChange={(e) => {
-                          const updated = [...courses];
-                          updated[cIndex].additionalTeachers[0].students[duty] =
-                            e.target.value === "" ? "" : Number(e.target.value);
-                          setCourses(updated);
-                        }}
+                        onChange={(e) =>
+                          updateAdditionalStudent(cIndex, duty, e.target.value)
+                        }
                       />
                     );
                   })}

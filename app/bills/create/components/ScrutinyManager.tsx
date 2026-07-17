@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,81 +20,104 @@ const designationList: Designation[] = [
 
 interface Props {
   evaluationSystem: "obe" | "mixed";
+  scrutinies: { obe: ScrutinyTeacher[]; nonObe: ScrutinyTeacher[] };
+  setScrutinies: (data: {
+    obe: ScrutinyTeacher[];
+    nonObe: ScrutinyTeacher[];
+  }) => void;
 }
 
-export default function ScrutinyManager({ evaluationSystem }: Props) {
-  const [obeTeachers, setObeTeachers] = useState<ScrutinyTeacher[]>([]);
-  const [nonObeTeachers, setNonObeTeachers] = useState<ScrutinyTeacher[]>([]);
-
-  const getList = (type: "obe" | "nonObe") =>
-    type === "obe" ? obeTeachers : nonObeTeachers;
-  const setList = (type: "obe" | "nonObe", value: ScrutinyTeacher[]) =>
-    type === "obe" ? setObeTeachers(value) : setNonObeTeachers(value);
-
-  const addTeacher = (type: "obe" | "nonObe") => {
-    const newTeacher: ScrutinyTeacher = {
-      name: "",
-      designation: "Assistant Professor",
-      scriptCount: "",
-    };
-    setList(type, [...getList(type), newTeacher]);
+export default function ScrutinyManager({
+  evaluationSystem,
+  scrutinies,
+  setScrutinies,
+}: Props) {
+  const getList = (type: "obe" | "nonObe") => {
+    return scrutinies[type];
   };
 
-  const removeTeacher = (type: "obe" | "nonObe", index: number) => {
+  const setList = (type: "obe" | "nonObe", value: ScrutinyTeacher[]) => {
+    setScrutinies({
+      ...scrutinies,
+      [type]: value,
+    });
+  };
+
+  const addRecord = (type: "obe" | "nonObe") => {
+    setList(type, [
+      ...getList(type),
+      {
+        name: "",
+        designation: "Assistant Professor",
+        scriptCount: "",
+      },
+    ]);
+  };
+
+  const removeRecord = (type: "obe" | "nonObe", index: number) => {
     setList(
       type,
       getList(type).filter((_, i) => i !== index)
     );
   };
 
-  const updateTeacher = (
+  const updateTeacherName = (
     type: "obe" | "nonObe",
     index: number,
-    field: keyof ScrutinyTeacher,
-    value: any
+    value: string
   ) => {
-    const list = [...getList(type)];
-    list[index] = {
-      ...list[index],
-      [field]:
-        field === "scriptCount"
-          ? value === ""
-            ? ""
-            : Number(value)
-          : value,
+    const updated = [...getList(type)];
+    updated[index] = { ...updated[index], name: value };
+    setList(type, updated);
+  };
+
+  const updateDesignation = (
+    type: "obe" | "nonObe",
+    index: number,
+    value: Designation
+  ) => {
+    const updated = [...getList(type)];
+    updated[index] = { ...updated[index], designation: value };
+    setList(type, updated);
+  };
+
+  const updateScriptCount = (
+    type: "obe" | "nonObe",
+    index: number,
+    value: string
+  ) => {
+    const updated = [...getList(type)];
+    updated[index] = {
+      ...updated[index],
+      scriptCount: value === "" ? "" : Number(value),
     };
-    setList(type, list);
+    setList(type, updated);
   };
 
   const renderSection = (title: string | null, type: "obe" | "nonObe") => {
-    const teachers = getList(type);
+    const records = getList(type);
     return (
       <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
         {title && <h3 className="text-lg font-bold">{title}</h3>}
-        <Button type="button" onClick={() => addTeacher(type)}>
+        <Button type="button" onClick={() => addRecord(type)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Teacher
         </Button>
         <div className="space-y-4">
-          {teachers.map((teacher, index) => (
+          {records.map((teacher, index) => (
             <div key={index} className="rounded-lg border bg-slate-50 p-4">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <Input
                   placeholder="Teacher Name"
                   value={teacher.name}
                   onChange={(e) =>
-                    updateTeacher(type, index, "name", e.target.value)
+                    updateTeacherName(type, index, e.target.value)
                   }
                 />
                 <Select
                   value={teacher.designation}
                   onValueChange={(value) =>
-                    updateTeacher(
-                      type,
-                      index,
-                      "designation",
-                      value as Designation
-                    )
+                    updateDesignation(type, index, value as Designation)
                   }
                 >
                   <SelectTrigger>
@@ -114,14 +136,14 @@ export default function ScrutinyManager({ evaluationSystem }: Props) {
                   placeholder="No. of Scripts"
                   value={teacher.scriptCount}
                   onChange={(e) =>
-                    updateTeacher(type, index, "scriptCount", e.target.value)
+                    updateScriptCount(type, index, e.target.value)
                   }
                 />
                 <Button
                   type="button"
                   variant="destructive"
                   size="icon"
-                  onClick={() => removeTeacher(type, index)}
+                  onClick={() => removeRecord(type, index)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -138,13 +160,12 @@ export default function ScrutinyManager({ evaluationSystem }: Props) {
       <h2 className="text-xl font-bold">
         6. List of Teachers Associated with Scrutiny
       </h2>
-
       {evaluationSystem === "obe" ? (
         renderSection(null, "obe")
       ) : (
         <div className="space-y-8">
           {renderSection("6.1 OBE (New Syllabus)", "obe")}
-          {renderSection("6.2 Non-OBE (Old Syllabus)", "nonObe")}
+          {renderSection("6.2 Non OBE (Old Syllabus)", "nonObe")}
         </div>
       )}
     </div>

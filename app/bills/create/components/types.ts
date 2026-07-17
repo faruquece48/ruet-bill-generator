@@ -8,9 +8,11 @@ export interface BillInfo {
   billNo: string;
   examination: string;
   year: string;
+  examType: "semester" | "backlog";
   semester: string;
   examYear: string;
   series: string;
+  evaluationSystem: "obe" | "mixed";
 }
 
 export interface CommitteeMember {
@@ -89,6 +91,15 @@ export interface SessionalCourse {
   additionalTeachers: SessionalAdditionalTeacher[];
 }
 
+// ------------------------------
+// Question Work Types
+// ------------------------------
+
+export interface QuestionWork {
+  name: string;
+  designation: Designation;
+  questionNumber: number | "";
+}
 
 // ------------------------------
 // Scrutiny
@@ -104,54 +115,43 @@ export interface ScrutinySection {
   teachers: ScrutinyTeacher[];
 }
 
+// ------------------------------
+// Student Duty (Tabulation) Types
+// ------------------------------
 
-export interface BillInfo {
-  billNo: string;
-  examination: string;
-  year: string;
-  examType: "semester" | "backlog";
-  semester: string;
-  examYear: string;
-  series: string;
-  evaluationSystem: "obe" | "mixed";
+export interface StudentDuty {
+  name: string;
+  designation: Designation;
+  students: number | "";
 }
 
+// ------------------------------
+// Course Adviser Types
+// ------------------------------
+
+export interface CourseAdviser {
+  name: string;
+  designation: Designation;
+  students: number | "";
+}
 
 // ==============================
 // Complete Examination Bill Data
 // ==============================
 
 export interface ExaminationBillData {
-
-  // Examination Information
   billInfo: BillInfo;
-
-
-  // Committee Members
-  committees: any[];
-
-
-  // Course related duties
-  courseDuties: any[];
-
-
-  // Sessional related duties
-  sessionalDuties: any[];
-
-
-  // Question preparation related work
-  questionWorks: any[];
-
-
-  // Scrutiny related duties
-  scrutinies: any[];
-
-
-  // Student related duties
-  studentDuties: any[];
-
-
-  // Course Adviser related duties
-  courseAdvisers: any[];
-
+  committees: CommitteeMember[];
+  courseDuties: {
+    obe: CourseDuty[];
+    nonObe: CourseDuty[];
+  };
+  sessionalDuties: SessionalCourse[];
+  questionWorks: QuestionWork[];
+  scrutinies: {
+    obe: ScrutinyTeacher[];
+    nonObe: ScrutinyTeacher[];
+  };
+  studentDuties: StudentDuty[];
+  courseAdvisers: CourseAdviser[];
 }

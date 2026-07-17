@@ -62,3 +62,15 @@ export default function Toolbar({
     </div>
   );
 }
+
+export interface StudentDuty {
+  name: string;
+  designation: Designation;
+  students: number | "";
+}
+
+export interface CourseAdviser {
+  name: string;
+  designation: Designation;
+  students: number | "";
+}

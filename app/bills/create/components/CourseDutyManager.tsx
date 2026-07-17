@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -35,16 +34,25 @@ const label = (s: string) => s.replace(/([A-Z])/g, " $1");
 
 interface Props {
   evaluationSystem: "obe" | "mixed";
+  courseDuties: { obe: CourseDuty[]; nonObe: CourseDuty[] };
+  setCourseDuties: (data: { obe: CourseDuty[]; nonObe: CourseDuty[] }) => void;
 }
 
-export default function CourseDutyManager({ evaluationSystem }: Props) {
-  const [obeCourses, setObeCourses] = useState<CourseDuty[]>([]);
-  const [nonObeCourses, setNonObeCourses] = useState<CourseDuty[]>([]);
+export default function CourseDutyManager({
+  evaluationSystem,
+  courseDuties,
+  setCourseDuties,
+}: Props) {
+  const getList = (type: "obe" | "nonObe") => {
+    return courseDuties[type];
+  };
 
-  const getList = (type: "obe" | "nonObe") =>
-    type === "obe" ? obeCourses : nonObeCourses;
-  const setList = (type: "obe" | "nonObe", value: CourseDuty[]) =>
-    type === "obe" ? setObeCourses(value) : setNonObeCourses(value);
+  const setList = (type: "obe" | "nonObe", value: CourseDuty[]) => {
+    setCourseDuties({
+      ...courseDuties,
+      [type]: value,
+    });
+  };
 
   const addCourse = (type: "obe" | "nonObe") => {
     setList(type, [
@@ -376,13 +384,12 @@ export default function CourseDutyManager({ evaluationSystem }: Props) {
       <h2 className="text-xl font-bold">
         3. List of Teachers Associated with Paper Setter & Examiner
       </h2>
-
       {evaluationSystem === "obe" ? (
         renderSection(null, "obe")
       ) : (
         <div className="space-y-8">
-          {renderSection("3.1 Theory Courses — OBE (New Syllabus)", "obe")}
-          {renderSection("3.2 Theory Courses — Non-OBE (Old Syllabus)", "nonObe")}
+          {renderSection("3.1 OBE (New Syllabus)", "obe")}
+          {renderSection("3.2 Non OBE (Old Syllabus)", "nonObe")}
         </div>
       )}
     </div>
