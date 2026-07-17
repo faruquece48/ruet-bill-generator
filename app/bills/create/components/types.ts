@@ -25,7 +25,6 @@ export interface CommitteeMember {
 // ------------------------------
 // Paper Setter & Examiner Duty Types
 // ------------------------------
-
 export interface DutyOption {
   paperSetter: boolean;
   examiner: boolean;
@@ -34,11 +33,20 @@ export interface DutyOption {
   courseFile: boolean;
 }
 
-export type DutyStudentCount = Record<keyof DutyOption, number | "">;
+// paperSetter / courseFile are fixed/shared values (just a checkbox, no count).
+// examiner / assignment accept a fraction-style string (e.g. "1", "1/2").
+// classTest is split into its own count + total students.
+export interface DutyStudentCount {
+  examiner: string;
+  assignment: string;
+  classTestCount: number | "";
+  classTestStudents: number | "";
+}
 
 export interface AdditionalTeacher {
   name: string;
   designation: Designation;
+  department: string;
   duties: DutyOption;
   students: DutyStudentCount;
 }
@@ -47,6 +55,7 @@ export interface CoursePart {
   part: "A" | "B";
   teacher: string;
   designation: Designation;
+  department: string;
   duties: DutyOption;
   students: DutyStudentCount;
   additionalTeachers: AdditionalTeacher[];
@@ -61,7 +70,6 @@ export interface CourseDuty {
 // ------------------------------
 // Sessional Duty Types
 // ------------------------------
-
 export interface SessionalDutyOption {
   courseFile: boolean;
   sessional: boolean;
@@ -77,6 +85,7 @@ export interface StudentCount {
 export interface SessionalAdditionalTeacher {
   name: string;
   designation: Designation;
+  department: string;
   duties: SessionalDutyOption;
   students: StudentCount;
 }
@@ -86,15 +95,16 @@ export interface SessionalCourse {
   courseTitle: string;
   teacher: string;
   designation: Designation;
+  department: string;
   duties: SessionalDutyOption;
   students: StudentCount;
   additionalTeachers: SessionalAdditionalTeacher[];
+}
 }
 
 // ------------------------------
 // Question Work Types
 // ------------------------------
-
 export interface QuestionWork {
   name: string;
   designation: Designation;
@@ -104,10 +114,10 @@ export interface QuestionWork {
 // ------------------------------
 // Scrutiny
 // ------------------------------
-
 export interface ScrutinyTeacher {
   name: string;
   designation: Designation;
+  department: string;
   scriptCount: number | "";
 }
 
@@ -118,40 +128,64 @@ export interface ScrutinySection {
 // ------------------------------
 // Student Duty (Tabulation) Types
 // ------------------------------
-
 export interface StudentDuty {
   name: string;
   designation: Designation;
+  department: string;
   students: number | "";
 }
 
 // ------------------------------
 // Course Adviser Types
 // ------------------------------
-
 export interface CourseAdviser {
   name: string;
   designation: Designation;
+  department: string;
   students: number | "";
+}
+
+// ------------------------------
+// Thesis / Project Examination Types
+// ------------------------------
+export interface ThesisTeacher {
+  name: string;
+  designation: Designation;
+  department: string;
+  supervisorCount: number | "";
+  examinerCount: number | "";
+  attendsViva: boolean;
+}
+
+export interface VerificationTeacher {
+  name: string;
+  designation: Designation;
+  department: string;
+}
+
+// ------------------------------
+// Course Coordinator Types
+// ------------------------------
+export interface CourseCoordinatorTeacher {
+  name: string;
+  designation: Designation;
+  department: string;
 }
 
 // ==============================
 // Complete Examination Bill Data
 // ==============================
-
 export interface ExaminationBillData {
   billInfo: BillInfo;
   committees: CommitteeMember[];
-  courseDuties: {
-    obe: CourseDuty[];
-    nonObe: CourseDuty[];
-  };
+  courseDuties: { obe: CourseDuty[]; nonObe: CourseDuty[] };
   sessionalDuties: SessionalCourse[];
   questionWorks: QuestionWork[];
-  scrutinies: {
-    obe: ScrutinyTeacher[];
-    nonObe: ScrutinyTeacher[];
-  };
+  scrutinies: { obe: ScrutinyTeacher[]; nonObe: ScrutinyTeacher[] };
   studentDuties: StudentDuty[];
   courseAdvisers: CourseAdviser[];
+  thesisTeachers: ThesisTeacher[];
+  verificationTeachers: VerificationTeacher[];
+  verificationStudentCount: string;
+  courseCoordinatorTeachers: CourseCoordinatorTeacher[];
 }

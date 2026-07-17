@@ -1,6 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -9,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
-import type { Designation, StudentDuty } from "./types";
+import type { BillInfo, Designation, ThesisTeacher } from "./types";
 
 const designationList: Designation[] = [
   "Lecturer",
@@ -19,19 +20,21 @@ const designationList: Designation[] = [
 ];
 
 interface Props {
-  title?: string;
-  studentDuties: StudentDuty[];
-  setStudentDuties: (data: StudentDuty[]) => void;
+  bill: BillInfo;
+  sectionNumber: number;
+  thesisTeachers: ThesisTeacher[];
+  setThesisTeachers: (data: ThesisTeacher[]) => void;
 }
 
-export default function StudentDutyManager({
-  title = "7. List of Teachers Associated with Tabulation",
-  studentDuties,
-  setStudentDuties,
+export default function ThesisManager({
+  bill,
+  sectionNumber,
+  thesisTeachers,
+  setThesisTeachers,
 }: Props) {
-  const records = studentDuties;
-  const setRecords = (data: StudentDuty[]) => {
-    setStudentDuties(data);
+  const records = thesisTeachers;
+  const setRecords = (data: ThesisTeacher[]) => {
+    setThesisTeachers(data);
   };
 
   const addRecord = () => {
@@ -41,7 +44,9 @@ export default function StudentDutyManager({
         name: "",
         designation: "Assistant Professor",
         department: "",
-        students: "",
+        supervisorCount: "",
+        examinerCount: "",
+        attendsViva: true,
       },
     ]);
   };
@@ -68,18 +73,42 @@ export default function StudentDutyManager({
     setRecords(updated);
   };
 
-  const updateStudent = (index: number, value: string) => {
+  const updateSupervisorCount = (index: number, value: string) => {
     const updated = [...records];
     updated[index] = {
       ...updated[index],
-      students: value === "" ? "" : Number(value),
+      supervisorCount: value === "" ? "" : Number(value),
     };
     setRecords(updated);
   };
 
+  const updateExaminerCount = (index: number, value: string) => {
+    const updated = [...records];
+    updated[index] = {
+      ...updated[index],
+      examinerCount: value === "" ? "" : Number(value),
+    };
+    setRecords(updated);
+  };
+
+  const toggleViva = (index: number) => {
+    const updated = [...records];
+    updated[index] = {
+      ...updated[index],
+      attendsViva: !updated[index].attendsViva,
+    };
+    setRecords(updated);
+  };
+
+  const isApplicable = bill.year === "4th Year" && bill.semester === "Even";
+  if (!isApplicable) return null;
+
   return (
     <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
-      <h2 className="text-xl font-bold">{title}</h2>
+      <h2 className="text-xl font-bold">
+        {sectionNumber}. List of Teachers Associated with Thesis/Project
+        Examination
+      </h2>
       <Button type="button" onClick={addRecord}>
         <Plus className="mr-2 h-4 w-4" />
         Add Teacher
@@ -87,8 +116,8 @@ export default function StudentDutyManager({
       <div className="space-y-4">
         {records.map((teacher, index) => (
           <div key={index} className="rounded-lg border bg-slate-50 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_1fr_1fr_1fr_auto] gap-4 items-center">
-              <div className="flex h-10 w-12 items-center justify-center rounded-md border bg-white text-sm font-semibold text-slate-700">
+            <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_1fr_1fr] gap-4 items-end">
+              <div className="flex items-center justify-center rounded-md border bg-white px-3 py-2 text-sm font-medium text-gray-700">
                 {String(index + 1).padStart(2, "0")}.
               </div>
               <Input
@@ -118,12 +147,43 @@ export default function StudentDutyManager({
                 value={teacher.department}
                 onChange={(e) => updateDepartment(index, e.target.value)}
               />
-              <Input
-                type="number"
-                placeholder="No. of Students"
-                value={teacher.students}
-                onChange={(e) => updateStudent(index, e.target.value)}
-              />
+            </div>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              <div>
+                <label className="mb-1 block text-sm text-gray-600">
+                  No. of Supervisor Students
+                </label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 4"
+                  value={teacher.supervisorCount}
+                  onChange={(e) =>
+                    updateSupervisorCount(index, e.target.value)
+                  }
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-gray-600">
+                  No. of Thesis Examiner Students
+                </label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 9"
+                  value={teacher.examinerCount}
+                  onChange={(e) =>
+                    updateExaminerCount(index, e.target.value)
+                  }
+                />
+              </div>
+              <label className="flex items-center gap-2 pb-2">
+                <Checkbox
+                  checked={teacher.attendsViva}
+                  onCheckedChange={() => toggleViva(index)}
+                />
+                Attends Thesis Viva
+              </label>
+            </div>
+            <div className="mt-3 flex justify-end">
               <Button
                 type="button"
                 variant="destructive"

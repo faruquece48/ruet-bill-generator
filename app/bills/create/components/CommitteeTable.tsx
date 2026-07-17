@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
 import {
   Table,
   TableBody,
@@ -12,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
 import {
   Select,
   SelectContent,
@@ -20,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import { Trash2, Plus } from "lucide-react";
 
 interface CommitteeMember {
@@ -30,19 +26,15 @@ interface CommitteeMember {
   role: string;
 }
 
-export default function CommitteeTable() {
-  const [committee, setCommittee] = useState<CommitteeMember[]>([
-    {
-      name: "",
-      designation: "",
-      department: "",
-      role: "Member",
-    },
-  ]);
+interface Props {
+  committees: CommitteeMember[];
+  setCommittees: (data: CommitteeMember[]) => void;
+}
 
+export default function CommitteeTable({ committees, setCommittees }: Props) {
   const addMember = () => {
-    setCommittee([
-      ...committee,
+    setCommittees([
+      ...committees,
       {
         name: "",
         designation: "",
@@ -53,7 +45,7 @@ export default function CommitteeTable() {
   };
 
   const removeMember = (index: number) => {
-    setCommittee(committee.filter((_, i) => i !== index));
+    setCommittees(committees.filter((_, i) => i !== index));
   };
 
   const updateMember = (
@@ -61,125 +53,74 @@ export default function CommitteeTable() {
     field: keyof CommitteeMember,
     value: string
   ) => {
-    const updated = [...committee];
+    const updated = [...committees];
     updated[index] = {
       ...updated[index],
       [field]: value,
     };
-    setCommittee(updated);
+    setCommittees(updated);
   };
 
   return (
     <div className="rounded-xl border p-6 space-y-6">
-      <h2 className="text-xl font-bold">
-        2. Examination Committee
-      </h2>
-
+      <h2 className="text-xl font-bold">2. Examination Committee</h2>
       <Table className="table-fixed w-full">
         <TableHeader>
           <TableRow>
             <TableHead className="w-14">Sl.</TableHead>
-
-            <TableHead className="w-[28%]">
-              Teacher Name
-            </TableHead>
-
-            <TableHead className="w-[18%]">
-              Designation
-            </TableHead>
-
-            <TableHead className="w-[20%]">
-              Department
-            </TableHead>
-
-            <TableHead className="w-[18%]">
-              Role
-            </TableHead>
-
-            <TableHead className="w-16 text-center">
-              Action
-            </TableHead>
+            <TableHead className="w-[28%]">Teacher Name</TableHead>
+            <TableHead className="w-[18%]">Designation</TableHead>
+            <TableHead className="w-[20%]">Department</TableHead>
+            <TableHead className="w-[18%]">Role</TableHead>
+            <TableHead className="w-16 text-center">Action</TableHead>
           </TableRow>
         </TableHeader>
-
         <TableBody>
-          {committee.map((member, index) => (
+          {committees.map((member, index) => (
             <TableRow key={index}>
               <TableCell>{index + 1}</TableCell>
-
               <TableCell>
                 <Input
                   placeholder="Teacher Name"
                   value={member.name}
-                  onChange={(e) =>
-                    updateMember(
-                      index,
-                      "name",
-                      e.target.value
-                    )
-                  }
+                  onChange={(e) => updateMember(index, "name", e.target.value)}
                 />
               </TableCell>
-
               <TableCell>
                 <Input
                   placeholder="Designation"
                   value={member.designation}
                   onChange={(e) =>
-                    updateMember(
-                      index,
-                      "designation",
-                      e.target.value
-                    )
+                    updateMember(index, "designation", e.target.value)
                   }
                 />
               </TableCell>
-
               <TableCell>
                 <Input
                   placeholder="Department"
                   value={member.department}
                   onChange={(e) =>
-                    updateMember(
-                      index,
-                      "department",
-                      e.target.value
-                    )
+                    updateMember(index, "department", e.target.value)
                   }
                 />
               </TableCell>
-
               <TableCell>
                 <Select
                   value={member.role}
-                  onValueChange={(value) =>
-                    updateMember(
-                      index,
-                      "role",
-                      value
-                    )
-                  }
+                  onValueChange={(value) => updateMember(index, "role", value)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Role" />
                   </SelectTrigger>
-
                   <SelectContent>
-                    <SelectItem value="Chairman">
-                      Chairman
-                    </SelectItem>
-
-                    <SelectItem value="Member">
-                      Member
-                    </SelectItem>
-
+                    <SelectItem value="Chairman">Chairman</SelectItem>
+                    <SelectItem value="Member">Member</SelectItem>
                     <SelectItem value="External Member">
                       External Member
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </TableCell>
-
               <TableCell className="text-center">
                 <Button
                   variant="destructive"
@@ -193,7 +134,6 @@ export default function CommitteeTable() {
           ))}
         </TableBody>
       </Table>
-
       <Button onClick={addMember}>
         <Plus className="mr-2 h-4 w-4" />
         Add Member

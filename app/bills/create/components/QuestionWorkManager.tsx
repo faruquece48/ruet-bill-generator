@@ -19,6 +19,7 @@ type Designation =
 interface QuestionTeacher {
   name: string;
   designation: Designation;
+  department: string;
   questionNumber: number | "";
 }
 
@@ -39,7 +40,6 @@ export default function QuestionWorkManager({
   setQuestionWorks,
 }: Props) {
   const works = questionWorks;
-
   const setWorks = (data: QuestionTeacher[]) => {
     setQuestionWorks(data);
   };
@@ -50,6 +50,7 @@ export default function QuestionWorkManager({
       {
         name: "",
         designation: "Assistant Professor",
+        department: "",
         questionNumber: "",
       },
     ]);
@@ -68,6 +69,12 @@ export default function QuestionWorkManager({
   const updateDesignation = (index: number, value: Designation) => {
     const updated = [...works];
     updated[index] = { ...updated[index], designation: value };
+    setWorks(updated);
+  };
+
+  const updateDepartment = (index: number, value: string) => {
+    const updated = [...works];
+    updated[index] = { ...updated[index], department: value };
     setWorks(updated);
   };
 
@@ -93,7 +100,10 @@ export default function QuestionWorkManager({
       <div className="space-y-4">
         {works.map((teacher, index) => (
           <div key={index} className="rounded-lg border bg-slate-50 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_1fr_1fr_1fr_auto] gap-4 items-center">
+              <div className="flex h-10 w-12 items-center justify-center rounded-md border bg-white text-sm font-semibold text-slate-700">
+                {String(index + 1).padStart(2, "0")}.
+              </div>
               <Input
                 placeholder="Teacher Name"
                 value={teacher.name}
@@ -116,6 +126,11 @@ export default function QuestionWorkManager({
                   ))}
                 </SelectContent>
               </Select>
+              <Input
+                placeholder="Department"
+                value={teacher.department}
+                onChange={(e) => updateDepartment(index, e.target.value)}
+              />
               <Input
                 type="number"
                 placeholder="No. of Question"

@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -35,6 +36,8 @@ const defaultStudent: StudentCount = {
   boardViva: "",
 };
 
+const label = (s: string) => s.replace(/([A-Z])/g, " $1");
+
 interface Props {
   sessionalDuties: SessionalCourse[];
   setSessionalDuties: (data: SessionalCourse[]) => void;
@@ -45,7 +48,6 @@ export default function SessionalDutyManager({
   setSessionalDuties,
 }: Props) {
   const courses = sessionalDuties;
-
   const setCourses = (data: SessionalCourse[]) => {
     setSessionalDuties(data);
   };
@@ -58,11 +60,16 @@ export default function SessionalDutyManager({
         courseTitle: "",
         teacher: "",
         designation: "Assistant Professor",
+        department: "",
         duties: { ...defaultDuty },
         students: { ...defaultStudent },
         additionalTeachers: [],
       },
     ]);
+  };
+
+  const deleteCourse = (index: number) => {
+    setCourses(courses.filter((_, i) => i !== index));
   };
 
   const updateCourse = (
@@ -92,7 +99,6 @@ export default function SessionalDutyManager({
     const updated = [...courses];
     const current = updated[courseIndex];
     current.duties[field] = !current.duties[field];
-
     const remainingDuty: SessionalDutyOption = {
       courseFile: false,
       sessional: false,
@@ -103,7 +109,6 @@ export default function SessionalDutyManager({
       sessional: "",
       boardViva: "",
     };
-
     (Object.keys(current.duties) as (keyof SessionalDutyOption)[]).forEach(
       (key) => {
         if (!current.duties[key]) {
@@ -112,12 +117,12 @@ export default function SessionalDutyManager({
         }
       }
     );
-
     if (Object.values(remainingDuty).some(Boolean)) {
       current.additionalTeachers = [
         {
           name: "",
           designation: "Assistant Professor",
+          department: "",
           duties: remainingDuty,
           students: remainingStudent,
         },
@@ -125,26 +130,24 @@ export default function SessionalDutyManager({
     } else {
       current.additionalTeachers = [];
     }
-
     setCourses(updated);
   };
 
   const updateAdditionalTeacher = (
     courseIndex: number,
-    field: "name" | "designation",
+    field: "name" | "designation" | "department",
     value: string
   ) => {
     const updated = [...courses];
-
     if (!updated[courseIndex].additionalTeachers.length) return;
-
     if (field === "name") {
       updated[courseIndex].additionalTeachers[0].name = value;
-    } else {
+    } else if (field === "designation") {
       updated[courseIndex].additionalTeachers[0].designation =
         value as Designation;
+    } else {
+      updated[courseIndex].additionalTeachers[0].department = value;
     }
-
     setCourses(updated);
   };
 
@@ -154,12 +157,9 @@ export default function SessionalDutyManager({
     value: string
   ) => {
     const updated = [...courses];
-
     if (!updated[courseIndex].additionalTeachers.length) return;
-
     updated[courseIndex].additionalTeachers[0].students[duty] =
       value === "" ? "" : Number(value);
-
     setCourses(updated);
   };
 
@@ -171,12 +171,32 @@ export default function SessionalDutyManager({
       <Button type="button" onClick={addCourse}>
         + Add Sessional Course
       </Button>
-
       {courses.map((course, cIndex) => (
         <div
           key={cIndex}
           className="rounded-xl border bg-slate-50 p-5 space-y-5"
         >
+          {/* Serial Number */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center justify-center rounded-md border bg-white px-3 py-1 text-sm font-semibold text-gray-700">
+                {String(cIndex + 1).padStart(2, "0")}.
+              </span>
+              <span className="text-sm font-medium text-gray-500">
+                Sessional Course
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => deleteCourse(cIndex)}
+              className="rounded-md bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700"
+              aria-label="Delete sessional course"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
           {/* Course Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
@@ -194,9 +214,8 @@ export default function SessionalDutyManager({
               }
             />
           </div>
-
           {/* Teacher Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
               placeholder="Teacher Name"
               value={course.teacher}
@@ -221,54 +240,52 @@ export default function SessionalDutyManager({
                 ))}
               </SelectContent>
             </Select>
+            <Input
+              placeholder="Department"
+              value={course.department}
+              onChange={(e) =>
+                updateCourse(cIndex, "department", e.target.value)
+              }
+            />
           </div>
-
-          {/* Duty Selection */}
+          {/* Duty Selection with inline student count */}
           <div>
-            <h4 className="font-semibold mb-3">Duty Selection</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <h4 className="text-sm font-medium mb-2">Duty Selection</h4>
+            <div className="grid md:grid-cols-3 gap-3">
               {(Object.keys(course.duties) as (keyof SessionalDutyOption)[]).map(
-                (duty) => (
-                  <label key={duty} className="flex items-center gap-2">
-                    <Checkbox
-                      checked={course.duties[duty]}
-                      onCheckedChange={() => toggleDuty(cIndex, duty)}
-                    />
-                    {duty.replace(/([A-Z])/g, " $1")}
-                  </label>
-                )
-              )}
-            </div>
-          </div>
-
-          {/* Student Number */}
-          <div>
-            <h4 className="font-semibold mb-3">Number of Students</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {(Object.keys(course.students) as (keyof StudentCount)[]).map(
                 (duty) => {
-                  if (!course.duties[duty]) return null;
+                  const checked = course.duties[duty];
                   return (
-                    <Input
-                      key={duty}
-                      type="number"
-                      placeholder={`${duty.replace(/([A-Z])/g, " $1")} Students`}
-                      value={course.students[duty]}
-                      onChange={(e) =>
-                        updateStudent(cIndex, duty, e.target.value)
-                      }
-                    />
+                    <div key={duty} className="flex items-center gap-2">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={() => toggleDuty(cIndex, duty)}
+                      />
+                      <span className="w-24 shrink-0 text-sm">
+                        {label(duty)}
+                      </span>
+                      {checked && (
+                        <Input
+                          type="number"
+                          placeholder="Students"
+                          value={course.students[duty]}
+                          onChange={(e) =>
+                            updateStudent(cIndex, duty, e.target.value)
+                          }
+                          className="h-8"
+                        />
+                      )}
+                    </div>
                   );
                 }
               )}
             </div>
           </div>
-
           {/* Additional Teacher */}
           {course.additionalTeachers.length > 0 && (
             <div className="rounded-lg border bg-white p-5 space-y-5">
               <h4 className="font-bold text-lg">Additional Teacher Required</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
                   placeholder="Teacher Name"
                   value={course.additionalTeachers[0].name}
@@ -293,51 +310,38 @@ export default function SessionalDutyManager({
                     ))}
                   </SelectContent>
                 </Select>
+                <Input
+                  placeholder="Department"
+                  value={course.additionalTeachers[0].department}
+                  onChange={(e) =>
+                    updateAdditionalTeacher(cIndex, "department", e.target.value)
+                  }
+                />
               </div>
-
-              <div>
-                <p className="font-medium mb-3">Assigned Duties</p>
-                <div className="flex flex-wrap gap-3">
-                  {(
-                    Object.keys(
-                      course.additionalTeachers[0].duties
-                    ) as (keyof SessionalDutyOption)[]
-                  )
-                    .filter((duty) => course.additionalTeachers[0].duties[duty])
-                    .map((duty) => (
-                      <span
-                        key={duty}
-                        className="rounded bg-green-100 px-3 py-1 text-sm"
-                      >
-                        ✓ {duty.replace(/([A-Z])/g, " $1")}
+              <div className="grid md:grid-cols-3 gap-3">
+                {(
+                  Object.keys(
+                    course.additionalTeachers[0].duties
+                  ) as (keyof SessionalDutyOption)[]
+                ).map((duty) => {
+                  if (!course.additionalTeachers[0].duties[duty]) return null;
+                  return (
+                    <div key={duty} className="flex items-center gap-2">
+                      <span className="rounded bg-green-100 px-2 py-1 text-xs shrink-0">
+                        ✓ {label(duty)}
                       </span>
-                    ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="font-medium mb-3">Number of Students</p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {(
-                    Object.keys(
-                      course.additionalTeachers[0].students
-                    ) as (keyof StudentCount)[]
-                  ).map((duty) => {
-                    if (!course.additionalTeachers[0].duties[duty])
-                      return null;
-                    return (
                       <Input
-                        key={duty}
                         type="number"
-                        placeholder={`${duty.replace(/([A-Z])/g, " $1")} Students`}
+                        placeholder="Students"
                         value={course.additionalTeachers[0].students[duty]}
                         onChange={(e) =>
                           updateAdditionalStudent(cIndex, duty, e.target.value)
                         }
+                        className="h-8"
                       />
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

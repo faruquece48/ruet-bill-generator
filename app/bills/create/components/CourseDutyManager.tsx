@@ -3,9 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CourseDuty, DutyOption, Designation } from "./types";
-
-type StudentCount = Record<keyof DutyOption, number | "">;
+import { Trash2 } from "lucide-react";
+import { CourseDuty, DutyOption, Designation, DutyStudentCount } from "./types";
 
 const defaultDuty: DutyOption = {
   paperSetter: true,
@@ -15,12 +14,11 @@ const defaultDuty: DutyOption = {
   courseFile: true,
 };
 
-const defaultStudent: StudentCount = {
-  paperSetter: "",
+const defaultStudent: DutyStudentCount = {
   examiner: "",
-  classTest: "",
   assignment: "",
-  courseFile: "",
+  classTestCount: "",
+  classTestStudents: "",
 };
 
 const designationList: Designation[] = [
@@ -31,6 +29,9 @@ const designationList: Designation[] = [
 ];
 
 const label = (s: string) => s.replace(/([A-Z])/g, " $1");
+
+// Duty keys that use a free-text fraction value (e.g. "1", "1/2")
+type FractionDuty = "examiner" | "assignment";
 
 interface Props {
   evaluationSystem: "obe" | "mixed";
@@ -46,7 +47,6 @@ export default function CourseDutyManager({
   const getList = (type: "obe" | "nonObe") => {
     return courseDuties[type];
   };
-
   const setList = (type: "obe" | "nonObe", value: CourseDuty[]) => {
     setCourseDuties({
       ...courseDuties,
@@ -64,12 +64,20 @@ export default function CourseDutyManager({
           part,
           teacher: "",
           designation: "Assistant Professor",
+          department: "",
           duties: { ...defaultDuty },
           students: { ...defaultStudent },
           additionalTeachers: [],
-        })),
+        })) as CourseDuty["parts"],
       },
     ]);
+  };
+
+  const deleteCourse = (type: "obe" | "nonObe", ci: number) => {
+    setList(
+      type,
+      getList(type).filter((_, i) => i !== ci)
+    );
   };
 
   const updateCourse = (
@@ -95,28 +103,78 @@ export default function CourseDutyManager({
     setList(type, updated);
   };
 
-  const updateStudent = (
+  // ---- Main teacher: fraction-style fields (examiner/assignment)
+  const updateFractionStudent = (
     type: "obe" | "nonObe",
     ci: number,
     pi: number,
-    duty: keyof DutyOption,
+    duty: FractionDuty,
     value: string
   ) => {
     const updated = [...getList(type)];
-    (updated[ci].parts[pi] as any).students[duty] =
+    updated[ci].parts[pi].students[duty] = value;
+    setList(type, updated);
+  };
+
+  // ---- Main teacher: class test count / total students
+  const updateClassTestCount = (
+    type: "obe" | "nonObe",
+    ci: number,
+    pi: number,
+    value: string
+  ) => {
+    const updated = [...getList(type)];
+    updated[ci].parts[pi].students.classTestCount =
       value === "" ? "" : Number(value);
     setList(type, updated);
   };
 
-  const updateAdditionalStudent = (
+  const updateClassTestStudents = (
     type: "obe" | "nonObe",
     ci: number,
     pi: number,
-    duty: keyof DutyOption,
     value: string
   ) => {
     const updated = [...getList(type)];
-    updated[ci].parts[pi].additionalTeachers[0].students[duty] =
+    updated[ci].parts[pi].students.classTestStudents =
+      value === "" ? "" : Number(value);
+    setList(type, updated);
+  };
+
+  // ---- Additional teacher: fraction-style fields
+  const updateAdditionalFractionStudent = (
+    type: "obe" | "nonObe",
+    ci: number,
+    pi: number,
+    duty: FractionDuty,
+    value: string
+  ) => {
+    const updated = [...getList(type)];
+    updated[ci].parts[pi].additionalTeachers[0].students[duty] = value;
+    setList(type, updated);
+  };
+
+  // ---- Additional teacher: class test count / total students
+  const updateAdditionalClassTestCount = (
+    type: "obe" | "nonObe",
+    ci: number,
+    pi: number,
+    value: string
+  ) => {
+    const updated = [...getList(type)];
+    updated[ci].parts[pi].additionalTeachers[0].students.classTestCount =
+      value === "" ? "" : Number(value);
+    setList(type, updated);
+  };
+
+  const updateAdditionalClassTestStudents = (
+    type: "obe" | "nonObe",
+    ci: number,
+    pi: number,
+    value: string
+  ) => {
+    const updated = [...getList(type)];
+    updated[ci].parts[pi].additionalTeachers[0].students.classTestStudents =
       value === "" ? "" : Number(value);
     setList(type, updated);
   };
@@ -138,12 +196,18 @@ export default function CourseDutyManager({
       assignment: false,
       courseFile: false,
     };
-    const remainingStudent: StudentCount = { ...defaultStudent };
+    const remainingStudent: DutyStudentCount = { ...defaultStudent };
 
     (Object.keys(part.duties) as (keyof DutyOption)[]).forEach((key) => {
       if (!part.duties[key]) {
         remainingDuty[key] = true;
-        remainingStudent[key] = part.students[key];
+        if (key === "classTest") {
+          remainingStudent.classTestCount = part.students.classTestCount;
+          remainingStudent.classTestStudents = part.students.classTestStudents;
+        } else if (key === "examiner" || key === "assignment") {
+          remainingStudent[key] = part.students[key];
+        }
+        // paperSetter / courseFile: no value to carry over, checkbox-only
       }
     });
 
@@ -152,12 +216,12 @@ export default function CourseDutyManager({
           {
             name: "",
             designation: "Assistant Professor",
+            department: "",
             duties: remainingDuty,
             students: remainingStudent,
           },
         ]
       : [];
-
     setList(type, updated);
   };
 
@@ -173,17 +237,30 @@ export default function CourseDutyManager({
     setList(type, updated);
   };
 
-  const renderSection = (title: string | null, type: "obe" | "nonObe") => {
+  const renderCourses = (type: "obe" | "nonObe") => {
     const courses = getList(type);
     return (
-      <div className="rounded-xl border p-6 space-y-6">
-        {title && <h3 className="text-lg font-bold">{title}</h3>}
+      <>
         <Button type="button" onClick={() => addCourse(type)}>
           + Add Course
         </Button>
-
         {courses.map((course, cIndex) => (
-          <div key={cIndex} className="rounded-xl border p-5 space-y-5">
+          <div key={cIndex} className="rounded-xl border p-5 space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex items-center justify-center rounded-md border bg-white px-3 py-1 text-sm font-semibold text-gray-700">
+                {String(cIndex + 1).padStart(2, "0")}.
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => deleteCourse(type, cIndex)}
+                className="rounded-md bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700"
+                aria-label="Delete course"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
             <div className="grid md:grid-cols-2 gap-4">
               <Input
                 placeholder="Course Code"
@@ -200,19 +277,17 @@ export default function CourseDutyManager({
                 }
               />
             </div>
-
             {course.parts.map((part, pIndex) => (
-              <div key={pIndex} className="rounded-lg bg-slate-50 p-4">
-                <h4 className="font-bold mb-4">Part {part.part}</h4>
-                <Input
-                  placeholder="Teacher Name"
-                  value={part.teacher}
-                  onChange={(e) =>
-                    updatePart(type, cIndex, pIndex, "teacher", e.target.value)
-                  }
-                />
-                <div className="mt-3">
-                  <label className="text-sm">Designation</label>
+              <div key={pIndex} className="rounded-lg bg-slate-50 p-4 space-y-3">
+                <h4 className="font-bold">Part {part.part}</h4>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <Input
+                    placeholder="Teacher Name"
+                    value={part.teacher}
+                    onChange={(e) =>
+                      updatePart(type, cIndex, pIndex, "teacher", e.target.value)
+                    }
+                  />
                   <Select
                     value={part.designation}
                     onValueChange={(v) =>
@@ -230,72 +305,147 @@ export default function CourseDutyManager({
                       ))}
                     </SelectContent>
                   </Select>
+                  <Input
+                    placeholder="Department"
+                    value={part.department}
+                    onChange={(e) =>
+                      updatePart(type, cIndex, pIndex, "department", e.target.value)
+                    }
+                  />
                 </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Duty Selection</h4>
+                  <div className="grid md:grid-cols-3 gap-3">
+                    {(Object.keys(part.duties) as (keyof DutyOption)[]).map((key) => {
+                      const checked = part.duties[key];
 
-                <div className="mt-5">
-                  <h4 className="font-medium">Duty Selection</h4>
-                  <div className="grid md:grid-cols-3 gap-3 mt-3">
-                    {Object.keys(part.duties).map((d) => (
-                      <label key={d} className="flex items-center gap-2">
-                        <Checkbox
-                          checked={part.duties[d as keyof DutyOption]}
-                          onCheckedChange={() =>
-                            toggleDuty(type, cIndex, pIndex, d as keyof DutyOption)
-                          }
-                        />
-                        {label(d)}
-                      </label>
-                    ))}
-                  </div>
+                      // Checkbox-only duties: Paper Setter, Course File (fixed shared value of 1)
+                      if (key === "paperSetter" || key === "courseFile") {
+                        return (
+                          <div key={key} className="flex items-center gap-2">
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={() =>
+                                toggleDuty(type, cIndex, pIndex, key)
+                              }
+                            />
+                            <span className="text-sm">{label(key)}</span>
+                          </div>
+                        );
+                      }
 
-                  <div className="mt-4">
-                    <h4 className="font-medium">Number of Students</h4>
-                    <div className="grid md:grid-cols-3 gap-3 mt-3">
-                      {(Object.keys(part.students) as (keyof DutyOption)[]).map(
-                        (d) => {
-                          if (!part.duties[d]) return null;
-                          return (
+                      if (key === "classTest") {
+                        return (
+                          <div
+                            key={key}
+                            className="col-span-full flex flex-col gap-2 rounded-md border bg-white p-3"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={() =>
+                                  toggleDuty(type, cIndex, pIndex, key)
+                                }
+                              />
+                              <span className="text-sm font-medium">Class Test</span>
+                            </div>
+                            {checked && (
+                              <div className="grid grid-cols-2 gap-3 pl-6">
+                                <div>
+                                  <label className="mb-1 block text-xs text-gray-500">
+                                    No. of Class Tests
+                                  </label>
+                                  <Input
+                                    type="number"
+                                    placeholder="e.g. 2"
+                                    value={part.students.classTestCount}
+                                    onChange={(e) =>
+                                      updateClassTestCount(
+                                        type,
+                                        cIndex,
+                                        pIndex,
+                                        e.target.value
+                                      )
+                                    }
+                                    className="h-8"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="mb-1 block text-xs text-gray-500">
+                                    Total Students
+                                  </label>
+                                  <Input
+                                    type="number"
+                                    placeholder="e.g. 40"
+                                    value={part.students.classTestStudents}
+                                    onChange={(e) =>
+                                      updateClassTestStudents(
+                                        type,
+                                        cIndex,
+                                        pIndex,
+                                        e.target.value
+                                      )
+                                    }
+                                    className="h-8"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      // Remaining: examiner, assignment (fraction-style value)
+                      const fractionKey = key as FractionDuty;
+                      return (
+                        <div key={key} className="flex items-center gap-2">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() =>
+                              toggleDuty(type, cIndex, pIndex, key)
+                            }
+                          />
+                          <span className="w-24 shrink-0 text-sm">
+                            {label(key)}
+                          </span>
+                          {checked && (
                             <Input
-                              key={d}
-                              type="number"
-                              placeholder={`${label(d)} Students`}
-                              value={part.students[d]}
+                              type="text"
+                              placeholder="e.g. 1/2"
+                              value={part.students[fractionKey]}
                               onChange={(e) =>
-                                updateStudent(
+                                updateFractionStudent(
                                   type,
                                   cIndex,
                                   pIndex,
-                                  d,
+                                  fractionKey,
                                   e.target.value
                                 )
                               }
+                              className="h-8"
                             />
-                          );
-                        }
-                      )}
-                    </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-
                   {part.additionalTeachers.length > 0 && (
-                    <div className="mt-5 rounded-lg border bg-white p-4">
-                      <h4 className="font-bold mb-4">
-                        Additional Teacher Required
-                      </h4>
-                      <Input
-                        placeholder="Teacher Name"
-                        value={part.additionalTeachers[0].name}
-                        onChange={(e) =>
-                          updateAdditional(
-                            type,
-                            cIndex,
-                            pIndex,
-                            "name",
-                            e.target.value
-                          )
-                        }
-                      />
-                      <div className="mt-3">
-                        <label className="text-sm">Designation</label>
+                    <div className="mt-4 rounded-lg border bg-white p-4 space-y-3">
+                      <h4 className="font-bold">Additional Teacher Required</h4>
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <Input
+                          placeholder="Teacher Name"
+                          value={part.additionalTeachers[0].name}
+                          onChange={(e) =>
+                            updateAdditional(
+                              type,
+                              cIndex,
+                              pIndex,
+                              "name",
+                              e.target.value
+                            )
+                          }
+                        />
                         <Select
                           value={part.additionalTeachers[0].designation}
                           onValueChange={(v) =>
@@ -319,54 +469,124 @@ export default function CourseDutyManager({
                             ))}
                           </SelectContent>
                         </Select>
+                        <Input
+                          placeholder="Department"
+                          value={part.additionalTeachers[0].department}
+                          onChange={(e) =>
+                            updateAdditional(
+                              type,
+                              cIndex,
+                              pIndex,
+                              "department",
+                              e.target.value
+                            )
+                          }
+                        />
                       </div>
-                      <p className="mt-4 font-medium">Assigned Duty:</p>
-                      <div className="mt-2 flex flex-wrap gap-3">
-                        {Object.keys(part.additionalTeachers[0].duties)
-                          .filter(
-                            (k) =>
-                              part.additionalTeachers[0].duties[
-                                k as keyof DutyOption
-                              ]
-                          )
-                          .map((d) => (
-                            <span
-                              key={d}
-                              className="rounded bg-green-100 px-3 py-1 text-sm"
-                            >
-                              ✓ {label(d)}
-                            </span>
-                          ))}
-                      </div>
-                      <div className="mt-4">
-                        <p className="font-medium mb-3">Number of Students</p>
-                        <div className="grid md:grid-cols-3 gap-3">
-                          {(
-                            Object.keys(
-                              part.additionalTeachers[0].students
-                            ) as (keyof DutyOption)[]
-                          ).map((d) => {
-                            if (!part.additionalTeachers[0].duties[d])
-                              return null;
+                      <div className="grid md:grid-cols-3 gap-3">
+                        {(
+                          Object.keys(
+                            part.additionalTeachers[0].duties
+                          ) as (keyof DutyOption)[]
+                        ).map((d) => {
+                          if (!part.additionalTeachers[0].duties[d]) return null;
+
+                          // Checkbox-only duties carried to additional teacher: no value shown
+                          if (d === "paperSetter" || d === "courseFile") {
                             return (
-                              <Input
+                              <div key={d} className="flex items-center gap-2">
+                                <span className="rounded bg-green-100 px-2 py-1 text-xs shrink-0">
+                                  ✓ {label(d)}
+                                </span>
+                              </div>
+                            );
+                          }
+
+                          if (d === "classTest") {
+                            return (
+                              <div
                                 key={d}
-                                type="number"
-                                placeholder={`${label(d)} Students`}
-                                value={part.additionalTeachers[0].students[d]}
+                                className="col-span-full flex flex-col gap-2 rounded-md border p-3"
+                              >
+                                <span className="rounded bg-green-100 px-2 py-1 text-xs w-fit">
+                                  ✓ Class Test
+                                </span>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="mb-1 block text-xs text-gray-500">
+                                      No. of Class Tests
+                                    </label>
+                                    <Input
+                                      type="number"
+                                      placeholder="e.g. 2"
+                                      value={
+                                        part.additionalTeachers[0].students
+                                          .classTestCount
+                                      }
+                                      onChange={(e) =>
+                                        updateAdditionalClassTestCount(
+                                          type,
+                                          cIndex,
+                                          pIndex,
+                                          e.target.value
+                                        )
+                                      }
+                                      className="h-8"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="mb-1 block text-xs text-gray-500">
+                                      Total Students
+                                    </label>
+                                    <Input
+                                      type="number"
+                                      placeholder="e.g. 40"
+                                      value={
+                                        part.additionalTeachers[0].students
+                                          .classTestStudents
+                                      }
+                                      onChange={(e) =>
+                                        updateAdditionalClassTestStudents(
+                                          type,
+                                          cIndex,
+                                          pIndex,
+                                          e.target.value
+                                        )
+                                      }
+                                      className="h-8"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          const fractionKey = d as FractionDuty;
+                          return (
+                            <div key={d} className="flex items-center gap-2">
+                              <span className="rounded bg-green-100 px-2 py-1 text-xs shrink-0">
+                                ✓ {label(d)}
+                              </span>
+                              <Input
+                                type="text"
+                                placeholder="e.g. 1/2"
+                                value={
+                                  part.additionalTeachers[0].students[fractionKey]
+                                }
                                 onChange={(e) =>
-                                  updateAdditionalStudent(
+                                  updateAdditionalFractionStudent(
                                     type,
                                     cIndex,
                                     pIndex,
-                                    d,
+                                    fractionKey,
                                     e.target.value
                                   )
                                 }
+                                className="h-8"
                               />
-                            );
-                          })}
-                        </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -375,21 +595,27 @@ export default function CourseDutyManager({
             ))}
           </div>
         ))}
-      </div>
+      </>
     );
   };
 
   return (
-    <div className="space-y-6">
+    <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
       <h2 className="text-xl font-bold">
         3. List of Teachers Associated with Paper Setter & Examiner
       </h2>
       {evaluationSystem === "obe" ? (
-        renderSection(null, "obe")
+        renderCourses("obe")
       ) : (
         <div className="space-y-8">
-          {renderSection("3.1 OBE (New Syllabus)", "obe")}
-          {renderSection("3.2 Non OBE (Old Syllabus)", "nonObe")}
+          <div className="rounded-lg border p-5 space-y-6">
+            <h3 className="text-lg font-bold">3.1 OBE (New Syllabus)</h3>
+            {renderCourses("obe")}
+          </div>
+          <div className="rounded-lg border p-5 space-y-6">
+            <h3 className="text-lg font-bold">3.2 Non OBE (Old Syllabus)</h3>
+            {renderCourses("nonObe")}
+          </div>
         </div>
       )}
     </div>

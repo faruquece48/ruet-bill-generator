@@ -1,5 +1,4 @@
 "use client";
-
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -15,6 +14,39 @@ interface Props {
   setBill: React.Dispatch<React.SetStateAction<BillInfo>>;
 }
 
+const examinationLabels: Record<string, string> = {
+  "B.Sc. Engineering": "B.Sc. Engineering",
+  "M.Sc. Engineering": "M.Sc. Engineering",
+  PhD: "PhD",
+};
+
+const examTypeLabels: Record<string, string> = {
+  semester: "Semester Examination",
+  backlog: "Backlog Examination",
+};
+
+const yearLabels: Record<string, string> = {
+  "1st Year": "1st Year",
+  "2nd Year": "2nd Year",
+  "3rd Year": "3rd Year",
+  "4th Year": "4th Year",
+};
+
+const semesterLabels: Record<string, string> = {
+  Odd: "Odd Semester",
+  Even: "Even Semester",
+};
+
+const evaluationSystemLabels: Record<string, string> = {
+  obe: "OBE (New Syllabus)",
+  mixed: "Mixed (OBE + Non OBE)",
+};
+
+const graduatingLabels: Record<string, string> = {
+  yes: "Yes",
+  no: "No",
+};
+
 export default function BillInformation({ bill, setBill }: Props) {
   const updateField = (field: keyof BillInfo, value: string) => {
     setBill((previous) => ({
@@ -27,17 +59,17 @@ export default function BillInformation({ bill, setBill }: Props) {
     bill.examType === "semester"
       ? `${bill.examination || "B.Sc. Engineering"} ${bill.year || ""} ${
           bill.semester || ""
-        } Semester Examination ${bill.examYear || "2024"} (Series ${
+        } Semester Examination ${bill.examYear || "2024"} (${
           bill.series || "2023"
-        })`
+        } Series)`
       : `${bill.examination || "B.Sc. Engineering"} ${
           bill.year || ""
-        } Backlog Examination ${bill.examYear || "2024"} (Series ${
+        } Backlog Examination ${bill.examYear || "2024"} (${
           bill.series || "2023"
-        })`;
+        } Series)`;
 
   return (
-    <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
+    <div className="rounded-xl border bg-white p-6 shadow-sm space-y-5">
       <h2 className="text-xl font-bold">1. Examination Information</h2>
 
       <div className="rounded-lg bg-slate-100 p-4">
@@ -47,43 +79,77 @@ export default function BillInformation({ bill, setBill }: Props) {
         <p className="font-semibold text-lg">{heading}</p>
       </div>
 
-      <div>
-        <label className="mb-2 block text-sm font-medium">Bill No.</label>
-        <Input
-          placeholder="Example: 01"
-          value={bill.billNo}
-          onChange={(e) => updateField("billNo", e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label className="mb-2 block text-sm font-medium">Examination</label>
-        <Select
-          value={bill.examination}
-          onValueChange={(value) => updateField("examination", value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select Examination" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="B.Sc. Engineering">B.Sc. Engineering</SelectItem>
-            <SelectItem value="M.Sc. Engineering">M.Sc. Engineering</SelectItem>
-            <SelectItem value="PhD">PhD</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-3 block text-sm font-medium">Bill No.</label>
+          <Input
+            placeholder="Example: 01"
+            value={bill.billNo}
+            onChange={(e) => updateField("billNo", e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="mb-3 block text-sm font-medium">
+            Examination
+          </label>
+          <Select
+            value={bill.examination}
+            onValueChange={(value) => updateField("examination", value)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Examination">
+                {examinationLabels[bill.examination] || "Select Examination"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="B.Sc. Engineering">
+                B.Sc. Engineering
+              </SelectItem>
+              <SelectItem value="M.Sc. Engineering">
+                M.Sc. Engineering
+              </SelectItem>
+              <SelectItem value="PhD">PhD</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="mb-3 block text-sm font-medium">
+            Examination Type
+          </label>
+          <Select
+            value={bill.examType}
+            onValueChange={(value) =>
+              updateField("examType", value as "semester" | "backlog")
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Type">
+                {examTypeLabels[bill.examType] || "Select Type"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="semester">Semester Examination</SelectItem>
+              <SelectItem value="backlog">Backlog Examination</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+          <label className="mb-3 block text-sm font-medium">
             Academic Year
           </label>
           <Select
             value={bill.year}
             onValueChange={(value) => updateField("year", value)}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Select Year" />
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Year">
+                {yearLabels[bill.year] || "Select Year"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="1st Year">1st Year</SelectItem>
@@ -95,47 +161,54 @@ export default function BillInformation({ bill, setBill }: Props) {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium">
-            Examination Type
+          <label className="mb-3 block text-sm font-medium">
+            {bill.examType === "semester" ? "Semester" : ""}
+          </label>
+          {bill.examType === "semester" && (
+            <Select
+              value={bill.semester}
+              onValueChange={(value) => updateField("semester", value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Semester">
+                  {semesterLabels[bill.semester] || "Select Semester"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Odd">Odd Semester</SelectItem>
+                <SelectItem value="Even">Even Semester</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+
+        <div>
+          <label className="mb-3 block text-sm font-medium">
+            Evaluation System
           </label>
           <Select
-            value={bill.examType}
+            value={bill.evaluationSystem}
             onValueChange={(value) =>
-              updateField("examType", value as "semester" | "backlog")
+              updateField("evaluationSystem", value as "obe" | "mixed")
             }
           >
-            <SelectTrigger>
-              <SelectValue />
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Evaluation System">
+                {evaluationSystemLabels[bill.evaluationSystem] ||
+                  "Select Evaluation System"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="semester">Semester Examination</SelectItem>
-              <SelectItem value="backlog">Backlog Examination</SelectItem>
+              <SelectItem value="obe">OBE (New Syllabus)</SelectItem>
+              <SelectItem value="mixed">Mixed (OBE + Non OBE)</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      {bill.examType === "semester" && (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
-          <label className="mb-2 block text-sm font-medium">Semester</label>
-          <Select
-            value={bill.semester}
-            onValueChange={(value) => updateField("semester", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select Semester" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Odd">Odd Semester</SelectItem>
-              <SelectItem value="Even">Even Semester</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-3 block text-sm font-medium">
             Examination Year
           </label>
           <Input
@@ -146,33 +219,36 @@ export default function BillInformation({ bill, setBill }: Props) {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium">Series</label>
+          <label className="mb-3 block text-sm font-medium">Series</label>
           <Input
             placeholder="2023"
             value={bill.series}
             onChange={(e) => updateField("series", e.target.value)}
           />
         </div>
-      </div>
 
-      <div>
-        <label className="mb-2 block text-sm font-medium">
-          Evaluation System
-        </label>
-        <Select
-          value={bill.evaluationSystem}
-          onValueChange={(value) =>
-            updateField("evaluationSystem", value as "obe" | "mixed")
-          }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select Evaluation System" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="obe">OBE (New Syllabus)</SelectItem>
-            <SelectItem value="mixed">Mixed (OBE + Non-OBE)</SelectItem>
-          </SelectContent>
-        </Select>
+        <div>
+          <label className="mb-3 block text-sm font-medium">
+            Graduating Students?
+          </label>
+          <Select
+            value={bill.hasGraduatingStudents}
+            onValueChange={(value) =>
+              updateField("hasGraduatingStudents", value as "yes" | "no")
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Yes or No">
+                {graduatingLabels[bill.hasGraduatingStudents] ||
+                  "Select Yes or No"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="yes">Yes</SelectItem>
+              <SelectItem value="no">No</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   );

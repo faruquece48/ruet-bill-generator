@@ -28,7 +28,6 @@ export default function CourseAdviserManager({
   setCourseAdvisers,
 }: Props) {
   const advisers = courseAdvisers;
-
   const setAdvisers = (data: CourseAdviser[]) => {
     setCourseAdvisers(data);
   };
@@ -39,6 +38,7 @@ export default function CourseAdviserManager({
       {
         name: "",
         designation: "Assistant Professor",
+        department: "",
         students: "",
       },
     ]);
@@ -57,6 +57,12 @@ export default function CourseAdviserManager({
   const updateDesignation = (index: number, value: Designation) => {
     const updated = [...advisers];
     updated[index] = { ...updated[index], designation: value };
+    setAdvisers(updated);
+  };
+
+  const updateDepartment = (index: number, value: string) => {
+    const updated = [...advisers];
+    updated[index] = { ...updated[index], department: value };
     setAdvisers(updated);
   };
 
@@ -79,11 +85,15 @@ export default function CourseAdviserManager({
       <div className="space-y-4">
         {advisers.map((adviser, index) => (
           <div key={index} className="rounded-lg border bg-slate-50 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div className="flex flex-wrap items-center gap-4">
+              <span className="flex w-14 shrink-0 items-center justify-center rounded-md border bg-white px-3 py-2 text-sm font-semibold text-gray-700">
+                {String(index + 1).padStart(2, "0")}.
+              </span>
               <Input
                 placeholder="Teacher Name"
                 value={adviser.name}
                 onChange={(e) => updateTeacher(index, e.target.value)}
+                className="flex-1 min-w-[160px]"
               />
               <Select
                 value={adviser.designation}
@@ -91,7 +101,7 @@ export default function CourseAdviserManager({
                   updateDesignation(index, value as Designation)
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-[200px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -103,10 +113,17 @@ export default function CourseAdviserManager({
                 </SelectContent>
               </Select>
               <Input
+                placeholder="Department"
+                value={adviser.department}
+                onChange={(e) => updateDepartment(index, e.target.value)}
+                className="flex-1 min-w-[160px]"
+              />
+              <Input
                 type="number"
                 placeholder="No. of Students"
                 value={adviser.students}
                 onChange={(e) => updateStudentCount(index, e.target.value)}
+                className="flex-1 min-w-[160px]"
               />
               <Button
                 type="button"

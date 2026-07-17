@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
-import type { Designation, StudentDuty } from "./types";
+import type { Designation, VerificationTeacher } from "./types";
 
 const designationList: Designation[] = [
   "Lecturer",
@@ -19,82 +19,91 @@ const designationList: Designation[] = [
 ];
 
 interface Props {
-  title?: string;
-  studentDuties: StudentDuty[];
-  setStudentDuties: (data: StudentDuty[]) => void;
+  sectionNumber: number;
+  studentCount: string;
+  setStudentCount: (value: string) => void;
+  verificationTeachers: VerificationTeacher[];
+  setVerificationTeachers: (data: VerificationTeacher[]) => void;
 }
 
-export default function StudentDutyManager({
-  title = "7. List of Teachers Associated with Tabulation",
-  studentDuties,
-  setStudentDuties,
+export default function VerificationManager({
+  sectionNumber,
+  studentCount,
+  setStudentCount,
+  verificationTeachers,
+  setVerificationTeachers,
 }: Props) {
-  const records = studentDuties;
-  const setRecords = (data: StudentDuty[]) => {
-    setStudentDuties(data);
+  const teachers = verificationTeachers;
+  const setTeachers = (data: VerificationTeacher[]) => {
+    setVerificationTeachers(data);
   };
 
-  const addRecord = () => {
-    setRecords([
-      ...records,
+  const addTeacher = () => {
+    setTeachers([
+      ...teachers,
       {
         name: "",
         designation: "Assistant Professor",
         department: "",
-        students: "",
       },
     ]);
   };
 
-  const removeRecord = (index: number) => {
-    setRecords(records.filter((_, i) => i !== index));
+  const removeTeacher = (index: number) => {
+    setTeachers(teachers.filter((_, i) => i !== index));
   };
 
   const updateTeacher = (index: number, value: string) => {
-    const updated = [...records];
+    const updated = [...teachers];
     updated[index] = { ...updated[index], name: value };
-    setRecords(updated);
+    setTeachers(updated);
   };
 
   const updateDesignation = (index: number, value: Designation) => {
-    const updated = [...records];
+    const updated = [...teachers];
     updated[index] = { ...updated[index], designation: value };
-    setRecords(updated);
+    setTeachers(updated);
   };
 
   const updateDepartment = (index: number, value: string) => {
-    const updated = [...records];
+    const updated = [...teachers];
     updated[index] = { ...updated[index], department: value };
-    setRecords(updated);
-  };
-
-  const updateStudent = (index: number, value: string) => {
-    const updated = [...records];
-    updated[index] = {
-      ...updated[index],
-      students: value === "" ? "" : Number(value),
-    };
-    setRecords(updated);
+    setTeachers(updated);
   };
 
   return (
     <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
-      <h2 className="text-xl font-bold">{title}</h2>
-      <Button type="button" onClick={addRecord}>
+      <h2 className="text-xl font-bold">
+        {sectionNumber}. List of Teachers Associated with Verification of
+        Final Result
+      </h2>
+      <div>
+        <label className="mb-1 block text-sm text-gray-600">
+          No. of Students
+        </label>
+        <Input
+          className="max-w-xs"
+          placeholder="e.g. 31/7"
+          value={studentCount}
+          onChange={(e) => setStudentCount(e.target.value)}
+        />
+      </div>
+      <Button type="button" onClick={addTeacher}>
         <Plus className="mr-2 h-4 w-4" />
         Add Teacher
       </Button>
       <div className="space-y-4">
-        {records.map((teacher, index) => (
+        {teachers.map((teacher, index) => (
           <div key={index} className="rounded-lg border bg-slate-50 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_1fr_1fr_1fr_auto] gap-4 items-center">
-              <div className="flex h-10 w-12 items-center justify-center rounded-md border bg-white text-sm font-semibold text-slate-700">
+            <div className="flex flex-wrap items-center gap-4">
+              <span className="flex w-14 shrink-0 items-center justify-center rounded-md border bg-white px-3 py-2 text-sm font-semibold text-gray-700">
                 {String(index + 1).padStart(2, "0")}.
-              </div>
+              </span>
               <Input
                 placeholder="Teacher Name"
                 value={teacher.name}
                 onChange={(e) => updateTeacher(index, e.target.value)}
+                className="w-full max-w-sm min-w-[160px]"
               />
               <Select
                 value={teacher.designation}
@@ -102,7 +111,7 @@ export default function StudentDutyManager({
                   updateDesignation(index, value as Designation)
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-[200px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -117,18 +126,13 @@ export default function StudentDutyManager({
                 placeholder="Department"
                 value={teacher.department}
                 onChange={(e) => updateDepartment(index, e.target.value)}
-              />
-              <Input
-                type="number"
-                placeholder="No. of Students"
-                value={teacher.students}
-                onChange={(e) => updateStudent(index, e.target.value)}
+                className="w-full max-w-sm min-w-[160px]"
               />
               <Button
                 type="button"
                 variant="destructive"
                 size="icon"
-                onClick={() => removeRecord(index)}
+                onClick={() => removeTeacher(index)}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

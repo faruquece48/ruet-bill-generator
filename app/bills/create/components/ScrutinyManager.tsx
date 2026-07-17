@@ -35,7 +35,6 @@ export default function ScrutinyManager({
   const getList = (type: "obe" | "nonObe") => {
     return scrutinies[type];
   };
-
   const setList = (type: "obe" | "nonObe", value: ScrutinyTeacher[]) => {
     setScrutinies({
       ...scrutinies,
@@ -49,6 +48,7 @@ export default function ScrutinyManager({
       {
         name: "",
         designation: "Assistant Professor",
+        department: "",
         scriptCount: "",
       },
     ]);
@@ -81,6 +81,16 @@ export default function ScrutinyManager({
     setList(type, updated);
   };
 
+  const updateDepartment = (
+    type: "obe" | "nonObe",
+    index: number,
+    value: string
+  ) => {
+    const updated = [...getList(type)];
+    updated[index] = { ...updated[index], department: value };
+    setList(type, updated);
+  };
+
   const updateScriptCount = (
     type: "obe" | "nonObe",
     index: number,
@@ -94,11 +104,10 @@ export default function ScrutinyManager({
     setList(type, updated);
   };
 
-  const renderSection = (title: string | null, type: "obe" | "nonObe") => {
+  const renderTeachers = (type: "obe" | "nonObe") => {
     const records = getList(type);
     return (
-      <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
-        {title && <h3 className="text-lg font-bold">{title}</h3>}
+      <>
         <Button type="button" onClick={() => addRecord(type)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Teacher
@@ -106,7 +115,7 @@ export default function ScrutinyManager({
         <div className="space-y-4">
           {records.map((teacher, index) => (
             <div key={index} className="rounded-lg border bg-slate-50 p-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                 <Input
                   placeholder="Teacher Name"
                   value={teacher.name}
@@ -132,6 +141,13 @@ export default function ScrutinyManager({
                   </SelectContent>
                 </Select>
                 <Input
+                  placeholder="Department"
+                  value={teacher.department}
+                  onChange={(e) =>
+                    updateDepartment(type, index, e.target.value)
+                  }
+                />
+                <Input
                   type="number"
                   placeholder="No. of Scripts"
                   value={teacher.scriptCount}
@@ -151,21 +167,27 @@ export default function ScrutinyManager({
             </div>
           ))}
         </div>
-      </div>
+      </>
     );
   };
 
   return (
-    <div className="space-y-6">
+    <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
       <h2 className="text-xl font-bold">
         6. List of Teachers Associated with Scrutiny
       </h2>
       {evaluationSystem === "obe" ? (
-        renderSection(null, "obe")
+        renderTeachers("obe")
       ) : (
         <div className="space-y-8">
-          {renderSection("6.1 OBE (New Syllabus)", "obe")}
-          {renderSection("6.2 Non OBE (Old Syllabus)", "nonObe")}
+          <div className="rounded-lg border p-5 space-y-6">
+            <h3 className="text-lg font-bold">6.1 OBE (New Syllabus)</h3>
+            {renderTeachers("obe")}
+          </div>
+          <div className="rounded-lg border p-5 space-y-6">
+            <h3 className="text-lg font-bold">6.2 Non OBE (Old Syllabus)</h3>
+            {renderTeachers("nonObe")}
+          </div>
         </div>
       )}
     </div>
