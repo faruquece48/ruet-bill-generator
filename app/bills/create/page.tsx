@@ -14,6 +14,8 @@ import CourseCoordinatorManager from "./components/CourseCoordinatorManager";
 import Toolbar from "./components/Toolbar";
 import DraftDialog from "./components/DraftDialog";
 import type { ExaminationBillData } from "./components/types";
+import { pdf } from "@react-pdf/renderer";
+import BillPdfDocument from "./components/pdf/BillPdfDocument";
 import {
   saveDraft,
   loadDraft,
@@ -22,7 +24,6 @@ import {
   clearCurrentWork,
 } from "@/lib/storage/draft";
 import { exportBillData, importBillData } from "@/lib/storage/exportImport";
-
 const emptyBill: ExaminationBillData = {
   billInfo: {
     billNo: "",
@@ -49,14 +50,12 @@ const emptyBill: ExaminationBillData = {
   verificationStudentCount: "",
   courseCoordinatorTeachers: [],
 };
-
 export default function Home() {
   const [billData, setBillData] = useState<ExaminationBillData>(emptyBill);
   const [saveOpen, setSaveOpen] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hydrated = useRef(false);
-
   // Load autosaved work once, on first mount
   useEffect(() => {
     const saved = loadCurrentWork();
@@ -68,13 +67,11 @@ export default function Home() {
     }
     hydrated.current = true;
   }, []);
-
   // Autosave on every change, after initial hydration
   useEffect(() => {
     if (!hydrated.current) return;
     saveCurrentWork(billData);
   }, [billData]);
-
   // ------------------------
   // Section numbering
   // ------------------------
@@ -85,7 +82,6 @@ export default function Home() {
     billData.billInfo.hasGraduatingStudents === "yes";
   // Course Coordinator table: 4th Year Even semester only
   const isCourseCoordinatorApplicable = isThesisApplicable;
-
   // Sections 9+ are conditional; number them dynamically based on
   // which ones actually render, in this fixed order:
   // Thesis -> Verification -> Course Coordinator
@@ -95,38 +91,31 @@ export default function Home() {
   const verificationSectionNumber = sectionCounter;
   if (isVerificationApplicable) sectionCounter++;
   const courseCoordinatorSectionNumber = sectionCounter;
-
   // ------------------------
   // Toolbar Handlers
   // ------------------------
   const handleSave = () => setSaveOpen(true);
   const handleLoad = () => setLoadOpen(true);
-
   const confirmSave = (name: string) => {
     saveDraft(name, billData);
     alert(`Saved as "${name}".`);
   };
-
   const confirmLoad = (name: string) => {
     const data = loadDraft(name);
     if (data) setBillData({ ...emptyBill, ...data });
   };
-
   const handleClear = () => {
     if (!window.confirm("Are you sure you want to clear all data?")) return;
     setBillData(emptyBill);
     clearCurrentWork();
     alert("Form cleared successfully.");
   };
-
   const handleExport = () => {
     exportBillData(billData);
   };
-
   const handleImport = () => {
     fileInputRef.current?.click();
   };
-
   const onFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -140,9 +129,20 @@ export default function Home() {
       e.target.value = "";
     }
   };
-
   const handleValidate = () => alert("Validate Data clicked.");
-
+  const handleGeneratePdf = async () => {
+    try {
+      const blob = await pdf(<BillPdfDocument bill={billData} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Examination-Bill-${billData.billInfo.billNo || "draft"}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Failed to generate PDF: " + (err as Error).message);
+    }
+  };
   return (
     <main className="min-h-screen bg-slate-50 py-10">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -164,6 +164,15 @@ export default function Home() {
           onClear={handleClear}
           onValidate={handleValidate}
         />
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={handleGeneratePdf}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Download PDF
+          </button>
+        </div>
         <DraftDialog
           mode="save"
           open={saveOpen}
