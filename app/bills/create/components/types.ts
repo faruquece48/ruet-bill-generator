@@ -100,7 +100,7 @@ export interface SessionalCourse {
   students: StudentCount;
   additionalTeachers: SessionalAdditionalTeacher[];
 }
-}
+
 
 // ------------------------------
 // Question Work Types
@@ -188,4 +188,107 @@ export interface ExaminationBillData {
   verificationTeachers: VerificationTeacher[];
   verificationStudentCount: string;
   courseCoordinatorTeachers: CourseCoordinatorTeacher[];
+  layoutSettings: TableLayoutSettings;
 }
+
+// ------------------------------
+// PDF Table Layout / Column Width Settings
+// ------------------------------
+
+export interface ColumnWidths {
+  [columnKey: string]: number; // percentage (0-100), should sum to ~100 per table
+}
+
+export interface TableLayoutSettings {
+  committee: ColumnWidths;
+  courseDutyObe: ColumnWidths;
+  courseDutyNonObe: ColumnWidths;
+  sessionalDuty: ColumnWidths;
+  questionWork: ColumnWidths;
+  scrutinyObe: ColumnWidths;
+  scrutinyNonObe: ColumnWidths;
+  studentDuty: ColumnWidths;
+  courseAdviser: ColumnWidths;
+  thesis: ColumnWidths;
+  verification: ColumnWidths;
+  courseCoordinator: ColumnWidths;
+}
+
+export const defaultLayoutSettings: TableLayoutSettings = {
+  committee: { sl: 6, name: 30, designation: 18, department: 26, role: 20 },
+  courseDutyObe: {
+    courseCode: 8,
+    courseTitle: 18,
+    part: 6,
+    name: 16,
+    designation: 12,
+    department: 10,
+    paperSetter: 6,
+    examiner: 8,
+    classTest: 6,
+    assignment: 8,
+    courseFile: 2,
+  },
+  courseDutyNonObe: {
+    courseCode: 8,
+    courseTitle: 18,
+    part: 6,
+    name: 16,
+    designation: 12,
+    department: 10,
+    paperSetter: 6,
+    examiner: 8,
+    classTest: 6,
+    assignment: 8,
+    courseFile: 2,
+  },
+  sessionalDuty: {
+    courseCode: 10,
+    courseTitle: 20,
+    name: 18,
+    designation: 14,
+    department: 14,
+    sessional: 8,
+    sessionalStudents: 8,
+    courseFile: 8,
+  },
+  questionWork: {
+    sl: 6,
+    name: 30,
+    designation: 18,
+    department: 26,
+    questionNumber: 20,
+  },
+  scrutinyObe: { name: 32, designation: 20, department: 28, scriptCount: 20 },
+  scrutinyNonObe: {
+    name: 32,
+    designation: 20,
+    department: 28,
+    scriptCount: 20,
+  },
+  studentDuty: {
+    sl: 6,
+    name: 28,
+    designation: 18,
+    department: 28,
+    students: 20,
+  },
+  courseAdviser: {
+    sl: 6,
+    name: 28,
+    designation: 18,
+    department: 28,
+    students: 20,
+  },
+  thesis: {
+    sl: 6,
+    name: 22,
+    designation: 14,
+    department: 18,
+    supervisorCount: 14,
+    examinerCount: 14,
+    attendsViva: 12,
+  },
+  verification: { sl: 6, name: 32, designation: 22, department: 40 },
+  courseCoordinator: { sl: 6, name: 32, designation: 22, department: 40 },
+};
