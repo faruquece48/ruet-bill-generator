@@ -1,124 +1,170 @@
 "use client";
+
 import type { ExaminationBillData } from "../../create/components/types";
-import BillPreview from "../../create/components/BillPreview";
 import PreviewTable, { PreviewColumn } from "./PreviewTable";
 import {
-  flattenCourseDuties,
-  flattenSessionalDuties,
+  flattenPaperSetter,
+  flattenClassTest,
+  flattenAssignment,
+  flattenCourseFile,
+  flattenSessional,
+  flattenBoardViva,
+  flattenTabulation,
+  deriveGradeSheetRows,
 } from "../../create/components/pdf/pdfHelpers";
 
 interface Props {
   bill: ExaminationBillData;
 }
 
+// ---- Column sets ----
 const committeeCols: PreviewColumn[] = [
   { key: "sl", label: "Sl." },
-  { key: "name", label: "Teacher Name" },
-  { key: "designation", label: "Designation" },
+  { key: "teacherLine", label: "Name of Teachers & Designation" },
   { key: "department", label: "Department" },
   { key: "role", label: "Role" },
 ];
 
-const courseDutyCols: PreviewColumn[] = [
-  { key: "courseCode", label: "Code" },
-  { key: "courseTitle", label: "Title" },
+const paperSetterCols: PreviewColumn[] = [
+  { key: "courseCode", label: "Course No. & Title" },
   { key: "part", label: "Part" },
-  { key: "name", label: "Teacher" },
-  { key: "designation", label: "Designation" },
-  { key: "department", label: "Dept." },
-  { key: "paperSetter", label: "Paper Setter" },
-  { key: "examiner", label: "Examiner" },
-  { key: "classTest", label: "Class Test" },
-  { key: "assignment", label: "Assignment" },
-  { key: "courseFile", label: "Course File" },
+  { key: "teacherLine", label: "Name of Teachers & Designation" },
+  { key: "paperSetCount", label: "No. of Paper Set" },
+  { key: "scriptExamined", label: "No. of Script Examined" },
 ];
 
-const sessionalCols: PreviewColumn[] = [
-  { key: "courseCode", label: "Code" },
-  { key: "courseTitle", label: "Title" },
-  { key: "name", label: "Teacher" },
-  { key: "designation", label: "Designation" },
-  { key: "department", label: "Dept." },
-  { key: "sessional", label: "Sessional" },
-  { key: "sessionalStudents", label: "Students" },
-  { key: "courseFile", label: "Course File" },
+const classTestCols: PreviewColumn[] = [
+  { key: "courseCode", label: "Course No. & Title" },
+  { key: "teacherLine", label: "Name of Teachers & Designation" },
+  { key: "classTestCount", label: "No. of Class Test" },
+  { key: "students", label: "No. of Students" },
+];
+
+const assignmentCols: PreviewColumn[] = [
+  { key: "courseCode", label: "Course No. & Title" },
+  { key: "teacherLine", label: "Name of Teachers & Designation" },
+  { key: "assignmentValue", label: "No. of Class Assignment" },
+];
+
+const courseFileCols: PreviewColumn[] = [
+  { key: "courseCode", label: "Course No. & Title" },
+  { key: "teacherLine", label: "Name of Teachers & Designation" },
 ];
 
 const questionWorkCols: PreviewColumn[] = [
-  { key: "sl", label: "Sl." },
-  { key: "name", label: "Teacher Name" },
-  { key: "designation", label: "Designation" },
-  { key: "department", label: "Department" },
-  { key: "questionNumber", label: "No. of Questions" },
+  { key: "sl", label: "Sl. No." },
+  { key: "teacherLine", label: "Name of The Teachers & Designation" },
+  { key: "questionNumber", label: "No. of Question" },
 ];
 
 const scrutinyCols: PreviewColumn[] = [
-  { key: "name", label: "Teacher Name" },
-  { key: "designation", label: "Designation" },
-  { key: "department", label: "Department" },
-  { key: "scriptCount", label: "No. of Scripts" },
+  { key: "sl", label: "Sl. No." },
+  { key: "teacherLine", label: "Name of The Teachers & Designation" },
+  { key: "scriptCount", label: "No. of Script" },
 ];
 
-const studentDutyCols: PreviewColumn[] = [
-  { key: "sl", label: "Sl." },
-  { key: "name", label: "Teacher Name" },
-  { key: "designation", label: "Designation" },
-  { key: "department", label: "Department" },
+const sessionalCols: PreviewColumn[] = [
+  { key: "courseCode", label: "Course No. & Title" },
+  { key: "teacherLine", label: "Name of Teachers & Designation" },
   { key: "students", label: "No. of Students" },
 ];
 
-const courseAdviserCols: PreviewColumn[] = [
-  { key: "sl", label: "Sl." },
-  { key: "name", label: "Teacher Name" },
-  { key: "designation", label: "Designation" },
-  { key: "department", label: "Department" },
+const boardVivaCols: PreviewColumn[] = [
+  { key: "sl", label: "Sl. No." },
+  { key: "teacherLine", label: "Name of Teachers & Designation" },
   { key: "students", label: "No. of Students" },
+];
+
+const tabulationCols: PreviewColumn[] = [
+  { key: "sl", label: "Sl. No." },
+  { key: "teacherLine", label: "Name of Teachers & Designation" },
+  { key: "students", label: "No. of Students" },
+];
+
+const gradeSheetCols: PreviewColumn[] = [
+  { key: "sl", label: "Sl. No." },
+  { key: "teacherLine", label: "Name of Teachers & Designation" },
+  { key: "studentsDisplay", label: "No. of Students" },
 ];
 
 const thesisCols: PreviewColumn[] = [
-  { key: "sl", label: "Sl." },
-  { key: "name", label: "Teacher Name" },
-  { key: "designation", label: "Designation" },
-  { key: "department", label: "Department" },
+  { key: "sl", label: "Sl. No." },
+  { key: "teacherLine", label: "Name of Teachers & Designation" },
   { key: "supervisorCount", label: "Supervisor" },
-  { key: "examinerCount", label: "Examiner" },
-  { key: "attendsViva", label: "Viva" },
+  { key: "examinerCount", label: "Thesis Examiner" },
+  { key: "attendsViva", label: "Thesis Viva" },
+];
+
+const courseAdviserCols: PreviewColumn[] = [
+  { key: "sl", label: "Sl. No." },
+  { key: "teacherLine", label: "Name of Teachers & Designation" },
+  { key: "students", label: "No. of Students" },
+];
+
+const courseCoordinatorCols: PreviewColumn[] = [
+  { key: "sl", label: "Sl. No." },
+  { key: "teacherLine", label: "Name of Teachers & Designation" },
 ];
 
 const verificationCols: PreviewColumn[] = [
-  { key: "sl", label: "Sl." },
-  { key: "name", label: "Teacher Name" },
-  { key: "designation", label: "Designation" },
-  { key: "department", label: "Department" },
+  { key: "sl", label: "Sl. No." },
+  { key: "teacherLine", label: "Name of Teachers & Designation" },
+  { key: "students", label: "No. of Students" },
 ];
 
-const courseCoordinatorCols: PreviewColumn[] = verificationCols;
+function withTeacherLine<
+  T extends { name: string; designation: string; department: string }
+>(rows: T[]) {
+  return rows.map((r) => ({
+    ...r,
+    teacherLine: `${r.name}, ${r.designation}${
+      r.department ? `, Dept. of ${r.department}` : ""
+    }`,
+  }));
+}
 
 export default function PreviewDocument({ bill }: Props) {
+  const isBacklog = bill.billInfo.examType === "backlog";
   const isThesisApplicable =
     bill.billInfo.year === "4th Year" && bill.billInfo.semester === "Even";
-  const isVerificationApplicable = bill.billInfo.hasGraduatingStudents === "yes";
+  const isVerificationApplicable =
+    bill.billInfo.hasGraduatingStudents === "yes";
   const isCourseCoordinatorApplicable = isThesisApplicable;
 
-  const courseDutyRows = [
-    ...flattenCourseDuties(bill.courseDuties.obe),
-    ...flattenCourseDuties(bill.courseDuties.nonObe),
+  const allCourseDuties = [
+    ...bill.courseDuties.obe,
+    ...bill.courseDuties.nonObe,
   ];
+
+  const paperSetterRows = flattenPaperSetter(allCourseDuties);
+  const classTestRows = flattenClassTest(allCourseDuties);
+  const assignmentRows = flattenAssignment(allCourseDuties);
+  const courseFileRows = flattenCourseFile(
+    allCourseDuties,
+    bill.sessionalDuties
+  );
+  const sessionalRows = flattenSessional(bill.sessionalDuties);
+  const boardVivaRows = flattenBoardViva(bill.sessionalDuties);
+  const tabulationRows = flattenTabulation(bill.studentDuties);
+  const gradeSheetRows = deriveGradeSheetRows(bill.studentDuties);
+  const allScrutiny = [...bill.scrutinies.obe, ...bill.scrutinies.nonObe];
 
   type Section = {
     title: string;
     hasData: boolean;
     content: React.ReactNode;
+    includeInBacklog: boolean; // whether this counts toward backlog's fixed 7
   };
 
   const sections: Section[] = [
     {
       title: "Examination Committee",
       hasData: bill.committees.some((m) => m.name.trim() !== ""),
+      includeInBacklog: true,
       content: (
         <PreviewTable
           columns={committeeCols}
-          rows={bill.committees}
+          rows={withTeacherLine(bill.committees)}
           widths={bill.layoutSettings.committee}
           showSerial
         />
@@ -126,57 +172,62 @@ export default function PreviewDocument({ bill }: Props) {
     },
     {
       title: "List of Teachers Associated with Paper Setter & Examiner",
-      hasData: courseDutyRows.length > 0,
-      content: (
-        <div className="space-y-4">
-          {bill.courseDuties.obe.length > 0 && (
-            <div>
-              {bill.billInfo.evaluationSystem === "mixed" && (
-                <p className="mb-1 text-xs font-semibold text-gray-500">
-                  OBE (New Syllabus)
-                </p>
-              )}
-              <PreviewTable
-                columns={courseDutyCols}
-                rows={flattenCourseDuties(bill.courseDuties.obe)}
-                widths={bill.layoutSettings.courseDutyObe}
-              />
-            </div>
-          )}
-          {bill.courseDuties.nonObe.length > 0 && (
-            <div>
-              <p className="mb-1 text-xs font-semibold text-gray-500">
-                Non-OBE (Old Syllabus)
-              </p>
-              <PreviewTable
-                columns={courseDutyCols}
-                rows={flattenCourseDuties(bill.courseDuties.nonObe)}
-                widths={bill.layoutSettings.courseDutyNonObe}
-              />
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      title: "List of Teachers Associated with Sessional Courses",
-      hasData: bill.sessionalDuties.length > 0,
+      hasData: paperSetterRows.length > 0,
+      includeInBacklog: true,
       content: (
         <PreviewTable
-          columns={sessionalCols}
-          rows={flattenSessionalDuties(bill.sessionalDuties)}
-          widths={bill.layoutSettings.sessionalDuty}
+          columns={paperSetterCols}
+          rows={paperSetterRows}
+          widths={bill.layoutSettings.courseDutyObe}
         />
       ),
     },
     {
-      title:
-        "List of Teachers Associated with Question Typing, Sketching, Comparing & Printing",
+      title: "List of Teachers Associated with Class Test",
+      hasData: classTestRows.length > 0,
+      includeInBacklog: false,
+      content: (
+        <PreviewTable
+          columns={classTestCols}
+          rows={classTestRows}
+          widths={bill.layoutSettings.courseDutyObe}
+        />
+      ),
+    },
+    {
+      title: "List of Teachers Associated with Assignment",
+      hasData: assignmentRows.length > 0,
+      includeInBacklog: false,
+      content: (
+        <PreviewTable
+          columns={assignmentCols}
+          rows={assignmentRows}
+          widths={bill.layoutSettings.courseDutyObe}
+        />
+      ),
+    },
+    {
+      title: "List of Teachers Associated with Course File",
+      hasData: courseFileRows.length > 0,
+      includeInBacklog: false,
+      content: (
+        <PreviewTable
+          columns={courseFileCols}
+          rows={courseFileRows}
+          widths={bill.layoutSettings.courseDutyObe}
+        />
+      ),
+    },
+    {
+      title: isBacklog
+        ? "List of Teachers Associated with Question Typing, Sketching & Printing"
+        : "List of Teachers Associated with Question Typing, Sketching, Comparing & Printing",
       hasData: bill.questionWorks.length > 0,
+      includeInBacklog: true,
       content: (
         <PreviewTable
           columns={questionWorkCols}
-          rows={bill.questionWorks}
+          rows={withTeacherLine(bill.questionWorks as any)}
           widths={bill.layoutSettings.questionWork}
           showSerial
         />
@@ -184,46 +235,80 @@ export default function PreviewDocument({ bill }: Props) {
     },
     {
       title: "List of Teachers Associated with Scrutiny",
-      hasData:
-        bill.scrutinies.obe.length > 0 || bill.scrutinies.nonObe.length > 0,
+      hasData: allScrutiny.length > 0,
+      includeInBacklog: true,
       content: (
-        <div className="space-y-4">
-          {bill.scrutinies.obe.length > 0 && (
-            <div>
-              {bill.billInfo.evaluationSystem === "mixed" && (
-                <p className="mb-1 text-xs font-semibold text-gray-500">
-                  OBE (New Syllabus)
-                </p>
-              )}
-              <PreviewTable
-                columns={scrutinyCols}
-                rows={bill.scrutinies.obe}
-                widths={bill.layoutSettings.scrutinyObe}
-              />
-            </div>
-          )}
-          {bill.scrutinies.nonObe.length > 0 && (
-            <div>
-              <p className="mb-1 text-xs font-semibold text-gray-500">
-                Non-OBE (Old Syllabus)
-              </p>
-              <PreviewTable
-                columns={scrutinyCols}
-                rows={bill.scrutinies.nonObe}
-                widths={bill.layoutSettings.scrutinyNonObe}
-              />
-            </div>
-          )}
-        </div>
+        <PreviewTable
+          columns={scrutinyCols}
+          rows={withTeacherLine(allScrutiny as any)}
+          widths={bill.layoutSettings.scrutinyObe}
+          showSerial
+        />
+      ),
+    },
+    {
+      title: "List of Teachers Associated with Sessional",
+      hasData: sessionalRows.length > 0,
+      includeInBacklog: false,
+      content: (
+        <PreviewTable
+          columns={sessionalCols}
+          rows={sessionalRows}
+          widths={bill.layoutSettings.sessionalDuty}
+        />
+      ),
+    },
+    // Board Viva: appears purely based on whether board-viva data exists,
+    // in both semester and backlog modes (confirmed).
+    {
+      title: "List of Teachers Associated with Board Viva",
+      hasData: boardVivaRows.length > 0,
+      includeInBacklog: true,
+      content: (
+        <PreviewTable
+          columns={boardVivaCols}
+          rows={boardVivaRows}
+          widths={bill.layoutSettings.studentDuty}
+          showSerial
+        />
       ),
     },
     {
       title: "List of Teachers Associated with Tabulation",
-      hasData: bill.studentDuties.length > 0,
+      hasData: tabulationRows.length > 0,
+      includeInBacklog: true,
       content: (
         <PreviewTable
-          columns={studentDutyCols}
-          rows={bill.studentDuties}
+          columns={tabulationCols}
+          rows={tabulationRows}
+          widths={bill.layoutSettings.studentDuty}
+          showSerial
+        />
+      ),
+    },
+    // Grade Sheet Preparation and Verification: always two separate
+    // sections, in both semester and backlog modes (confirmed).
+    {
+      title: "List of Teachers Associated with Grade Sheet Preparation",
+      hasData: gradeSheetRows.length > 0,
+      includeInBacklog: true,
+      content: (
+        <PreviewTable
+          columns={gradeSheetCols}
+          rows={gradeSheetRows}
+          widths={bill.layoutSettings.studentDuty}
+          showSerial
+        />
+      ),
+    },
+    {
+      title: "List of Teachers Associated with Grade Sheet Verification",
+      hasData: gradeSheetRows.length > 0,
+      includeInBacklog: true,
+      content: (
+        <PreviewTable
+          columns={gradeSheetCols}
+          rows={gradeSheetRows}
           widths={bill.layoutSettings.studentDuty}
           showSerial
         />
@@ -232,11 +317,27 @@ export default function PreviewDocument({ bill }: Props) {
     {
       title: "List of Course Advisers",
       hasData: bill.courseAdvisers.length > 0,
+      includeInBacklog: false,
       content: (
         <PreviewTable
           columns={courseAdviserCols}
-          rows={bill.courseAdvisers}
+          rows={withTeacherLine(bill.courseAdvisers as any)}
           widths={bill.layoutSettings.courseAdviser}
+          showSerial
+        />
+      ),
+    },
+    {
+      title: "List of Teachers Associated with Course Coordinator",
+      hasData:
+        isCourseCoordinatorApplicable &&
+        bill.courseCoordinatorTeachers.length > 0,
+      includeInBacklog: false,
+      content: (
+        <PreviewTable
+          columns={courseCoordinatorCols}
+          rows={withTeacherLine(bill.courseCoordinatorTeachers as any)}
+          widths={bill.layoutSettings.courseCoordinator}
           showSerial
         />
       ),
@@ -244,19 +345,23 @@ export default function PreviewDocument({ bill }: Props) {
     {
       title: "List of Teachers Associated with Thesis/Project Examination",
       hasData: isThesisApplicable && bill.thesisTeachers.length > 0,
+      includeInBacklog: false,
       content: (
         <PreviewTable
           columns={thesisCols}
-          rows={bill.thesisTeachers}
+          rows={withTeacherLine(bill.thesisTeachers as any)}
           widths={bill.layoutSettings.thesis}
           showSerial
         />
       ),
     },
+    // Verification: always last, gated only by hasGraduatingStudents,
+    // applies to either semester or backlog exams.
     {
       title: "List of Teachers Associated with Verification of Final Result",
       hasData:
         isVerificationApplicable && bill.verificationTeachers.length > 0,
+      includeInBacklog: true,
       content: (
         <>
           {bill.verificationStudentCount && (
@@ -266,34 +371,42 @@ export default function PreviewDocument({ bill }: Props) {
           )}
           <PreviewTable
             columns={verificationCols}
-            rows={bill.verificationTeachers}
+            rows={withTeacherLine(bill.verificationTeachers as any)}
             widths={bill.layoutSettings.verification}
             showSerial
           />
         </>
       ),
     },
-    {
-      title: "List of Teachers Associated with Course Coordinator",
-      hasData:
-        isCourseCoordinatorApplicable &&
-        bill.courseCoordinatorTeachers.length > 0,
-      content: (
-        <PreviewTable
-          columns={courseCoordinatorCols}
-          rows={bill.courseCoordinatorTeachers}
-          widths={bill.layoutSettings.courseCoordinator}
-          showSerial
-        />
-      ),
-    },
   ];
 
-  const visible = sections.filter((s) => s.hasData);
+  const visible = sections.filter((s) => {
+    if (!s.hasData) return false;
+    if (isBacklog && !s.includeInBacklog) return false;
+    return true;
+  });
 
   return (
     <div className="rounded-xl border bg-white p-6 shadow-sm space-y-8">
-      <BillPreview bill={bill.billInfo} />
+      <div className="text-center space-y-1">
+        <p
+          className="italic"
+          style={{ fontFamily: "'Monotype Corsiva', cursive", fontSize: 10 }}
+        >
+          Heaven&apos;s Light is Our Guide
+        </p>
+        <p className="text-[11px]">
+          Department of Building Engineering &amp; Construction Management
+        </p>
+        <p className="text-[11px]">
+          Rajshahi University of Engineering &amp; Technology
+        </p>
+        <p className="mt-1 text-[11px] font-bold">
+          {bill.billInfo.examination || "B.Sc. Engineering"}{" "}
+          {bill.billInfo.year} {bill.billInfo.semester} Semester Examination-
+          {bill.billInfo.examYear} (Series {bill.billInfo.series})
+        </p>
+      </div>
 
       {visible.length === 0 && (
         <p className="text-center text-sm text-gray-400">
@@ -303,9 +416,9 @@ export default function PreviewDocument({ bill }: Props) {
       )}
 
       {visible.map((section, i) => (
-        <div key={section.title} className="space-y-3">
+        <div key={section.title} className="space-y-3 text-[11px]">
           <h2 className="text-lg font-bold">
-            {i + 2}. {section.title}
+            {i + 1}. {section.title}
           </h2>
           {section.content}
         </div>
