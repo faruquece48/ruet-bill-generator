@@ -12,10 +12,20 @@ import PreviewDocument from "./components/PreviewDocument";
 
 const committeeLabels = {
   sl: "Sl.",
-  name: "Teacher Name",
-  designation: "Designation",
-  department: "Department",
+  teacherLine: "Name of Teachers & Designation",
   role: "Role",
+};
+
+const groupedLabels = {
+  course: "Course No. & Title",
+  part: "Part",
+  teacherLine: "Name of Teachers & Designation",
+  paperSetCount: "No. of Paper Set",
+  scriptExamined: "No. of Script Examined",
+  classTestCount: "No. of Class Test",
+  students: "No. of Students",
+  assignmentValue: "No. of Class Assignment",
+  count: "No. of Course File",
 };
 
 const courseDutyLabels = {
@@ -32,37 +42,34 @@ const courseDutyLabels = {
   courseFile: "Course File",
 };
 
+const courseFileLabels = {
+  course: "Course No. & Title",
+  teacherLine: "Name of Teachers & Designation",
+  count: "No. of Course File",
+};
+
 const sessionalLabels = {
-  courseCode: "Code",
-  courseTitle: "Title",
-  name: "Teacher",
-  designation: "Designation",
-  department: "Dept.",
-  sessional: "Sessional",
-  sessionalStudents: "Students",
-  courseFile: "Course File",
+  courseLine: "Course No. & Title",
+  credit: "Credit",
+  teacherLine: "Name of Teachers & Designation",
+  students: "No. of Students",
 };
 
 const questionWorkLabels = {
   sl: "Sl.",
-  name: "Teacher Name",
-  designation: "Designation",
-  department: "Department",
+  teacherLine: "Name of Teachers & Designation",
   questionNumber: "No. of Questions",
 };
 
 const scrutinyLabels = {
-  name: "Teacher Name",
-  designation: "Designation",
-  department: "Department",
+  sl: "Sl.",
+  teacherLine: "Name of Teachers & Designation",
   scriptCount: "No. of Scripts",
 };
 
 const studentDutyLabels = {
   sl: "Sl.",
-  name: "Teacher Name",
-  designation: "Designation",
-  department: "Department",
+  teacherLine: "Name of Teachers & Designation",
   students: "No. of Students",
 };
 
@@ -96,6 +103,11 @@ export default function PreviewPage() {
         layoutSettings: {
           ...defaultLayoutSettings,
           ...(saved.layoutSettings || {}),
+          committee: { ...defaultLayoutSettings.committee, ...(saved.layoutSettings?.committee || {}) },
+          questionWork: { ...defaultLayoutSettings.questionWork, ...(saved.layoutSettings?.questionWork || {}) },
+          scrutinyObe: { ...defaultLayoutSettings.scrutinyObe, ...(saved.layoutSettings?.scrutinyObe || {}) },
+          scrutinyNonObe: { ...defaultLayoutSettings.scrutinyNonObe, ...(saved.layoutSettings?.scrutinyNonObe || {}) },
+          sessionalDuty: { ...defaultLayoutSettings.sessionalDuty, ...(saved.layoutSettings?.sessionalDuty || {}) },
         },
       });
     }
@@ -160,18 +172,26 @@ export default function PreviewPage() {
 
             <SectionPanel title="3. Paper Setter & Examiner — OBE">
               <ColumnWidthEditor
-                widths={billData.layoutSettings.courseDutyObe}
-                setWidths={(v) => updateLayout("courseDutyObe", v)}
-                labels={courseDutyLabels}
+                widths={billData.layoutSettings.paperSetter}
+                setWidths={(v) => updateLayout("paperSetter", v)}
+                labels={groupedLabels}
               />
             </SectionPanel>
 
             <SectionPanel title="3. Paper Setter & Examiner — Non-OBE">
               <ColumnWidthEditor
-                widths={billData.layoutSettings.courseDutyNonObe}
-                setWidths={(v) => updateLayout("courseDutyNonObe", v)}
-                labels={courseDutyLabels}
+                widths={billData.layoutSettings.classTest}
+                setWidths={(v) => updateLayout("classTest", v)}
+                labels={groupedLabels}
               />
+            </SectionPanel>
+
+            <SectionPanel title="Assignment">
+              <ColumnWidthEditor widths={billData.layoutSettings.assignment} setWidths={(v) => updateLayout("assignment", v)} labels={groupedLabels} />
+            </SectionPanel>
+
+            <SectionPanel title="Course File">
+              <ColumnWidthEditor widths={billData.layoutSettings.courseFile} setWidths={(v) => updateLayout("courseFile", v)} labels={groupedLabels} />
             </SectionPanel>
 
             <SectionPanel title="4. Sessional Courses">
@@ -206,12 +226,24 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
+            <SectionPanel title="Board Viva">
+              <ColumnWidthEditor widths={billData.layoutSettings.boardViva} setWidths={(v) => updateLayout("boardViva", v)} labels={studentDutyLabels} />
+            </SectionPanel>
+
             <SectionPanel title="7. Tabulation">
               <ColumnWidthEditor
-                widths={billData.layoutSettings.studentDuty}
-                setWidths={(v) => updateLayout("studentDuty", v)}
+                widths={billData.layoutSettings.tabulation}
+                setWidths={(v) => updateLayout("tabulation", v)}
                 labels={studentDutyLabels}
               />
+            </SectionPanel>
+
+            <SectionPanel title="Grade Sheet Preparation">
+              <ColumnWidthEditor widths={billData.layoutSettings.gradeSheetPreparation} setWidths={(v) => updateLayout("gradeSheetPreparation", v)} labels={{ ...studentDutyLabels, studentsDisplay: "No. of Students" }} />
+            </SectionPanel>
+
+            <SectionPanel title="Grade Sheet Verification">
+              <ColumnWidthEditor widths={billData.layoutSettings.gradeSheetVerification} setWidths={(v) => updateLayout("gradeSheetVerification", v)} labels={{ ...studentDutyLabels, studentsDisplay: "No. of Students" }} />
             </SectionPanel>
 
             <SectionPanel title="8. Course Advisers">

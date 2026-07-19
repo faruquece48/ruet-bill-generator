@@ -55,11 +55,9 @@ const styles = StyleSheet.create({
   // box regardless of which page it lands on.
   table: { width: "100%" },
   row: { flexDirection: "row", width: "100%" },
-  cell: { borderRightWidth: BW, borderTopWidth: BW, borderBottomWidth: BW, borderColor: BORDER, padding: 4, fontSize: 11, justifyContent: "center" },
+  cell: { borderRightWidth: BW, borderColor: BORDER, padding: 4, fontSize: 11, justifyContent: "center" },
   headerCell: {
     borderRightWidth: BW,
-    borderTopWidth: BW,
-    borderBottomWidth: BW,
     borderColor: BORDER,
     padding: 4,
     fontSize: 11,
@@ -67,12 +65,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   cellLeftEdge: { borderLeftWidth: BW },
+  rowTopEdge: { borderTopWidth: BW, borderBottomWidth: BW, borderColor: BORDER },
+  cellBottomEdge: { borderBottomWidth: BW },
   center: { textAlign: "center" },
   // Right-corner footer block: fixed width, anchored to the bottom-right,
   // text centered within that block. A blank spacer sits above "Chairman"
   // to leave room for an actual pen signature.
   footer: { position: "absolute", bottom: 24, right: 36, width: 190, textAlign: "center", fontSize: 11 },
-  signatureSpace: { height: 30 },
+  signatureSpace: { height: 14 },
 });
 interface Col {
   key: string;
@@ -80,25 +80,43 @@ interface Col {
   width: number;
   align?: "left" | "center" | "right";
 }
+
+/**
+ * Layout settings are relative column weights, not fixed percentages. This
+ * keeps every table exactly as wide as its printable container even when a
+ * saved layout's values do not add up to 100.
+ */
+function normalizeColumns(columns: Col[]): Col[] {
+  if (columns.length === 0) return columns;
+
+  const total = columns.reduce((sum, column) => sum + Math.max(0, column.width), 0);
+  if (total <= 0) {
+    return columns.map((column) => ({ ...column, width: 100 / columns.length }));
+  }
+  return columns.map((column) => ({ ...column, width: (Math.max(0, column.width) / total) * 100 }));
+}
+
 function formatCell(value: any): string {
   if (value === true) return "Yes";
   if (value === false || value === "" || value === undefined || value === null) return "—";
   return String(value);
 }
 function SimpleTable({ columns, rows }: { columns: Col[]; rows: Record<string, any>[] }) {
+  const normalizedColumns = normalizeColumns(columns);
+
   return (
     <View style={styles.table}>
-      <View style={styles.row} wrap={false}>
-        {columns.map((c, i) => (
-          <View key={c.key} style={[styles.headerCell, { width: `${c.width}%` }, i === 0 && styles.cellLeftEdge]}>
+      <View style={[styles.row, styles.rowTopEdge]} wrap={false}>
+        {normalizedColumns.map((c, i) => (
+          <View key={c.key} style={[styles.headerCell, { width: `${c.width}%` }, i === 0 ? styles.cellLeftEdge : {}]}>
             <Text style={c.align === "center" || c.key === "sl" ? styles.center : undefined}>{c.label}</Text>
           </View>
         ))}
       </View>
       {rows.map((row, ri) => (
-        <View style={styles.row} key={ri} wrap={false}>
-          {columns.map((c, i) => (
-            <View key={c.key} style={[styles.cell, { width: `${c.width}%` }, i === 0 && styles.cellLeftEdge]}>
+        <View style={[styles.row, styles.rowTopEdge]} key={ri} wrap={false}>
+          {normalizedColumns.map((c, i) => (
+            <View key={c.key} style={[styles.cell, { width: `${c.width}%` }, i === 0 ? styles.cellLeftEdge : {}, ri === rows.length - 1 ? styles.cellBottomEdge : {}]}>
               <Text style={c.align === "center" || c.key === "sl" ? styles.center : undefined}>
                 {c.key === "sl" ? String(ri + 1) : formatCell(row[c.key])}
               </Text>
@@ -120,56 +138,79 @@ function GroupedTable({
   courseWidth,
   entryColumns,
   groups,
-  groupColumn,
+  groupMergeColumn,
 }: {
   courseWidth: number;
   entryColumns: Col[];
   groups: { courseCode: string; courseTitle: string; entries: Record<string, any>[] }[];
-  groupColumn?: {
-    label: string;
-    width: number;
-    value: (group: { courseCode: string; courseTitle: string; entries: Record<string, any>[] }) => React.ReactNode;
-  };
+  groupMergeColumn?: { key: string; label: string; width: number; align?: "left" | "center" | "right"; value: () => React.ReactNode };
 }) {
-  const restTotal = entryColumns.reduce((s, c) => s + c.width, 0) || 1;
-  const entriesWidth = 100 - courseWidth - (groupColumn?.width ?? 0);
+  const normalized = normalizeColumns([
+    { key: "course", label: "Course No. & Title", width: courseWidth },
+    ...entryColumns,
+    ...(groupMergeColumn ? [groupMergeColumn] : []),
+  ]);
+  const normalizedCourseWidth = normalized[0].width;
+  const normalizedEntryColumns = normalized.slice(1, 1 + entryColumns.length);
+  const normalizedMergeColumn = groupMergeColumn ? normalized[normalized.length - 1] : undefined;
+  const entryTotal = normalizedEntryColumns.reduce((sum, column) => sum + column.width, 0) || 1;
+
   return (
     <View style={styles.table}>
-      <View style={styles.row} wrap={false}>
-        <View style={[styles.headerCell, { width: `${courseWidth}%` }, styles.cellLeftEdge]}>
+      <View style={[styles.row, styles.rowTopEdge]}>
+        <View style={[styles.headerCell, { width: `${normalizedCourseWidth}%` }, styles.cellLeftEdge]}>
           <Text>Course No. &amp; Title</Text>
         </View>
-        {entryColumns.map((c) => (
-          <View key={c.key} style={[styles.headerCell, { width: `${c.width}%` }]}>
+        {normalizedEntryColumns.map((c) => (
+          <View
+            key={c.key}
+            style={[
+              styles.headerCell,
+              { width: `${c.width}%` },
+            ]}
+          >
             <Text style={c.align === "center" ? styles.center : undefined}>{c.label}</Text>
           </View>
         ))}
-        {groupColumn && (
-          <View style={[styles.headerCell, { width: `${groupColumn.width}%` }]}>
-            <Text style={styles.center}>{groupColumn.label}</Text>
+        {normalizedMergeColumn && (
+          <View style={[styles.headerCell, { width: `${normalizedMergeColumn.width}%` }]}>
+            <Text style={normalizedMergeColumn.align === "center" ? styles.center : undefined}>
+              {normalizedMergeColumn.label}
+            </Text>
           </View>
         )}
       </View>
+
       {groups.map((group, gi) => (
-        <View style={styles.row} key={gi} wrap={false}>
-          <View style={[styles.cell, { width: `${courseWidth}%` }, styles.cellLeftEdge]}>
-            <Text style={{ fontWeight: 700 }}>{group.courseCode}</Text>
+        <View key={gi} style={[styles.row, styles.rowTopEdge, { alignItems: "stretch" }]} wrap={false}>
+          <View style={[styles.cell, { width: `${normalizedCourseWidth}%`, justifyContent: "center" }, styles.cellLeftEdge, gi === groups.length - 1 ? styles.cellBottomEdge : {}]}>
+            <Text>{group.courseCode}</Text>
             <Text>{group.courseTitle}</Text>
           </View>
-          <View style={{ width: `${entriesWidth}%` }}>
+          <View style={{ width: `${entryTotal}%` }}>
             {group.entries.map((entry, ei) => (
-              <View key={ei} style={{ flexDirection: "row" }}>
-                {entryColumns.map((c) => (
-                  <View key={c.key} style={[styles.cell, { width: `${(c.width / restTotal) * 100}%` }]}>
+              <View
+                key={ei}
+                style={[{ flexDirection: "row" }, ei > 0 ? styles.rowTopEdge : {}]}
+              >
+                {normalizedEntryColumns.map((c) => (
+                  <View
+                    key={c.key}
+                    style={[
+                      styles.cell,
+                      { width: `${(c.width / entryTotal) * 100}%` },
+                      gi === groups.length - 1 && ei === group.entries.length - 1 ? styles.cellBottomEdge : {},
+                    ]}
+                  >
                     <Text style={c.align === "center" ? styles.center : undefined}>{formatCell(entry[c.key])}</Text>
                   </View>
                 ))}
               </View>
             ))}
           </View>
-          {groupColumn && (
-            <View style={[styles.cell, { width: `${groupColumn.width}%`, justifyContent: "center", alignItems: "center" }]}>
-              <Text style={styles.center}>{groupColumn.value(group)}</Text>
+          {normalizedMergeColumn && groupMergeColumn && (
+            <View style={[styles.cell, { width: `${normalizedMergeColumn.width}%`, justifyContent: "center" }, gi === groups.length - 1 ? styles.cellBottomEdge : {}]}>
+              <Text style={styles.center}>{groupMergeColumn.value()}</Text>
             </View>
           )}
         </View>
@@ -188,30 +229,31 @@ function MergedColumnTable({
   mergeKey: string;
   mergeValue: React.ReactNode;
 }) {
-  const mergeCol = columns.find((c) => c.key === mergeKey)!;
-  const mergeIndex = columns.findIndex((c) => c.key === mergeKey);
-  const leftCols = columns.slice(0, mergeIndex);
-  const rightCols = columns.slice(mergeIndex + 1);
+  const normalizedColumns = normalizeColumns(columns);
+  const mergeCol = normalizedColumns.find((c) => c.key === mergeKey)!;
+  const mergeIndex = normalizedColumns.findIndex((c) => c.key === mergeKey);
+  const leftCols = normalizedColumns.slice(0, mergeIndex);
+  const rightCols = normalizedColumns.slice(mergeIndex + 1);
   const leftTotal = leftCols.reduce((s, c) => s + c.width, 0) || 1;
   const rightTotal = rightCols.reduce((s, c) => s + c.width, 0) || 1;
   const hasLeft = leftCols.length > 0;
   const hasRight = rightCols.length > 0;
   return (
     <View style={styles.table}>
-      <View style={styles.row} wrap={false}>
-        {columns.map((c, i) => (
-          <View key={c.key} style={[styles.headerCell, { width: `${c.width}%` }, i === 0 && styles.cellLeftEdge]}>
+      <View style={[styles.row, styles.rowTopEdge]} wrap={false}>
+        {normalizedColumns.map((c, i) => (
+          <View key={c.key} style={[styles.headerCell, { width: `${c.width}%` }, i === 0 ? styles.cellLeftEdge : {}]}>
             <Text style={c.align === "center" || c.key === "sl" ? styles.center : undefined}>{c.label}</Text>
           </View>
         ))}
       </View>
-      <View style={{ flexDirection: "row" }}>
+      <View style={styles.row}>
         {hasLeft && (
           <View style={{ width: `${leftTotal}%` }}>
             {rows.map((row, ri) => (
-              <View key={ri} style={{ flexDirection: "row" }} wrap={false}>
+              <View key={ri} style={[{ flexDirection: "row" }, styles.rowTopEdge]} wrap={false}>
                 {leftCols.map((c, ci) => (
-                  <View key={c.key} style={[styles.cell, { width: `${(c.width / leftTotal) * 100}%` }, ci === 0 && styles.cellLeftEdge]}>
+                  <View key={c.key} style={[styles.cell, { width: `${(c.width / leftTotal) * 100}%` }, ci === 0 ? styles.cellLeftEdge : {}, ri === rows.length - 1 ? styles.cellBottomEdge : {}]}>
                     <Text style={c.key === "sl" ? styles.center : undefined}>
                       {c.key === "sl" ? String(ri + 1) : formatCell(row[c.key])}
                     </Text>
@@ -221,15 +263,15 @@ function MergedColumnTable({
             ))}
           </View>
         )}
-        <View style={[styles.cell, { width: `${mergeCol.width}%`, justifyContent: "center", alignItems: "center" }, !hasLeft && styles.cellLeftEdge]}>
+        <View style={[styles.cell, styles.rowTopEdge, styles.cellBottomEdge, { width: `${mergeCol.width}%`, justifyContent: "center", alignItems: "center" }, !hasLeft ? styles.cellLeftEdge : {}]}>
           <Text style={styles.center}>{mergeValue ?? "—"}</Text>
         </View>
         {hasRight && (
           <View style={{ width: `${rightTotal}%` }}>
             {rows.map((row, ri) => (
-              <View key={ri} style={{ flexDirection: "row" }} wrap={false}>
+              <View key={ri} style={[{ flexDirection: "row" }, styles.rowTopEdge]} wrap={false}>
                 {rightCols.map((c) => (
-                  <View key={c.key} style={[styles.cell, { width: `${(c.width / rightTotal) * 100}%` }]}>
+                  <View key={c.key} style={[styles.cell, { width: `${(c.width / rightTotal) * 100}%` }, ri === rows.length - 1 ? styles.cellBottomEdge : {}]}>
                     <Text>{formatCell(row[c.key])}</Text>
                   </View>
                 ))}
@@ -349,13 +391,17 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       content: (
         <GroupedTable
           courseWidth={lw.courseFile.course ?? 35}
-          entryColumns={[{ key: "teacherLine", label: "Name of Teachers & Designation", width: lw.courseFile.teacherLine ?? 50 }]}
-          groupColumn={{
+          entryColumns={[
+            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.courseFile.teacherLine ?? 50 },
+          ]}
+          groups={courseFileGroups}
+          groupMergeColumn={{
+            key: "count",
             label: "No. of Course File",
-            width: lw.courseFile.courseFileCount ?? 15,
+            width: lw.courseFile.count ?? 15,
+            align: "center",
             value: () => "01",
           }}
-          groups={courseFileGroups}
         />
       ),
     },
@@ -404,16 +450,12 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       content: (
         <SimpleTable
           columns={[
-            { key: "sl", label: "Sl.", width: lw.sessionalDuty.sl ?? 8, align: "center" },
-            { key: "courseCode", label: "Course No. & Title", width: lw.sessionalDuty.courseCode ?? 27 },
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.sessionalDuty.teacherLine ?? 45 },
-            { key: "students", label: "No. of Students", width: lw.sessionalDuty.students ?? 20, align: "center" },
+            { key: "courseLine", label: "Course No. & Title", width: lw.sessionalDuty.courseLine ?? 30 },
+            { key: "credit", label: "Credit", width: lw.sessionalDuty.credit ?? 8, align: "center" },
+            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.sessionalDuty.teacherLine ?? 52 },
+            { key: "students", label: "No. of Students", width: lw.sessionalDuty.students ?? 10, align: "center" },
           ]}
-          rows={sessionalRows.map((r) => ({
-            courseCode: `${r.courseCode}\n${r.courseTitle}`,
-            teacherLine: r.teacherLine,
-            students: r.students,
-          }))}
+          rows={sessionalRows}
         />
       ),
     },
@@ -424,61 +466,67 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       content: (
         <SimpleTable
           columns={[
-            { key: "sl", label: "Sl. No.", width: lw.studentDuty.sl ?? 10, align: "center" },
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.studentDuty.teacherLine ?? 65 },
-            { key: "students", label: "No. of Students", width: lw.studentDuty.students ?? 25, align: "center" },
+            { key: "sl", label: "Sl. No.", width: lw.boardViva.sl ?? 10, align: "center" },
+            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.boardViva.teacherLine ?? 65 },
+            { key: "students", label: "No. of Students", width: lw.boardViva.students ?? 25, align: "center" },
           ]}
           rows={boardVivaRows}
         />
       ),
     },
     {
-      title: "List of Teachers Associated with Tabulation",
-      hasData: tabulationRows.length > 0,
-      includeInBacklog: true,
-      content: (
-        <SimpleTable
-          columns={[
-            { key: "sl", label: "Sl. No.", width: lw.studentDuty.sl ?? 10, align: "center" },
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.studentDuty.teacherLine ?? 65 },
-            { key: "students", label: "No. of Students", width: lw.studentDuty.students ?? 25, align: "center" },
-          ]}
-          rows={tabulationRows}
-        />
-      ),
-    },
-    {
-      title: isBacklog
-        ? "List of Teachers Associated with Grade Sheet Preparation & Verification"
-        : "List of Teachers Associated with Grade Sheet Preparation",
-      hasData: gradeSheetRows.length > 0,
-      includeInBacklog: true,
-      content: (
-        <SimpleTable
-          columns={[
-            { key: "sl", label: "Sl. No.", width: lw.studentDuty.sl ?? 10, align: "center" },
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.studentDuty.teacherLine ?? 65 },
-            { key: "studentsDisplay", label: "No. of Students", width: lw.studentDuty.students ?? 25, align: "center" },
-          ]}
-          rows={gradeSheetRows}
-        />
-      ),
-    },
-    {
-      title: "List of Teachers Associated with Grade Sheet Verification",
-      hasData: !isBacklog && gradeSheetRows.length > 0,
-      includeInBacklog: false,
-      content: (
-        <SimpleTable
-          columns={[
-            { key: "sl", label: "Sl. No.", width: lw.studentDuty.sl ?? 10, align: "center" },
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.studentDuty.teacherLine ?? 65 },
-            { key: "studentsDisplay", label: "No. of Students", width: lw.studentDuty.students ?? 25, align: "center" },
-          ]}
-          rows={gradeSheetRows}
-        />
-      ),
-    },
+  title: "List of Teachers Associated with Tabulation",
+  hasData: tabulationRows.length > 0,
+  includeInBacklog: true,
+  content: (
+    <MergedColumnTable
+      columns={[
+        { key: "sl", label: "Sl. No.", width: lw.tabulation.sl ?? 10 },
+        { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.tabulation.teacherLine ?? 65 },
+        { key: "students", label: "No. of Students", width: lw.tabulation.students ?? 25 },
+      ]}
+      rows={tabulationRows}
+      mergeKey="students"
+      mergeValue={tabulationRows[0]?.students ?? "—"}
+    />
+  ),
+},
+{
+  title: isBacklog
+    ? "List of Teachers Associated with Grade Sheet Preparation & Verification"
+    : "List of Teachers Associated with Grade Sheet Preparation",
+  hasData: gradeSheetRows.length > 0,
+  includeInBacklog: true,
+  content: (
+    <MergedColumnTable
+      columns={[
+        { key: "sl", label: "Sl. No.", width: lw.gradeSheetPreparation.sl ?? 10 },
+        { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.gradeSheetPreparation.teacherLine ?? 65 },
+        { key: "studentsDisplay", label: "No. of Students", width: lw.gradeSheetPreparation.studentsDisplay ?? 25 },
+      ]}
+      rows={gradeSheetRows}
+      mergeKey="studentsDisplay"
+      mergeValue={gradeSheetRows[0]?.studentsDisplay ?? "—"}
+    />
+  ),
+},
+{
+  title: "List of Teachers Associated with Grade Sheet Verification",
+  hasData: !isBacklog && gradeSheetRows.length > 0,
+  includeInBacklog: false,
+  content: (
+    <MergedColumnTable
+      columns={[
+        { key: "sl", label: "Sl. No.", width: lw.gradeSheetVerification.sl ?? 10 },
+        { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.gradeSheetVerification.teacherLine ?? 65 },
+        { key: "studentsDisplay", label: "No. of Students", width: lw.gradeSheetVerification.studentsDisplay ?? 25 },
+      ]}
+      rows={gradeSheetRows}
+      mergeKey="studentsDisplay"
+      mergeValue={gradeSheetRows[0]?.studentsDisplay ?? "—"}
+    />
+  ),
+},
     {
       title: "List of Course Advisers",
       hasData: bill.courseAdvisers.length > 0,

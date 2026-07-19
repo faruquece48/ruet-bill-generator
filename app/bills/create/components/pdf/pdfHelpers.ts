@@ -287,6 +287,8 @@ export function flattenCourseFile(
 export interface SessionalRow {
   courseCode: string;
   courseTitle: string;
+  courseLine: string;
+  credit: string;
   teacherLine: string;
   students: number | "";
 }
@@ -315,11 +317,9 @@ export function flattenSessional(courses: SessionalCourse[]): SessionalRow[] {
       rows.push({
         courseCode: course.courseCode,
         courseTitle: course.courseTitle,
-        teacherLine: formatTeacher(
-          entry.name,
-          entry.designation,
-          entry.department
-        ),
+        courseLine: course.courseTitle ? `${course.courseCode}\n${course.courseTitle}` : course.courseCode,
+        credit: course.credit ?? "",
+        teacherLine: formatTeacher(entry.name, entry.designation, entry.department),
         students: entry.students.sessional,
       });
     });

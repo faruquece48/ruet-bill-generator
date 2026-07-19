@@ -94,6 +94,7 @@ export interface SessionalAdditionalTeacher {
 export interface SessionalCourse {
   courseCode: string;
   courseTitle: string;
+  credit: string;
   teacher: string;
   designation: Designation;
   department: string;
@@ -213,6 +214,10 @@ export interface TableLayoutSettings {
   scrutinyObe: ColumnWidths;
   scrutinyNonObe: ColumnWidths;
   studentDuty: ColumnWidths;
+  boardViva: ColumnWidths;
+  tabulation: ColumnWidths;
+  gradeSheetPreparation: ColumnWidths;
+  gradeSheetVerification: ColumnWidths;
   courseAdviser: ColumnWidths;
   thesis: ColumnWidths;
   verification: ColumnWidths;
@@ -220,7 +225,7 @@ export interface TableLayoutSettings {
 }
 
 export const defaultLayoutSettings: TableLayoutSettings = {
-  committee: { sl: 6, name: 30, designation: 18, department: 26, role: 20 },
+  committee: { sl: 8, teacherLine: 72, role: 20 },
   courseDutyObe: {
     courseCode: 8,
     courseTitle: 18,
@@ -267,48 +272,22 @@ export const defaultLayoutSettings: TableLayoutSettings = {
     teacherLine: 35,
     assignmentValue: 15,
   },
-  courseFile: {
-    course: 50,
-    teacherLine: 50,
-  },
+  courseFile: { course: 35, teacherLine: 50, count: 15 },
   sessionalDuty: {
-    courseCode: 10,
-    courseTitle: 20,
-    name: 18,
-    designation: 14,
-    department: 14,
-    sessional: 8,
-    sessionalStudents: 8,
-    courseFile: 8,
+    courseLine: 30,
+    credit: 8,
+    teacherLine: 52,
+    students: 10,
   },
-  questionWork: {
-    sl: 6,
-    name: 30,
-    designation: 18,
-    department: 26,
-    questionNumber: 20,
-  },
-  scrutinyObe: { name: 32, designation: 20, department: 28, scriptCount: 20 },
-  scrutinyNonObe: {
-    name: 32,
-    designation: 20,
-    department: 28,
-    scriptCount: 20,
-  },
-  studentDuty: {
-    sl: 6,
-    name: 28,
-    designation: 18,
-    department: 28,
-    students: 20,
-  },
-  courseAdviser: {
-    sl: 6,
-    name: 28,
-    designation: 18,
-    department: 28,
-    students: 20,
-  },
+  questionWork: { sl: 10, teacherLine: 65, questionNumber: 25 },
+  scrutinyObe: { sl: 10, teacherLine: 65, scriptCount: 25 },
+  scrutinyNonObe: { sl: 10, teacherLine: 65, scriptCount: 25 },
+  studentDuty: { sl: 10, teacherLine: 65, students: 25 },
+  boardViva: { sl: 10, teacherLine: 65, students: 25 },
+  tabulation: { sl: 10, teacherLine: 65, students: 25 },
+  gradeSheetPreparation: { sl: 10, teacherLine: 65, studentsDisplay: 25 },
+  gradeSheetVerification: { sl: 10, teacherLine: 65, studentsDisplay: 25 },
+  courseAdviser: { sl: 10, teacherLine: 65, students: 25 },
   thesis: {
     sl: 6,
     name: 22,
@@ -318,6 +297,6 @@ export const defaultLayoutSettings: TableLayoutSettings = {
     examinerCount: 14,
     attendsViva: 12,
   },
-  verification: { sl: 6, name: 32, designation: 22, department: 40 },
-  courseCoordinator: { sl: 6, name: 32, designation: 22, department: 40 },
+  verification: { sl: 10, teacherLine: 65, students: 25 },
+  courseCoordinator: { sl: 10, teacherLine: 90 },
 };

@@ -42,8 +42,8 @@ const scrutinyCols: PreviewColumn[] = [
 ];
 
 const sessionalCols: PreviewColumn[] = [
-  { key: "sl", label: "Sl." },
-  { key: "courseCode", label: "Course No. & Title" },
+  { key: "courseLine", label: "Course No. & Title" },
+  { key: "credit", label: "Credit", align: "center" },
   { key: "teacherLine", label: "Name of Teachers & Designation" },
   { key: "students", label: "No. of Students", align: "center" },
 ];
@@ -175,9 +175,17 @@ export default function PreviewDocument({ bill }: Props) {
       includeInBacklog: false,
       content: (
         <GroupedCourseTable
-          entryColumns={[{ key: "teacherLine", label: "Name of Teachers & Designation" }]}
+          entryColumns={[
+            { key: "teacherLine", label: "Name of Teachers & Designation" },
+          ]}
           groups={courseFileGroups}
           widths={bill.layoutSettings.courseFile}
+          groupMergeColumn={{
+            key: "count",
+            label: "No. of Course File",
+            align: "center",
+            value: () => "01",
+          }}
         />
       ),
     },
@@ -223,12 +231,13 @@ export default function PreviewDocument({ bill }: Props) {
         <PreviewTable
           columns={sessionalCols}
           rows={sessionalRows.map((r) => ({
+            courseLine: r.courseLine,
+            credit: r.credit,
             courseCode: `${r.courseCode} — ${r.courseTitle}`,
             teacherLine: r.teacherLine,
             students: r.students,
           }))}
           widths={bill.layoutSettings.sessionalDuty}
-          showSerial
         />
       ),
     },
@@ -236,13 +245,22 @@ export default function PreviewDocument({ bill }: Props) {
       title: "List of Teachers Associated with Board Viva",
       hasData: boardVivaRows.length > 0,
       includeInBacklog: true,
-      content: <PreviewTable columns={listCols} rows={boardVivaRows} widths={bill.layoutSettings.studentDuty} showSerial />,
+      content: <PreviewTable columns={listCols} rows={boardVivaRows} widths={bill.layoutSettings.boardViva} showSerial />,
     },
     {
       title: "List of Teachers Associated with Tabulation",
       hasData: tabulationRows.length > 0,
       includeInBacklog: true,
-      content: <PreviewTable columns={listCols} rows={tabulationRows} widths={bill.layoutSettings.studentDuty} showSerial />,
+      content: (
+        <PreviewTable
+          columns={listCols}
+          rows={tabulationRows}
+          widths={bill.layoutSettings.tabulation}
+          showSerial
+          mergeColumnKey="students"
+          mergeValue={tabulationRows[0]?.students ?? "—"}
+        />
+      ),
     },
     {
       title: isBacklog
@@ -250,13 +268,31 @@ export default function PreviewDocument({ bill }: Props) {
         : "List of Teachers Associated with Grade Sheet Preparation",
       hasData: gradeSheetRows.length > 0,
       includeInBacklog: true,
-      content: <PreviewTable columns={gradeSheetCols} rows={gradeSheetRows} widths={bill.layoutSettings.studentDuty} showSerial />,
+      content: (
+        <PreviewTable
+          columns={gradeSheetCols}
+          rows={gradeSheetRows}
+          widths={bill.layoutSettings.gradeSheetPreparation}
+          showSerial
+          mergeColumnKey="studentsDisplay"
+          mergeValue={gradeSheetRows[0]?.studentsDisplay ?? "—"}
+        />
+      ),
     },
     {
       title: "List of Teachers Associated with Grade Sheet Verification",
       hasData: !isBacklog && gradeSheetRows.length > 0,
       includeInBacklog: false,
-      content: <PreviewTable columns={gradeSheetCols} rows={gradeSheetRows} widths={bill.layoutSettings.studentDuty} showSerial />,
+      content: (
+        <PreviewTable
+          columns={gradeSheetCols}
+          rows={gradeSheetRows}
+          widths={bill.layoutSettings.gradeSheetVerification}
+          showSerial
+          mergeColumnKey="studentsDisplay"
+          mergeValue={gradeSheetRows[0]?.studentsDisplay ?? "—"}
+        />
+      ),
     },
     {
       title: "List of Course Advisers",

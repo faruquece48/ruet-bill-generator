@@ -9,16 +9,25 @@ export interface GroupedColumn {
   align?: "left" | "center" | "right";
 }
 
+export interface GroupMergeColumn<T> {
+  key: string;
+  label: string;
+  align?: "left" | "center" | "right";
+  value: (group: CourseGroup<T>) => React.ReactNode;
+}
+
 interface Props<T> {
   entryColumns: GroupedColumn[];
   groups: CourseGroup<T>[];
-  widths: ColumnWidths; // keys: "course" + entryColumns[].key
+  widths: ColumnWidths; // keys: "course" + entryColumns[].key + groupMergeColumn?.key
+  groupMergeColumn?: GroupMergeColumn<T>;
 }
 
 export default function GroupedCourseTable<T extends Record<string, any>>({
   entryColumns,
   groups,
   widths,
+  groupMergeColumn,
 }: Props<T>) {
   const alignClass = (a?: string) =>
     a === "center" ? "text-center" : a === "right" ? "text-right" : "text-left";
@@ -31,17 +40,32 @@ export default function GroupedCourseTable<T extends Record<string, any>>({
           {entryColumns.map((c) => (
             <col key={c.key} style={{ width: `${widths[c.key] ?? 0}%` }} />
           ))}
+          {groupMergeColumn && (
+            <col style={{ width: `${widths[groupMergeColumn.key] ?? 0}%` }} />
+          )}
         </colgroup>
         <thead>
           <tr>
-            <th className="border border-gray-400 px-2 py-1.5 text-left font-semibold">
+            <th className="border border-gray-400 px-2 py-1.5 text-left font-normal">
               Course No. &amp; Title
             </th>
             {entryColumns.map((c) => (
-              <th key={c.key} className={`border border-gray-400 px-2 py-1.5 font-semibold ${alignClass(c.align)}`}>
+              <th
+                key={c.key}
+                className={`border border-gray-400 px-2 py-1.5 font-normal ${alignClass(c.align)}`}
+              >
                 {c.label}
               </th>
             ))}
+            {groupMergeColumn && (
+              <th
+                className={`border border-gray-400 px-2 py-1.5 font-normal ${alignClass(
+                  groupMergeColumn.align
+                )}`}
+              >
+                {groupMergeColumn.label}
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -50,16 +74,34 @@ export default function GroupedCourseTable<T extends Record<string, any>>({
               {group.entries.map((entry, ei) => (
                 <tr key={ei}>
                   {ei === 0 && (
-                    <td rowSpan={group.entries.length} className="border border-gray-400 px-2 py-1 align-middle">
-                      <div className="font-semibold">{group.courseCode}</div>
+                    <td
+                      rowSpan={group.entries.length}
+                      className="border border-gray-400 px-2 py-1 align-middle"
+                    >
+                      <div>{group.courseCode}</div>
                       <div>{group.courseTitle}</div>
                     </td>
                   )}
                   {entryColumns.map((c) => (
-                    <td key={c.key} className={`border border-gray-400 px-2 py-1 align-top ${alignClass(c.align)}`}>
+                    <td
+                      key={c.key}
+                      className={`border border-gray-400 px-2 py-1 align-top ${alignClass(
+                        c.align
+                      )}`}
+                    >
                       {formatCell((entry as any)[c.key])}
                     </td>
                   ))}
+                  {ei === 0 && groupMergeColumn && (
+                    <td
+                      rowSpan={group.entries.length}
+                      className={`border border-gray-400 px-2 py-1 align-middle ${alignClass(
+                        groupMergeColumn.align
+                      )}`}
+                    >
+                      {groupMergeColumn.value(group)}
+                    </td>
+                  )}
                 </tr>
               ))}
             </Fragment>
@@ -72,6 +114,7 @@ export default function GroupedCourseTable<T extends Record<string, any>>({
 
 function formatCell(value: any): React.ReactNode {
   if (value === true) return "Yes";
-  if (value === false || value === "" || value === undefined || value === null) return "—";
+  if (value === false || value === "" || value === undefined || value === null)
+    return "—";
   return String(value);
 }

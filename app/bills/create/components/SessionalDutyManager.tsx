@@ -58,6 +58,7 @@ export default function SessionalDutyManager({
       {
         courseCode: "",
         courseTitle: "",
+        credit: "",
         teacher: "",
         designation: "Assistant Professor",
         department: "",
@@ -198,7 +199,7 @@ export default function SessionalDutyManager({
             </Button>
           </div>
           {/* Course Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
               placeholder="Course Code"
               value={course.courseCode}
@@ -211,6 +212,13 @@ export default function SessionalDutyManager({
               value={course.courseTitle}
               onChange={(e) =>
                 updateCourse(cIndex, "courseTitle", e.target.value)
+              }
+            />
+            <Input
+              placeholder="Credit (e.g. 1.5)"
+              value={course.credit}
+              onChange={(e) =>
+                updateCourse(cIndex, "credit", e.target.value)
               }
             />
           </div>
