@@ -13,6 +13,7 @@ export interface BillInfo {
   examYear: string;
   series: string;
   evaluationSystem: "obe" | "mixed";
+  hasGraduatingStudents: "yes" | "no";
 }
 
 export interface CommitteeMember {
@@ -203,6 +204,10 @@ export interface TableLayoutSettings {
   committee: ColumnWidths;
   courseDutyObe: ColumnWidths;
   courseDutyNonObe: ColumnWidths;
+  paperSetter: ColumnWidths;
+  classTest: ColumnWidths;
+  assignment: ColumnWidths;
+  courseFile: ColumnWidths;
   sessionalDuty: ColumnWidths;
   questionWork: ColumnWidths;
   scrutinyObe: ColumnWidths;
@@ -241,6 +246,30 @@ export const defaultLayoutSettings: TableLayoutSettings = {
     classTest: 6,
     assignment: 8,
     courseFile: 2,
+  },
+  // Used by GroupedCourseTable in PreviewDocument.tsx — needs a "course"
+  // width plus one width per entryColumns key passed for that section.
+  paperSetter: {
+    course: 30,
+    part: 8,
+    teacherLine: 32,
+    paperSetCount: 15,
+    scriptExamined: 15,
+  },
+  classTest: {
+    course: 34,
+    teacherLine: 36,
+    classTestCount: 15,
+    students: 15,
+  },
+  assignment: {
+    course: 50,
+    teacherLine: 35,
+    assignmentValue: 15,
+  },
+  courseFile: {
+    course: 50,
+    teacherLine: 50,
   },
   sessionalDuty: {
     courseCode: 10,

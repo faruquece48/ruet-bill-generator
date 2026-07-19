@@ -82,12 +82,12 @@ export default function DraftDialog({
                 </p>
               </div>
               <div className="flex gap-2">
-                {mode === "load" && (
+                {onLoad && (
                   <Button
                     type="button"
                     size="sm"
                     onClick={() => {
-                      onLoad?.(d.name);
+                      onLoad(d.name);
                       onOpenChange(false);
                     }}
                   >
