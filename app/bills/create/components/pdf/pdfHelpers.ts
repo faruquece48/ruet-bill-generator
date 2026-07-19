@@ -41,8 +41,12 @@ export function formatTeacher(
   designation: Designation,
   department: string
 ): string {
+  // NOTE: `department` already contains the "Dept. of ..." prefix as
+  // stored (e.g. "Dept. of BECM"), so it's appended as-is here. Do not
+  // re-prefix it — that was causing "Dept. of Dept. of BECM" in the
+  // rendered teacher line.
   const parts = [name, designation].filter(Boolean);
-  if (department) parts.push(`Dept. of ${department}`);
+  if (department) parts.push(department);
   return parts.join(", ");
 }
 
@@ -393,4 +397,111 @@ export function deriveGradeSheetRows(duties: StudentDuty[]): GradeSheetRow[] {
     teacherLine: formatTeacher(d.name, d.designation, d.department),
     studentsDisplay: d.students === "" ? "" : `${d.students}/3`,
   }));
+}
+
+// ------------------------------
+// Group flattened rows by course (courseCode + courseTitle), so Part A
+// and Part B of the same course share a single serial number and a
+// single merged "Course No. & Title" cell instead of repeating it on
+// every row.
+// ------------------------------
+export interface CourseGroup<T> {
+  sl: number;
+  courseCode: string;
+  courseTitle: string;
+  entries: T[];
+}
+
+export function groupByCourse<
+  T extends { courseCode: string; courseTitle: string }
+>(rows: T[]): CourseGroup<T>[] {
+  const map = new Map<string, CourseGroup<T>>();
+  let nextSl = 1;
+  rows.forEach((row) => {
+    const key = `${row.courseCode}||${row.courseTitle}`;
+    if (!map.has(key)) {
+      map.set(key, {
+        sl: nextSl++,
+        courseCode: row.courseCode,
+        courseTitle: row.courseTitle,
+        entries: [],
+      });
+    }
+    map.get(key)!.entries.push(row);
+  });
+  return Array.from(map.values());
+}
+
+// ------------------------------
+// Thesis Viva formula display, e.g. "(30 x 5)/10" — matches the source
+// document's format: (total viva students x 5) / (no. of teachers
+// attending viva). Shown as one merged cell for the whole column,
+// not evaluated to a single number.
+//
+// ASSUMPTION: "total viva students" is taken from the Board Viva batch
+// size (bill.sessionalDuties' boardViva student count), since that's the
+// only "total students attending a viva" figure available in the data
+// model. If this isn't the right source field, let me know and I'll
+// repoint it.
+// ------------------------------
+export function buildThesisVivaFormula(
+  totalVivaStudents: number | "",
+  teachersAttendingViva: number
+): string {
+  if (totalVivaStudents === "" || teachersAttendingViva <= 0) return "";
+  return `(${totalVivaStudents} x 5)/${teachersAttendingViva}`;
+}
+
+// ------------------------------
+// Course grouping helper — merges consecutive rows sharing the same
+// course (e.g. Part A / Part B of one course) into one visual group.
+// Only the first row in each group gets a serial number and shows the
+// course code/title; later rows in the same group get blanks there so
+// tables can render a "merged cell" look without native rowSpan.
+// ------------------------------
+export function groupConsecutiveByCourse<
+  T extends { courseCode: string; courseTitle: string }
+>(rows: T[]): (T & { sl: number | ""; showCourse: boolean })[] {
+  let counter = 0;
+  let lastCode: string | null = null;
+  return rows.map((row) => {
+    const isNew = row.courseCode !== lastCode;
+    if (isNew) {
+      counter += 1;
+      lastCode = row.courseCode;
+    }
+    return {
+      ...row,
+      sl: isNew ? counter : "",
+      showCourse: isNew,
+    };
+  });
+}
+
+export function courseLabel(courseCode: string, courseTitle: string): string {
+  return courseTitle ? `${courseCode}\n${courseTitle}` : courseCode;
+}
+
+// Add near formatTeacher()
+
+// "Name, Designation" only — no department. Used for Committee, where
+// Department already has its own separate column.
+export function formatTeacherOnly(name: string, designation: Designation): string {
+  return [name, designation].filter(Boolean).join(", ");
+}
+
+// ------------------------------
+// Thesis Viva merged formula: (totalVivaStudents x 5)/(teachers attending viva)
+// totalVivaStudents comes from the Board Viva batch size (first Board Viva
+// row's student count — all rows share the same batch). If Board Viva has
+// no data, or no thesis teacher has attendsViva checked, returns "".
+// ------------------------------
+export function computeThesisVivaFormula(
+  boardVivaRows: { students: number | "" }[],
+  thesisTeachers: { attendsViva: boolean }[]
+): string {
+  const totalStudents = boardVivaRows.length > 0 ? boardVivaRows[0].students : "";
+  const attendingCount = thesisTeachers.filter((t) => t.attendsViva).length;
+  if (totalStudents === "" || attendingCount === 0) return "";
+  return `(${totalStudents} x 5)/${attendingCount}`;
 }
