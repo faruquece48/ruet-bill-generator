@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 700,
   },
-  sectionTitle: { fontSize: 10, fontWeight: 700, marginTop: 14, marginBottom: 4 },
+  sectionTitle: { fontSize: 10, fontWeight: 700, marginTop: 0, marginBottom: 4 },
   subSectionTitle: { fontSize: 10, fontWeight: 700, marginTop: 5, marginBottom: 4 },
   // Table wrapper no longer carries a left/right border. A single View
   // spanning every row would get its border drawn as one continuous box
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
   // text centered within that block. A blank spacer sits above "Chairman"
   // to leave room for an actual pen signature.
   footer: { position: "absolute", bottom: 24, right: 36, width: 190, textAlign: "center", fontSize: 10 },
-  signatureSpace: { height: 14 },
+  signatureSpace: { height: 12 },
 });
 interface Col {
   key: string;
