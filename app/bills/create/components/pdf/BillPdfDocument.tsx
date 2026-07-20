@@ -28,11 +28,11 @@ Font.registerHyphenationCallback((word) => [word]);
 const BORDER = "#000000";
 const BW = 1; // border width, increased from 0.5
 const styles = StyleSheet.create({
-  page: { paddingTop: 30, paddingBottom: 110, paddingHorizontal: 36, fontSize: 11, fontFamily: "Times-Roman" },
+  page: { paddingTop: 30, paddingBottom: 110, paddingHorizontal: 36, fontSize: 10, fontFamily: "Times-Roman" },
   headerBlock: { textAlign: "center", marginBottom: 14 },
-  scriptLine: { fontSize: 10, fontFamily: "MonotypeCorsiva", marginBottom: 2 },
-  deptLine: { fontSize: 11, marginBottom: 2 },
-  titleLine: { fontSize: 11, fontWeight: 700, marginTop: 4 },
+  scriptLine: { fontSize: 9, fontFamily: "MonotypeCorsiva", marginBottom: 2 },
+  deptLine: { fontSize: 10, marginBottom: 2 },
+  titleLine: { fontSize: 10, fontWeight: 700, marginTop: 4 },
   billNo: {
     position: "absolute",
     top: 30,
@@ -41,11 +41,11 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
     paddingVertical: 4,
     paddingHorizontal: 8,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 700,
   },
-  sectionTitle: { fontSize: 12, fontWeight: 700, marginTop: 14, marginBottom: 4 },
-  subSectionTitle: { fontSize: 11, fontWeight: 700, marginTop: 5, marginBottom: 4 },
+  sectionTitle: { fontSize: 10, fontWeight: 700, marginTop: 14, marginBottom: 4 },
+  subSectionTitle: { fontSize: 10, fontWeight: 700, marginTop: 5, marginBottom: 4 },
   // Table wrapper no longer carries a left/right border. A single View
   // spanning every row would get its border drawn as one continuous box
   // even when react-pdf splits it across a page break — producing a
@@ -57,12 +57,12 @@ const styles = StyleSheet.create({
   // box regardless of which page it lands on.
   table: { width: "100%" },
   row: { flexDirection: "row", width: "100%" },
-  cell: { borderRightWidth: BW, borderColor: BORDER, padding: 4, fontSize: 11, justifyContent: "center" },
+  cell: { borderRightWidth: BW, borderColor: BORDER, padding: 4, fontSize: 10, justifyContent: "center" },
   headerCell: {
     borderRightWidth: BW,
     borderColor: BORDER,
     padding: 4,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 700,
     justifyContent: "center",
   },
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   // Right-corner footer block: fixed width, anchored to the bottom-right,
   // text centered within that block. A blank spacer sits above "Chairman"
   // to leave room for an actual pen signature.
-  footer: { position: "absolute", bottom: 24, right: 36, width: 190, textAlign: "center", fontSize: 11 },
+  footer: { position: "absolute", bottom: 24, right: 36, width: 190, textAlign: "center", fontSize: 10 },
   signatureSpace: { height: 14 },
 });
 interface Col {

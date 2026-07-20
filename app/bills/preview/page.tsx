@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import type {
   ExaminationBillData,
   TableLayoutSettings,
@@ -11,7 +12,18 @@ import { pdf } from "@react-pdf/renderer";
 import BillPdfDocument from "../create/components/pdf/BillPdfDocument";
 import SectionPanel from "./components/SectionPanel";
 import ColumnWidthEditor from "./components/ColumnWidthEditor";
-import PreviewDocument from "./components/PreviewDocument";
+
+const PdfPreviewViewer = dynamic(
+  () => import("./components/PdfPreviewViewer"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full items-center justify-center text-sm text-slate-600">
+        Preparing paginated PDF preview…
+      </div>
+    ),
+  }
+);
 
 const committeeLabels = {
   sl: "Sl. No.",
@@ -328,9 +340,14 @@ export default function PreviewPage() {
             </SectionPanel>
           </div>
 
-          {/* RIGHT: live full preview, sticky */}
+          {/* RIGHT: paginated preview rendered by the same PDF document */}
           <div className="lg:sticky lg:top-20">
-            <PreviewDocument bill={billData} />
+            <div className="h-[calc(100vh-7rem)] min-h-[720px] overflow-hidden rounded-xl border bg-slate-200 shadow-sm">
+              <PdfPreviewViewer
+                key={JSON.stringify(billData)}
+                bill={billData}
+              />
+            </div>
           </div>
         </div>
       </div>
