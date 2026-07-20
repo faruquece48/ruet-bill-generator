@@ -50,6 +50,15 @@ export function formatTeacher(
   return parts.join(", ");
 }
 
+// "Designation, Dept. of Department" — no name. Used for Committee's
+// separate Name / Designation+Department columns.
+export function formatDesignationDept(
+  designation: Designation,
+  department: string
+): string {
+  return [designation, department].filter(Boolean).join(", ");
+}
+
 // ------------------------------
 // 2. Paper Setter & Examiner
 // One row per part/additional-teacher, only if paperSetter or examiner is checked

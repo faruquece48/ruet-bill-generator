@@ -40,7 +40,7 @@ export default function PreviewTable({
             {columns.map((c) => (
               <th
                 key={c.key}
-                className={`border border-gray-400 px-2 py-1.5 font-semibold ${alignClass(c.align, c.key)}`}
+                className={`border border-gray-400 px-2 py-1.5 font-normal ${alignClass(c.align, c.key)}`}
               >
                 {c.label}
               </th>

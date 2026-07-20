@@ -23,48 +23,41 @@ interface Props {
 }
 
 const committeeCols: PreviewColumn[] = [
-  { key: "sl", label: "Sl." },
+  { key: "sl", label: "Sl.", align: "center" },
   { key: "teacherLine", label: "Name of Teachers & Designation" },
   { key: "department", label: "Department" },
   { key: "role", label: "Role" },
 ];
-
 const questionWorkCols: PreviewColumn[] = [
   { key: "sl", label: "Sl. No." },
   { key: "teacherLine", label: "Name of The Teachers & Designation" },
   { key: "questionNumber", label: "No. of Question", align: "center" },
 ];
-
 const scrutinyCols: PreviewColumn[] = [
   { key: "sl", label: "Sl. No." },
   { key: "teacherLine", label: "Name of The Teachers & Designation" },
   { key: "scriptCount", label: "No. of Script", align: "center" },
 ];
-
 const sessionalCols: PreviewColumn[] = [
   { key: "courseLine", label: "Course No. & Title" },
   { key: "credit", label: "Credit", align: "center" },
   { key: "teacherLine", label: "Name of Teachers & Designation" },
   { key: "students", label: "No. of Students", align: "center" },
 ];
-
 const listCols: PreviewColumn[] = [
   { key: "sl", label: "Sl. No." },
   { key: "teacherLine", label: "Name of Teachers & Designation" },
   { key: "students", label: "No. of Students", align: "center" },
 ];
-
 const gradeSheetCols: PreviewColumn[] = [
   { key: "sl", label: "Sl. No." },
   { key: "teacherLine", label: "Name of Teachers & Designation" },
   { key: "studentsDisplay", label: "No. of Students", align: "center" },
 ];
-
 const courseCoordinatorCols: PreviewColumn[] = [
   { key: "sl", label: "Sl. No." },
   { key: "teacherLine", label: "Name of Teachers & Designation" },
 ];
-
 const thesisCols: PreviewColumn[] = [
   { key: "sl", label: "Sl. No." },
   { key: "teacherLine", label: "Name of Teachers & Designation" },
@@ -72,7 +65,6 @@ const thesisCols: PreviewColumn[] = [
   { key: "examinerCount", label: "Thesis Examiner", align: "center" },
   { key: "thesisViva", label: "Thesis Viva", align: "center" },
 ];
-
 const verificationCols: PreviewColumn[] = [
   { key: "sl", label: "Sl. No." },
   { key: "teacherLine", label: "Name of Teachers & Designation" },
@@ -101,7 +93,6 @@ export default function PreviewDocument({ bill }: Props) {
   const classTestGroups = groupByCourse(classTestRows);
   const assignmentGroups = groupByCourse(assignmentRows);
   const courseFileGroups = groupByCourse(courseFileRows);
-
   const thesisVivaFormula = computeThesisVivaFormula(boardVivaRows, bill.thesisTeachers);
 
   const committeeRows = bill.committees.map((m) => ({
@@ -383,11 +374,9 @@ export default function PreviewDocument({ bill }: Props) {
           {bill.billInfo.examYear} (Series {bill.billInfo.series})
         </p>
       </div>
-
       {visible.length === 0 && (
         <p className="text-center text-sm text-gray-400">No section data entered yet.</p>
       )}
-
       {visible.map((section, i) => (
         <div key={section.title} className="w-full space-y-2 text-[11px]">
           <h2 className="text-lg font-bold">
@@ -396,7 +385,6 @@ export default function PreviewDocument({ bill }: Props) {
           {section.content}
         </div>
       ))}
-
       <div className="mt-8 border-t pt-3 text-center text-[11px] text-gray-500">
         <p className="italic">↓ This footer repeats on every PDF page ↓</p>
         <p>Chairman</p>
