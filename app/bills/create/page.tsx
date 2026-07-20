@@ -181,6 +181,10 @@ export default function Home() {
 
           <QuestionWorkManager
             questionWorks={billData.questionWorks}
+            totalQuestions={billData.questionWorkTotal}
+            setTotalQuestions={(value) =>
+              setBillData((prev) => ({ ...prev, questionWorkTotal: value }))
+            }
             setQuestionWorks={(data) =>
               setBillData((prev) => ({ ...prev, questionWorks: data }))
             }

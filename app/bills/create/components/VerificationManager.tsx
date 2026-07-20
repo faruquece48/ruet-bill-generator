@@ -44,7 +44,7 @@ export default function VerificationManager({
       {
         name: "",
         designation: "Assistant Professor",
-        department: "",
+        department: "Dept. of BECM, RUET",
       },
     ]);
   };

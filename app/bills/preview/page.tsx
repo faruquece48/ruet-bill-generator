@@ -109,9 +109,16 @@ function mergeLayoutSettings(
           Object.prototype.hasOwnProperty.call(savedWidths, column)
         );
 
-      return [key, hasCurrentColumns ? { ...defaults, ...savedWidths } : defaults];
+      const currentWidths = Object.fromEntries(
+        Object.keys(defaults).map((column) => [
+          column,
+          hasCurrentColumns ? savedWidths[column] : defaults[column],
+        ])
+      );
+
+      return [key, currentWidths];
     })
-  ) as TableLayoutSettings;
+  ) as unknown as TableLayoutSettings;
 }
 
 export default function PreviewPage() {
@@ -188,7 +195,13 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="3. Paper Setter & Examiner — OBE">
+            <SectionPanel
+              title={
+                billData.billInfo.evaluationSystem === "mixed"
+                  ? "2.1 OBE (New Syllabus) — Paper Setter & Examiner"
+                  : "2. List of Teachers Associated with Paper Setter & Examiner"
+              }
+            >
               <ColumnWidthEditor
                 widths={billData.layoutSettings.paperSetter}
                 setWidths={(v) => updateLayout("paperSetter", v)}
@@ -196,7 +209,17 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="List of Teachers Associated with Class Test">
+            {billData.billInfo.evaluationSystem === "mixed" && (
+              <SectionPanel title="2.2 Non-OBE (Old Syllabus) — Paper Setter & Examiner">
+                <ColumnWidthEditor
+                  widths={billData.layoutSettings.paperSetterNonObe}
+                  setWidths={(v) => updateLayout("paperSetterNonObe", v)}
+                  labels={paperSetterLabels}
+                />
+              </SectionPanel>
+            )}
+
+            <SectionPanel title="3. List of Teachers Associated with Class Test">
               <ColumnWidthEditor
                 widths={billData.layoutSettings.classTest}
                 setWidths={(v) => updateLayout("classTest", v)}
@@ -204,13 +227,45 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="List of Teachers Associated with Assignment">
+            <SectionPanel title="4. List of Teachers Associated with Assignment">
               <ColumnWidthEditor widths={billData.layoutSettings.assignment} setWidths={(v) => updateLayout("assignment", v)} labels={assignmentLabels} />
             </SectionPanel>
 
-            <SectionPanel title="List of Teachers Associated with Course File">
+            <SectionPanel title="5. List of Teachers Associated with Course File">
               <ColumnWidthEditor widths={billData.layoutSettings.courseFile} setWidths={(v) => updateLayout("courseFile", v)} labels={courseFileLabels} />
             </SectionPanel>
+
+            <SectionPanel title="6. List of Teachers Associated with Question Typing / Sketching / Printing">
+              <ColumnWidthEditor
+                widths={billData.layoutSettings.questionWork}
+                setWidths={(v) => updateLayout("questionWork", v)}
+                labels={questionWorkLabels}
+              />
+            </SectionPanel>
+
+            <SectionPanel
+              title={
+                billData.billInfo.evaluationSystem === "mixed"
+                  ? "7.1 OBE (New Syllabus) — Scrutiny"
+                  : "7. List of Teachers Associated with Scrutiny"
+              }
+            >
+              <ColumnWidthEditor
+                widths={billData.layoutSettings.scrutinyObe}
+                setWidths={(v) => updateLayout("scrutinyObe", v)}
+                labels={scrutinyLabels}
+              />
+            </SectionPanel>
+
+            {billData.billInfo.evaluationSystem === "mixed" && (
+              <SectionPanel title="7.2 Non-OBE (Old Syllabus) — Scrutiny">
+                <ColumnWidthEditor
+                  widths={billData.layoutSettings.scrutinyNonObe}
+                  setWidths={(v) => updateLayout("scrutinyNonObe", v)}
+                  labels={scrutinyLabels}
+                />
+              </SectionPanel>
+            )}
 
             <SectionPanel title="8. List of Teachers Associated with Sessional">
               <ColumnWidthEditor
@@ -220,35 +275,11 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="List of Teachers Associated with Question Typing / Sketching / Printing">
-              <ColumnWidthEditor
-                widths={billData.layoutSettings.questionWork}
-                setWidths={(v) => updateLayout("questionWork", v)}
-                labels={questionWorkLabels}
-              />
-            </SectionPanel>
-
-            <SectionPanel title="List of Teachers Associated with Scrutiny — OBE">
-              <ColumnWidthEditor
-                widths={billData.layoutSettings.scrutinyObe}
-                setWidths={(v) => updateLayout("scrutinyObe", v)}
-                labels={scrutinyLabels}
-              />
-            </SectionPanel>
-
-            <SectionPanel title="List of Teachers Associated with Scrutiny — Non-OBE">
-              <ColumnWidthEditor
-                widths={billData.layoutSettings.scrutinyNonObe}
-                setWidths={(v) => updateLayout("scrutinyNonObe", v)}
-                labels={scrutinyLabels}
-              />
-            </SectionPanel>
-
             <SectionPanel title="9. List of Teachers Associated with Board Viva">
               <ColumnWidthEditor widths={billData.layoutSettings.boardViva} setWidths={(v) => updateLayout("boardViva", v)} labels={studentDutyLabels} />
             </SectionPanel>
 
-            <SectionPanel title="List of Teachers Associated with Tabulation">
+            <SectionPanel title="10. List of Teachers Associated with Tabulation">
               <ColumnWidthEditor
                 widths={billData.layoutSettings.tabulation}
                 setWidths={(v) => updateLayout("tabulation", v)}
@@ -256,15 +287,15 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="10. List of Teachers Associated with Grade Sheet Preparation">
+            <SectionPanel title="11. List of Teachers Associated with Grade Sheet Preparation">
               <ColumnWidthEditor widths={billData.layoutSettings.gradeSheetPreparation} setWidths={(v) => updateLayout("gradeSheetPreparation", v)} labels={gradeSheetLabels} />
             </SectionPanel>
 
-            <SectionPanel title="11. List of Teachers Associated with Grade Sheet Verification">
+            <SectionPanel title="12. List of Teachers Associated with Grade Sheet Verification">
               <ColumnWidthEditor widths={billData.layoutSettings.gradeSheetVerification} setWidths={(v) => updateLayout("gradeSheetVerification", v)} labels={gradeSheetLabels} />
             </SectionPanel>
 
-            <SectionPanel title="12. List of Course Advisers">
+            <SectionPanel title="13. List of Course Advisers">
               <ColumnWidthEditor
                 widths={billData.layoutSettings.courseAdviser}
                 setWidths={(v) => updateLayout("courseAdviser", v)}
@@ -272,7 +303,15 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="14. List of Teachers Associated with Thesis/Project Examination">
+            <SectionPanel title="14. List of Teachers Associated with Course Coordinator">
+              <ColumnWidthEditor
+                widths={billData.layoutSettings.courseCoordinator}
+                setWidths={(v) => updateLayout("courseCoordinator", v)}
+                labels={courseCoordinatorLabels}
+              />
+            </SectionPanel>
+
+            <SectionPanel title="15. List of Teachers Associated with Thesis/Project Examination">
               <ColumnWidthEditor
                 widths={billData.layoutSettings.thesis}
                 setWidths={(v) => updateLayout("thesis", v)}
@@ -280,19 +319,11 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="Verification of Final Result">
+            <SectionPanel title="16. List of Teachers Associated with Verification of Final Result">
               <ColumnWidthEditor
                 widths={billData.layoutSettings.verification}
                 setWidths={(v) => updateLayout("verification", v)}
                 labels={verificationLabels}
-              />
-            </SectionPanel>
-
-            <SectionPanel title="13. List of Teachers Associated with Course Coordinator">
-              <ColumnWidthEditor
-                widths={billData.layoutSettings.courseCoordinator}
-                setWidths={(v) => updateLayout("courseCoordinator", v)}
-                labels={courseCoordinatorLabels}
               />
             </SectionPanel>
           </div>

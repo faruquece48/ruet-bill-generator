@@ -32,7 +32,7 @@ export default function CommitteeTable({ committees, setCommittees }: Props) {
       {
         name: "",
         designation: "",
-        department: "",
+        department: "Dept. of BECM, RUET",
         role: "Member",
       },
     ]);

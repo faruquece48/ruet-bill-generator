@@ -77,19 +77,29 @@ export default function PreviewDocument({ bill }: Props) {
     bill.billInfo.year === "4th Year" && bill.billInfo.semester === "Even";
   const isVerificationApplicable = bill.billInfo.hasGraduatingStudents === "yes";
   const isCourseCoordinatorApplicable = isThesisApplicable;
+  const isMixedEvaluation = bill.billInfo.evaluationSystem === "mixed";
 
   const allCourseDuties = [...bill.courseDuties.obe, ...bill.courseDuties.nonObe];
-  const paperSetterRows = flattenPaperSetter(allCourseDuties);
+  const obePaperSetterRows = flattenPaperSetter(bill.courseDuties.obe);
+  const nonObePaperSetterRows = flattenPaperSetter(bill.courseDuties.nonObe);
+  const paperSetterRows = isMixedEvaluation
+    ? [...obePaperSetterRows, ...nonObePaperSetterRows]
+    : obePaperSetterRows;
   const classTestRows = flattenClassTest(allCourseDuties);
-  const assignmentRows = flattenAssignment(allCourseDuties);
-  const courseFileRows = flattenCourseFile(allCourseDuties, bill.sessionalDuties);
+  const assignmentRows = flattenAssignment(bill.courseDuties.obe);
+  const courseFileRows = flattenCourseFile(bill.courseDuties.obe, bill.sessionalDuties);
   const sessionalRows = flattenSessional(bill.sessionalDuties);
   const boardVivaRows = flattenBoardViva(bill.sessionalDuties);
   const tabulationRows = flattenTabulation(bill.studentDuties);
   const gradeSheetRows = deriveGradeSheetRows(bill.studentDuties);
-  const allScrutiny = [...bill.scrutinies.obe, ...bill.scrutinies.nonObe];
+  const allScrutiny = isMixedEvaluation
+    ? [...bill.scrutinies.obe, ...bill.scrutinies.nonObe]
+    : bill.scrutinies.obe;
+  const questionTeachers = bill.questionWorks.filter((teacher) => teacher.name.trim() !== "");
+  const questionShare = `${bill.questionWorkTotal || "5"}/${questionTeachers.length || 1}`;
 
-  const paperSetterGroups = groupByCourse(paperSetterRows);
+  const obePaperSetterGroups = groupByCourse(obePaperSetterRows);
+  const nonObePaperSetterGroups = groupByCourse(nonObePaperSetterRows);
   const classTestGroups = groupByCourse(classTestRows);
   const assignmentGroups = groupByCourse(assignmentRows);
   const courseFileGroups = groupByCourse(courseFileRows);
@@ -123,16 +133,34 @@ export default function PreviewDocument({ bill }: Props) {
       hasData: paperSetterRows.length > 0,
       includeInBacklog: true,
       content: (
-        <GroupedCourseTable
-          entryColumns={[
-            { key: "part", label: "Part", align: "center" },
-            { key: "teacherLine", label: "Name of Teachers & Designation" },
-            { key: "paperSetCount", label: "No. of Paper Set", align: "center" },
-            { key: "scriptExamined", label: "No. of Script Examined", align: "center" },
-          ]}
-          groups={paperSetterGroups}
-          widths={bill.layoutSettings.paperSetter}
-        />
+        <div className="space-y-4">
+          {isMixedEvaluation && <h3 className="font-bold">2.1 OBE (New Syllabus)</h3>}
+          <GroupedCourseTable
+            entryColumns={[
+              { key: "part", label: "Part", align: "center" },
+              { key: "teacherLine", label: "Name of Teachers & Designation" },
+              { key: "paperSetCount", label: "No. of Paper Set", align: "center" },
+              { key: "scriptExamined", label: "No. of Script Examined", align: "center" },
+            ]}
+            groups={obePaperSetterGroups}
+            widths={bill.layoutSettings.paperSetter}
+          />
+          {isMixedEvaluation && (
+            <>
+              <h3 className="font-bold">2.2 Non-OBE (Old Syllabus)</h3>
+              <GroupedCourseTable
+                entryColumns={[
+                  { key: "part", label: "Part", align: "center" },
+                  { key: "teacherLine", label: "Name of Teachers & Designation" },
+                  { key: "paperSetCount", label: "No. of Paper Set", align: "center" },
+                  { key: "scriptExamined", label: "No. of Script Examined", align: "center" },
+                ]}
+                groups={nonObePaperSetterGroups}
+                widths={bill.layoutSettings.paperSetterNonObe}
+              />
+            </>
+          )}
+        </div>
       ),
     },
     {
@@ -190,17 +218,18 @@ export default function PreviewDocument({ bill }: Props) {
       title: isBacklog
         ? "List of Teachers Associated with Question Typing, Sketching & Printing"
         : "List of Teachers Associated with Question Typing, Sketching, Comparing & Printing",
-      hasData: bill.questionWorks.length > 0,
+      hasData: questionTeachers.length > 0,
       includeInBacklog: true,
       content: (
         <PreviewTable
           columns={questionWorkCols}
-          rows={bill.questionWorks.map((q) => ({
+          rows={questionTeachers.map((q) => ({
             teacherLine: formatTeacher(q.name, q.designation, q.department),
-            questionNumber: q.questionNumber,
           }))}
           widths={bill.layoutSettings.questionWork}
           showSerial
+          mergeColumnKey="questionNumber"
+          mergeValue={questionShare}
         />
       ),
     },
@@ -209,15 +238,32 @@ export default function PreviewDocument({ bill }: Props) {
       hasData: allScrutiny.length > 0,
       includeInBacklog: true,
       content: (
-        <PreviewTable
-          columns={scrutinyCols}
-          rows={allScrutiny.map((s) => ({
-            teacherLine: formatTeacher(s.name, s.designation, s.department),
-            scriptCount: s.scriptCount,
-          }))}
-          widths={bill.layoutSettings.scrutinyObe}
-          showSerial
-        />
+        <div className="space-y-4">
+          {isMixedEvaluation && <h3 className="font-bold">7.1 OBE (New Syllabus)</h3>}
+          <PreviewTable
+            columns={scrutinyCols}
+            rows={bill.scrutinies.obe.map((s) => ({
+              teacherLine: formatTeacher(s.name, s.designation, s.department),
+              scriptCount: s.scriptCount,
+            }))}
+            widths={bill.layoutSettings.scrutinyObe}
+            showSerial
+          />
+          {isMixedEvaluation && (
+            <>
+              <h3 className="font-bold">7.2 Non-OBE (Old Syllabus)</h3>
+              <PreviewTable
+                columns={scrutinyCols}
+                rows={bill.scrutinies.nonObe.map((s) => ({
+                  teacherLine: formatTeacher(s.name, s.designation, s.department),
+                  scriptCount: s.scriptCount,
+                }))}
+                widths={bill.layoutSettings.scrutinyNonObe}
+                showSerial
+              />
+            </>
+          )}
+        </div>
       ),
     },
     {

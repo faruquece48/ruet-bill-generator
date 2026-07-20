@@ -43,7 +43,7 @@ export default function ThesisManager({
       {
         name: "",
         designation: "Assistant Professor",
-        department: "",
+        department: "Dept. of BECM, RUET",
         supervisorCount: "",
         examinerCount: "",
         attendsViva: true,

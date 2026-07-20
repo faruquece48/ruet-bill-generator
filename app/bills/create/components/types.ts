@@ -112,7 +112,6 @@ export interface QuestionWork {
   name: string;
   designation: Designation;
   department: string;
-  questionNumber: number | "";
 }
 
 // ------------------------------
@@ -185,6 +184,7 @@ export interface ExaminationBillData {
   courseDuties: { obe: CourseDuty[]; nonObe: CourseDuty[] };
   sessionalDuties: SessionalCourse[];
   questionWorks: QuestionWork[];
+  questionWorkTotal: string;
   scrutinies: { obe: ScrutinyTeacher[]; nonObe: ScrutinyTeacher[] };
   studentDuties: StudentDuty[];
   courseAdvisers: CourseAdviser[];
@@ -208,6 +208,7 @@ export interface TableLayoutSettings {
   courseDutyObe: ColumnWidths;
   courseDutyNonObe: ColumnWidths;
   paperSetter: ColumnWidths;
+  paperSetterNonObe: ColumnWidths;
   classTest: ColumnWidths;
   assignment: ColumnWidths;
   courseFile: ColumnWidths;
@@ -263,6 +264,13 @@ export const defaultLayoutSettings: TableLayoutSettings = {
     paperSetCount: 15,
     scriptExamined: 15,
   },
+  paperSetterNonObe: {
+    course: 30,
+    part: 8,
+    teacherLine: 32,
+    paperSetCount: 15,
+    scriptExamined: 15,
+  },
   classTest: {
     course: 34,
     teacherLine: 36,
@@ -291,13 +299,11 @@ export const defaultLayoutSettings: TableLayoutSettings = {
   gradeSheetVerification: { sl: 10, teacherLine: 65, studentsDisplay: 25 },
   courseAdviser: { sl: 10, teacherLine: 65, students: 25 },
   thesis: {
-    sl: 6,
-    name: 22,
-    designation: 14,
-    department: 18,
-    supervisorCount: 14,
-    examinerCount: 14,
-    attendsViva: 12,
+    sl: 8,
+    teacherLine: 42,
+    supervisorCount: 12,
+    examinerCount: 13,
+    thesisViva: 25,
   },
   verification: { sl: 10, teacherLine: 65, students: 25 },
   courseCoordinator: { sl: 10, teacherLine: 90 },

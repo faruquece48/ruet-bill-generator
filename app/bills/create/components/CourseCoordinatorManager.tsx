@@ -40,7 +40,7 @@ export default function CourseCoordinatorManager({
       {
         name: "",
         designation: "Assistant Professor",
-        department: "",
+        department: "Dept. of BECM, RUET",
       },
     ]);
   };

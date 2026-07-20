@@ -45,6 +45,7 @@ const styles = StyleSheet.create({
     fontWeight: 700,
   },
   sectionTitle: { fontSize: 12, fontWeight: 700, marginTop: 14, marginBottom: 4 },
+  subSectionTitle: { fontSize: 11, fontWeight: 700, marginTop: 5, marginBottom: 4 },
   // Table wrapper no longer carries a left/right border. A single View
   // spanning every row would get its border drawn as one continuous box
   // even when react-pdf splits it across a page break — producing a
@@ -319,17 +320,27 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
   const isThesisApplicable = bill.billInfo.year === "4th Year" && bill.billInfo.semester === "Even";
   const isVerificationApplicable = bill.billInfo.hasGraduatingStudents === "yes";
   const isCourseCoordinatorApplicable = isThesisApplicable;
+  const isMixedEvaluation = bill.billInfo.evaluationSystem === "mixed";
   const allCourseDuties = [...bill.courseDuties.obe, ...bill.courseDuties.nonObe];
-  const paperSetterRows = flattenPaperSetter(allCourseDuties);
+  const obePaperSetterRows = flattenPaperSetter(bill.courseDuties.obe);
+  const nonObePaperSetterRows = flattenPaperSetter(bill.courseDuties.nonObe);
+  const paperSetterRows = isMixedEvaluation
+    ? [...obePaperSetterRows, ...nonObePaperSetterRows]
+    : obePaperSetterRows;
   const classTestRows = flattenClassTest(allCourseDuties);
-  const assignmentRows = flattenAssignment(allCourseDuties);
-  const courseFileRows = flattenCourseFile(allCourseDuties, bill.sessionalDuties);
+  const assignmentRows = flattenAssignment(bill.courseDuties.obe);
+  const courseFileRows = flattenCourseFile(bill.courseDuties.obe, bill.sessionalDuties);
   const sessionalRows = flattenSessional(bill.sessionalDuties);
   const boardVivaRows = flattenBoardViva(bill.sessionalDuties);
   const tabulationRows = flattenTabulation(bill.studentDuties);
   const gradeSheetRows = deriveGradeSheetRows(bill.studentDuties);
-  const allScrutiny = [...bill.scrutinies.obe, ...bill.scrutinies.nonObe];
-  const paperSetterGroups = groupByCourse(paperSetterRows);
+  const allScrutiny = isMixedEvaluation
+    ? [...bill.scrutinies.obe, ...bill.scrutinies.nonObe]
+    : bill.scrutinies.obe;
+  const questionTeachers = bill.questionWorks.filter((teacher) => teacher.name.trim() !== "");
+  const questionShare = `${bill.questionWorkTotal || "5"}/${questionTeachers.length || 1}`;
+  const obePaperSetterGroups = groupByCourse(obePaperSetterRows);
+  const nonObePaperSetterGroups = groupByCourse(nonObePaperSetterRows);
   const classTestGroups = groupByCourse(classTestRows);
   const assignmentGroups = groupByCourse(assignmentRows);
   const courseFileGroups = groupByCourse(courseFileRows);
@@ -364,16 +375,34 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       hasData: paperSetterRows.length > 0,
       includeInBacklog: true,
       content: (
-        <GroupedTable
-          courseWidth={lw.paperSetter.course ?? 30}
-          entryColumns={[
-            { key: "part", label: "Part", width: lw.paperSetter.part ?? 8, align: "center" },
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.paperSetter.teacherLine ?? 37 },
-            { key: "paperSetCount", label: "No. of Paper Set", width: lw.paperSetter.paperSetCount ?? 12, align: "center" },
-            { key: "scriptExamined", label: "No. of Script Examined", width: lw.paperSetter.scriptExamined ?? 13, align: "center" },
-          ]}
-          groups={paperSetterGroups}
-        />
+        <View>
+          {isMixedEvaluation && <Text style={styles.subSectionTitle}>2.1 OBE (New Syllabus)</Text>}
+          <GroupedTable
+            courseWidth={lw.paperSetter.course ?? 30}
+            entryColumns={[
+              { key: "part", label: "Part", width: lw.paperSetter.part ?? 8, align: "center" },
+              { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.paperSetter.teacherLine ?? 32 },
+              { key: "paperSetCount", label: "No. of Paper Set", width: lw.paperSetter.paperSetCount ?? 15, align: "center" },
+              { key: "scriptExamined", label: "No. of Script Examined", width: lw.paperSetter.scriptExamined ?? 15, align: "center" },
+            ]}
+            groups={obePaperSetterGroups}
+          />
+          {isMixedEvaluation && (
+            <View>
+              <Text style={styles.subSectionTitle}>2.2 Non-OBE (Old Syllabus)</Text>
+              <GroupedTable
+                courseWidth={lw.paperSetterNonObe.course ?? 30}
+                entryColumns={[
+                  { key: "part", label: "Part", width: lw.paperSetterNonObe.part ?? 8, align: "center" },
+                  { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.paperSetterNonObe.teacherLine ?? 32 },
+                  { key: "paperSetCount", label: "No. of Paper Set", width: lw.paperSetterNonObe.paperSetCount ?? 15, align: "center" },
+                  { key: "scriptExamined", label: "No. of Script Examined", width: lw.paperSetterNonObe.scriptExamined ?? 15, align: "center" },
+                ]}
+                groups={nonObePaperSetterGroups}
+              />
+            </View>
+          )}
+        </View>
       ),
     },
     {
@@ -432,19 +461,20 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       title: isBacklog
         ? "List of Teachers Associated with Question Typing, Sketching & Printing"
         : "List of Teachers Associated with Question Typing, Sketching, Comparing & Printing",
-      hasData: bill.questionWorks.length > 0,
+      hasData: questionTeachers.length > 0,
       includeInBacklog: true,
       content: (
-        <SimpleTable
+        <MergedColumnTable
           columns={[
             { key: "sl", label: "Sl. No.", width: lw.questionWork.sl ?? 10, align: "center" },
             { key: "teacherLine", label: "Name of The Teachers & Designation", width: lw.questionWork.teacherLine ?? 65 },
             { key: "questionNumber", label: "No. of Question", width: lw.questionWork.questionNumber ?? 25, align: "center" },
           ]}
-          rows={bill.questionWorks.map((q) => ({
+          rows={questionTeachers.map((q) => ({
             teacherLine: formatTeacher(q.name, q.designation, q.department),
-            questionNumber: q.questionNumber,
           }))}
+          mergeKey="questionNumber"
+          mergeValue={questionShare}
         />
       ),
     },
@@ -453,17 +483,36 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       hasData: allScrutiny.length > 0,
       includeInBacklog: true,
       content: (
-        <SimpleTable
-          columns={[
-            { key: "sl", label: "Sl. No.", width: lw.scrutinyObe.sl ?? 10, align: "center" },
-            { key: "teacherLine", label: "Name of The Teachers & Designation", width: lw.scrutinyObe.teacherLine ?? 65 },
-            { key: "scriptCount", label: "No. of Script", width: lw.scrutinyObe.scriptCount ?? 25, align: "center" },
-          ]}
-          rows={allScrutiny.map((s) => ({
-            teacherLine: formatTeacher(s.name, s.designation, s.department),
-            scriptCount: s.scriptCount,
-          }))}
-        />
+        <View>
+          {isMixedEvaluation && <Text style={styles.subSectionTitle}>7.1 OBE (New Syllabus)</Text>}
+          <SimpleTable
+            columns={[
+              { key: "sl", label: "Sl. No.", width: lw.scrutinyObe.sl ?? 10, align: "center" },
+              { key: "teacherLine", label: "Name of The Teachers & Designation", width: lw.scrutinyObe.teacherLine ?? 65 },
+              { key: "scriptCount", label: "No. of Script", width: lw.scrutinyObe.scriptCount ?? 25, align: "center" },
+            ]}
+            rows={bill.scrutinies.obe.map((s) => ({
+              teacherLine: formatTeacher(s.name, s.designation, s.department),
+              scriptCount: s.scriptCount,
+            }))}
+          />
+          {isMixedEvaluation && (
+            <View>
+              <Text style={styles.subSectionTitle}>7.2 Non-OBE (Old Syllabus)</Text>
+              <SimpleTable
+                columns={[
+                  { key: "sl", label: "Sl. No.", width: lw.scrutinyNonObe.sl ?? 10, align: "center" },
+                  { key: "teacherLine", label: "Name of The Teachers & Designation", width: lw.scrutinyNonObe.teacherLine ?? 65 },
+                  { key: "scriptCount", label: "No. of Script", width: lw.scrutinyNonObe.scriptCount ?? 25, align: "center" },
+                ]}
+                rows={bill.scrutinies.nonObe.map((s) => ({
+                  teacherLine: formatTeacher(s.name, s.designation, s.department),
+                  scriptCount: s.scriptCount,
+                }))}
+              />
+            </View>
+          )}
+        </View>
       ),
     },
     {

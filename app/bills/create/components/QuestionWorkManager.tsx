@@ -21,11 +21,15 @@ const designationList: Designation[] = [
 interface Props {
   questionWorks: QuestionTeacher[];
   setQuestionWorks: (data: QuestionTeacher[]) => void;
+  totalQuestions: string;
+  setTotalQuestions: (value: string) => void;
 }
 
 export default function QuestionWorkManager({
   questionWorks,
   setQuestionWorks,
+  totalQuestions,
+  setTotalQuestions,
 }: Props) {
   const works = questionWorks;
   const setWorks = (data: QuestionTeacher[]) => {
@@ -38,8 +42,7 @@ export default function QuestionWorkManager({
       {
         name: "",
         designation: "Assistant Professor",
-        department: "",
-        questionNumber: "",
+        department: "Dept. of BECM, RUET",
       },
     ]);
   };
@@ -66,29 +69,32 @@ export default function QuestionWorkManager({
     setWorks(updated);
   };
 
-  const updateQuestionNumber = (index: number, value: string) => {
-    const updated = [...works];
-    updated[index] = {
-      ...updated[index],
-      questionNumber: value === "" ? "" : Number(value),
-    };
-    setWorks(updated);
-  };
-
   return (
     <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
       <h2 className="text-xl font-bold">
         5. List of Teachers Associated with Question Typing, Sketching,
         Comparing & Printing
       </h2>
-      <Button type="button" onClick={addTeacher}>
-        <Plus className="mr-2 h-4 w-4" />
-        Add Teacher
-      </Button>
+      <div className="flex flex-wrap items-end gap-4">
+        <label className="space-y-1 text-sm font-medium">
+          <span>Total Number of Questions</span>
+          <Input
+            type="number"
+            min="0"
+            value={totalQuestions}
+            onChange={(e) => setTotalQuestions(e.target.value)}
+            className="w-48"
+          />
+        </label>
+        <Button type="button" onClick={addTeacher}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Teacher
+        </Button>
+      </div>
       <div className="space-y-4">
         {works.map((teacher, index) => (
           <div key={index} className="rounded-lg border bg-slate-50 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_1fr_1fr_1fr_auto] gap-4 items-center">
+            <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_1fr_1fr_auto] gap-4 items-center">
               <div className="flex h-10 w-12 items-center justify-center rounded-md border bg-white text-sm font-semibold text-slate-700">
                 {String(index + 1).padStart(2, "0")}.
               </div>
@@ -118,14 +124,6 @@ export default function QuestionWorkManager({
                 placeholder="Department"
                 value={teacher.department}
                 onChange={(e) => updateDepartment(index, e.target.value)}
-              />
-              <Input
-                type="number"
-                placeholder="No. of Question"
-                value={teacher.questionNumber}
-                onChange={(e) =>
-                  updateQuestionNumber(index, e.target.value)
-                }
               />
               <Button
                 type="button"

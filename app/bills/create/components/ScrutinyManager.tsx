@@ -48,7 +48,7 @@ export default function ScrutinyManager({
       {
         name: "",
         designation: "Assistant Professor",
-        department: "",
+        department: "Dept. of BECM, RUET",
         scriptCount: "",
       },
     ]);

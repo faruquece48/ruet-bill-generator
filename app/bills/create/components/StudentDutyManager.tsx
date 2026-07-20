@@ -40,7 +40,7 @@ export default function StudentDutyManager({
       {
         name: "",
         designation: "Assistant Professor",
-        department: "",
+        department: "Dept. of BECM, RUET",
         students: "",
       },
     ]);

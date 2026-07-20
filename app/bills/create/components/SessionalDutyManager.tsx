@@ -59,10 +59,10 @@ export default function SessionalDutyManager({
       {
         courseCode: "",
         courseTitle: "",
-        credit: "",
+        credit: "1.5",
         teacher: "",
         designation: "Assistant Professor",
-        department: "",
+        department: "Dept. of BECM, RUET",
         duties: { ...defaultDuty },
         students: { ...defaultStudent },
         additionalTeachers: [],
@@ -124,7 +124,7 @@ export default function SessionalDutyManager({
         {
           name: "",
           designation: "Assistant Professor",
-          department: "",
+          department: "Dept. of BECM, RUET",
           duties: remainingDuty,
           students: remainingStudent,
         },

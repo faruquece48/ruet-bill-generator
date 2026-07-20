@@ -65,8 +65,12 @@ export default function CourseDutyManager({
           part,
           teacher: "",
           designation: "Assistant Professor",
-          department: "",
-          duties: { ...defaultDuty },
+          department: "Dept. of BECM, RUET",
+          duties: {
+            ...defaultDuty,
+            assignment: type === "nonObe" ? false : defaultDuty.assignment,
+            courseFile: type === "nonObe" ? false : defaultDuty.courseFile,
+          },
           students: { ...defaultStudent },
           additionalTeachers: [],
         })) as CourseDuty["parts"],
@@ -217,7 +221,7 @@ export default function CourseDutyManager({
           {
             name: "",
             designation: "Assistant Professor",
-            department: "",
+            department: "Dept. of BECM, RUET",
             duties: remainingDuty,
             students: remainingStudent,
           },
@@ -317,7 +321,13 @@ export default function CourseDutyManager({
                 <div>
                   <h4 className="text-sm font-medium mb-2">Duty Selection</h4>
                   <div className="grid md:grid-cols-3 gap-3">
-                    {(Object.keys(part.duties) as (keyof DutyOption)[]).map((key) => {
+                    {(Object.keys(part.duties) as (keyof DutyOption)[])
+                      .filter(
+                        (key) =>
+                          type !== "nonObe" ||
+                          (key !== "assignment" && key !== "courseFile")
+                      )
+                      .map((key) => {
                       const checked = part.duties[key];
 
                       // Checkbox-only duties: Paper Setter, Course File (fixed shared value of 1)
@@ -428,7 +438,7 @@ export default function CourseDutyManager({
                           )}
                         </div>
                       );
-                    })}
+                      })}
                   </div>
                   {part.additionalTeachers.length > 0 && (
                     <div className="mt-4 rounded-lg border bg-white p-4 space-y-3">
@@ -489,7 +499,13 @@ export default function CourseDutyManager({
                           Object.keys(
                             part.additionalTeachers[0].duties
                           ) as (keyof DutyOption)[]
-                        ).map((d) => {
+                        )
+                          .filter(
+                            (d) =>
+                              type !== "nonObe" ||
+                              (d !== "assignment" && d !== "courseFile")
+                          )
+                          .map((d) => {
                           if (!part.additionalTeachers[0].duties[d]) return null;
 
                           // Checkbox-only duties carried to additional teacher: no value shown
@@ -587,7 +603,7 @@ export default function CourseDutyManager({
                               />
                             </div>
                           );
-                        })}
+                          })}
                       </div>
                     </div>
                   )}
