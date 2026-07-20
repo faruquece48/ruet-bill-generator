@@ -18,13 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Trash2, Plus } from "lucide-react";
-
-interface CommitteeMember {
-  name: string;
-  designation: string;
-  department: string;
-  role: string;
-}
+import type { CommitteeMember } from "./types";
 
 interface Props {
   committees: CommitteeMember[];
@@ -107,7 +101,7 @@ export default function CommitteeTable({ committees, setCommittees }: Props) {
               <TableCell>
                 <Select
                   value={member.role}
-                  onValueChange={(value) => updateMember(index, "role", value)}
+                  onValueChange={(value) => value !== null && updateMember(index, "role", value)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Role" />

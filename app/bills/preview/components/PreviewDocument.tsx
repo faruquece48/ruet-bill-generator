@@ -14,7 +14,7 @@ import {
   groupByCourse,
   computeThesisVivaFormula,
   formatTeacher,
-  formatTeacherOnly,
+  formatDesignationDept,
   buildExamLine,
 } from "../../create/components/pdf/pdfHelpers";
 
@@ -23,9 +23,9 @@ interface Props {
 }
 
 const committeeCols: PreviewColumn[] = [
-  { key: "sl", label: "Sl.", align: "center" },
-  { key: "teacherLine", label: "Name of Teachers & Designation" },
-  { key: "department", label: "Department" },
+  { key: "sl", label: "Sl. No.", align: "center" },
+  { key: "name", label: "Name" },
+  { key: "designationDept", label: "Designation & Department" },
   { key: "role", label: "Role" },
 ];
 const questionWorkCols: PreviewColumn[] = [
@@ -96,8 +96,8 @@ export default function PreviewDocument({ bill }: Props) {
   const thesisVivaFormula = computeThesisVivaFormula(boardVivaRows, bill.thesisTeachers);
 
   const committeeRows = bill.committees.map((m) => ({
-    teacherLine: formatTeacherOnly(m.name, m.designation),
-    department: m.department,
+    name: m.name,
+    designationDept: formatDesignationDept(m.designation, m.department),
     role: m.role,
   }));
 
@@ -109,7 +109,13 @@ export default function PreviewDocument({ bill }: Props) {
       hasData: bill.committees.some((m) => m.name.trim() !== ""),
       includeInBacklog: true,
       content: (
-        <PreviewTable columns={committeeCols} rows={committeeRows} widths={bill.layoutSettings.committee} showSerial />
+        <PreviewTable
+          columns={committeeCols}
+          rows={committeeRows}
+          widths={bill.layoutSettings.committee}
+          showSerial
+          showHeader={false}
+        />
       ),
     },
     {
@@ -364,13 +370,13 @@ export default function PreviewDocument({ bill }: Props) {
     <div className="w-full rounded-xl border bg-white p-6 shadow-sm space-y-8">
       <div className="text-center space-y-1">
         <p className="italic" style={{ fontFamily: "'Monotype Corsiva', cursive", fontSize: 10 }}>
-          Heaven's Light is Our Guide
+          Heaven’s Light is Our Guide
         </p>
         <p className="text-[11px]">Department of Building Engineering &amp; Construction Management</p>
         <p className="text-[11px]">Rajshahi University of Engineering &amp; Technology</p>
         <p className="mt-1 text-[11px] font-bold">
           {bill.billInfo.examination || "B.Sc. Engineering"} {bill.billInfo.year}{" "}
-          {bill.billInfo.examType === "semester" ? `${bill.billInfo.semester} Semester Examination` : "Backlog Examination"}-
+          {bill.billInfo.examType === "semester" ? `${bill.billInfo.semester} Semester Examination` : "Backlog Examination"}{" "}
           {bill.billInfo.examYear} (Series {bill.billInfo.series})
         </p>
       </div>

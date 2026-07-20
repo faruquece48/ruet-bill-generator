@@ -1,4 +1,5 @@
 export type Designation =
+  | ""
   | "Lecturer"
   | "Assistant Professor"
   | "Associate Professor"
@@ -34,6 +35,9 @@ export interface DutyOption {
   courseFile: boolean;
 }
 
+// paperSetter / courseFile are fixed/shared values (just a checkbox, no count).
+// examiner / assignment accept a fraction-style string (e.g. "1", "1/2").
+// classTest is split into its own count + total students.
 export interface DutyStudentCount {
   examiner: string;
   assignment: string;
@@ -99,6 +103,7 @@ export interface SessionalCourse {
   students: StudentCount;
   additionalTeachers: SessionalAdditionalTeacher[];
 }
+
 
 // ------------------------------
 // Question Work Types
@@ -171,61 +176,6 @@ export interface CourseCoordinatorTeacher {
   department: string;
 }
 
-// ------------------------------
-// PDF Table Layout / Column Width Settings
-// ------------------------------
-
-export interface ColumnWidths {
-  [columnKey: string]: number;
-}
-
-export interface TableLayoutSettings {
-  committee: ColumnWidths;
-  paperSetter: ColumnWidths;
-  classTest: ColumnWidths;
-  assignment: ColumnWidths;
-  courseFile: ColumnWidths;
-  sessionalDuty: ColumnWidths;
-  questionWork: ColumnWidths;
-  scrutinyObe: ColumnWidths;
-  scrutinyNonObe: ColumnWidths;
-  studentDuty: ColumnWidths;
-  courseAdviser: ColumnWidths;
-  thesis: ColumnWidths;
-  verification: ColumnWidths;
-  courseCoordinator: ColumnWidths;
-}
-
-// Committee now has 4 distinct columns: Sl. / Name / Designation & Department / Role
-export const defaultLayoutSettings: TableLayoutSettings = {
-  committee: { sl: 8, name: 30, designationDept: 42, role: 20 },
-  paperSetter: {
-    course: 30,
-    part: 8,
-    teacherLine: 37,
-    paperSetCount: 12,
-    scriptExamined: 13,
-  },
-  classTest: { course: 30, teacherLine: 40, classTestCount: 15, students: 15 },
-  assignment: { course: 35, teacherLine: 45, assignmentValue: 20 },
-  courseFile: { course: 40, teacherLine: 60 },
-  sessionalDuty: { sl: 8, courseCode: 27, teacherLine: 45, students: 20 },
-  questionWork: { sl: 10, teacherLine: 65, questionNumber: 25 },
-  scrutinyObe: { sl: 10, teacherLine: 65, scriptCount: 25 },
-  scrutinyNonObe: { sl: 10, teacherLine: 65, scriptCount: 25 },
-  studentDuty: { sl: 10, teacherLine: 65, students: 25 },
-  courseAdviser: { sl: 10, teacherLine: 65, students: 25 },
-  thesis: {
-    sl: 8,
-    teacherLine: 42,
-    supervisorCount: 12,
-    examinerCount: 13,
-    thesisViva: 25,
-  },
-  verification: { sl: 10, teacherLine: 65, students: 25 },
-  courseCoordinator: { sl: 10, teacherLine: 90 },
-};
-
 // ==============================
 // Complete Examination Bill Data
 // ==============================
@@ -243,7 +193,6 @@ export interface ExaminationBillData {
   verificationStudentCount: string;
   courseCoordinatorTeachers: CourseCoordinatorTeacher[];
   layoutSettings: TableLayoutSettings;
-<<<<<<< Updated upstream
 }
 
 // ------------------------------
@@ -278,7 +227,7 @@ export interface TableLayoutSettings {
 }
 
 export const defaultLayoutSettings: TableLayoutSettings = {
-  committee: { sl: 8, teacherLine: 72, role: 20 },
+  committee: { sl: 8, name: 30, designationDept: 42, role: 20 },
   courseDutyObe: {
     courseCode: 8,
     courseTitle: 18,
@@ -353,6 +302,3 @@ export const defaultLayoutSettings: TableLayoutSettings = {
   verification: { sl: 10, teacherLine: 65, students: 25 },
   courseCoordinator: { sl: 10, teacherLine: 90 },
 };
-=======
-}
->>>>>>> Stashed changes

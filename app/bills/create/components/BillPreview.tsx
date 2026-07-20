@@ -39,7 +39,7 @@ export default function BillPreview({
 
         <p className="italic text-lg">
 
-          Heaven's Light is Our Guide
+          Heaven’s Light is Our Guide
 
         </p>
 
@@ -79,7 +79,7 @@ export default function BillPreview({
           <br />
 
 
-          Examination-
+          Examination{" "}
 
           {bill.examYear || "2024"}
 

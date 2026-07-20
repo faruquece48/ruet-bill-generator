@@ -9,19 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Trash2, Plus } from "lucide-react";
-
-type Designation =
-  | "Lecturer"
-  | "Assistant Professor"
-  | "Associate Professor"
-  | "Professor";
-
-interface QuestionTeacher {
-  name: string;
-  designation: Designation;
-  department: string;
-  questionNumber: number | "";
-}
+import type { Designation, QuestionWork as QuestionTeacher } from "./types";
 
 const designationList: Designation[] = [
   "Lecturer",

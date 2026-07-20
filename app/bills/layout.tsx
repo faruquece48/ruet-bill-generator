@@ -13,6 +13,8 @@ function NavLink({ href, label }: { href: string; label: string }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Deliberately switch client-only navigation state after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

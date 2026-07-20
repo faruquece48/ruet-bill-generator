@@ -95,7 +95,7 @@ export default function BillInformation({ bill, setBill }: Props) {
           </label>
           <Select
             value={bill.examination}
-            onValueChange={(value) => updateField("examination", value)}
+            onValueChange={(value) => value !== null && updateField("examination", value)}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select Examination">
@@ -144,7 +144,7 @@ export default function BillInformation({ bill, setBill }: Props) {
           </label>
           <Select
             value={bill.year}
-            onValueChange={(value) => updateField("year", value)}
+            onValueChange={(value) => value !== null && updateField("year", value)}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select Year">
@@ -167,7 +167,7 @@ export default function BillInformation({ bill, setBill }: Props) {
           {bill.examType === "semester" && (
             <Select
               value={bill.semester}
-              onValueChange={(value) => updateField("semester", value)}
+              onValueChange={(value) => value !== null && updateField("semester", value)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select Semester">

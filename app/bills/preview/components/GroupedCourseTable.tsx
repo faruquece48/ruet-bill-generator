@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Fragment } from "react";
 import type { ColumnWidths } from "../../create/components/types";
 import type { CourseGroup } from "../../create/components/pdf/pdfHelpers";

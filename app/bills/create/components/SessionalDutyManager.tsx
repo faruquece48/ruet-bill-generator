@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -214,13 +215,20 @@ export default function SessionalDutyManager({
                 updateCourse(cIndex, "courseTitle", e.target.value)
               }
             />
-            <Input
-              placeholder="Credit (e.g. 1.5)"
-              value={course.credit}
-              onChange={(e) =>
-                updateCourse(cIndex, "credit", e.target.value)
-              }
-            />
+            <label className="space-y-1 text-sm font-medium">
+              <span>Credit</span>
+              <Input
+                type="number"
+                min="0"
+                step="0.5"
+                placeholder="e.g. 1.5"
+                aria-label="Sessional course credit"
+                value={course.credit}
+                onChange={(e) =>
+                  updateCourse(cIndex, "credit", e.target.value)
+                }
+              />
+            </label>
           </div>
           {/* Teacher Information */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -304,7 +312,7 @@ export default function SessionalDutyManager({
                 <Select
                   value={course.additionalTeachers[0].designation}
                   onValueChange={(value) =>
-                    updateAdditionalTeacher(cIndex, "designation", value)
+                    value !== null && updateAdditionalTeacher(cIndex, "designation", value)
                   }
                 >
                   <SelectTrigger>

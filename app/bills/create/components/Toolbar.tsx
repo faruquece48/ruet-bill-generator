@@ -9,6 +9,7 @@ import {
   Trash2,
   ShieldCheck,
 } from "lucide-react";
+import type { Designation } from "./types";
 
 interface ToolbarProps {
   onSave: () => void;

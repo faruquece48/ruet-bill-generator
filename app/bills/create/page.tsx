@@ -35,6 +35,8 @@ export default function Home() {
   useEffect(() => {
     const saved = loadCurrentWork();
     if (saved) {
+      // Hydrate once from browser storage after the client mounts.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBillData({ ...emptyBill, ...saved });
     }
     hydrated.current = true;

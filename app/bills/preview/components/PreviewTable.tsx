@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ColumnWidths } from "../../create/components/types";
 
 export interface PreviewColumn {
@@ -12,6 +13,7 @@ interface Props {
   rows: Record<string, any>[];
   widths: ColumnWidths;
   showSerial?: boolean;
+  showHeader?: boolean;
   mergeColumnKey?: string;
   mergeValue?: React.ReactNode;
 }
@@ -21,6 +23,7 @@ export default function PreviewTable({
   rows,
   widths,
   showSerial = false,
+  showHeader = true,
   mergeColumnKey,
   mergeValue,
 }: Props) {
@@ -35,18 +38,20 @@ export default function PreviewTable({
             <col key={c.key} style={{ width: `${widths[c.key] ?? 0}%` }} />
           ))}
         </colgroup>
-        <thead>
-          <tr>
-            {columns.map((c) => (
-              <th
-                key={c.key}
-                className={`border border-gray-400 px-2 py-1.5 font-normal ${alignClass(c.align, c.key)}`}
-              >
-                {c.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
+        {showHeader && (
+          <thead>
+            <tr>
+              {columns.map((c) => (
+                <th
+                  key={c.key}
+                  className={`border border-gray-400 px-2 py-1.5 font-normal ${alignClass(c.align, c.key)}`}
+                >
+                  {c.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+        )}
         <tbody>
           {rows.map((row, i) => (
             <tr key={i}>
