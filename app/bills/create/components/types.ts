@@ -185,9 +185,11 @@ export interface ExaminationBillData {
   sessionalDuties: SessionalCourse[];
   questionWorks: QuestionWork[];
   questionWorkTotal: string;
+  pageBreakAfter: Record<string, boolean>;
   scrutinies: { obe: ScrutinyTeacher[]; nonObe: ScrutinyTeacher[] };
   studentDuties: StudentDuty[];
   courseAdvisers: CourseAdviser[];
+  courseAdviserStudentCount: string;
   thesisTeachers: ThesisTeacher[];
   verificationTeachers: VerificationTeacher[];
   verificationStudentCount: string;

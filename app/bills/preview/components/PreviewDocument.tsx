@@ -5,6 +5,7 @@ import GroupedCourseTable from "./GroupedCourseTable";
 import {
   flattenPaperSetter,
   flattenClassTest,
+  combineClassTestRows,
   flattenAssignment,
   flattenCourseFile,
   flattenSessional,
@@ -79,13 +80,18 @@ export default function PreviewDocument({ bill }: Props) {
   const isCourseCoordinatorApplicable = isThesisApplicable;
   const isMixedEvaluation = bill.billInfo.evaluationSystem === "mixed";
 
-  const allCourseDuties = [...bill.courseDuties.obe, ...bill.courseDuties.nonObe];
   const obePaperSetterRows = flattenPaperSetter(bill.courseDuties.obe);
   const nonObePaperSetterRows = flattenPaperSetter(bill.courseDuties.nonObe);
   const paperSetterRows = isMixedEvaluation
     ? [...obePaperSetterRows, ...nonObePaperSetterRows]
     : obePaperSetterRows;
-  const classTestRows = flattenClassTest(allCourseDuties);
+  const obeClassTestRows = flattenClassTest(bill.courseDuties.obe);
+  const classTestRows = isMixedEvaluation
+    ? combineClassTestRows(
+        obeClassTestRows,
+        flattenClassTest(bill.courseDuties.nonObe)
+      )
+    : obeClassTestRows;
   const assignmentRows = flattenAssignment(bill.courseDuties.obe);
   const courseFileRows = flattenCourseFile(bill.courseDuties.obe, bill.sessionalDuties);
   const sessionalRows = flattenSessional(bill.sessionalDuties);
@@ -346,10 +352,15 @@ export default function PreviewDocument({ bill }: Props) {
           columns={listCols}
           rows={bill.courseAdvisers.map((a) => ({
             teacherLine: formatTeacher(a.name, a.designation, a.department),
-            students: a.students,
           }))}
           widths={bill.layoutSettings.courseAdviser}
           showSerial
+          mergeColumnKey="students"
+          mergeValue={
+            bill.courseAdviserStudentCount
+              ? `${bill.courseAdviserStudentCount}/${bill.courseAdvisers.filter((a) => a.name.trim()).length || 1}`
+              : "—"
+          }
         />
       ),
     },

@@ -5,6 +5,7 @@ import type { ExaminationBillData } from "../types";
 import {
   flattenPaperSetter,
   flattenClassTest,
+  combineClassTestRows,
   flattenAssignment,
   flattenCourseFile,
   flattenSessional,
@@ -26,7 +27,7 @@ Font.register({ family: "MonotypeCorsiva", src: "/fonts/monotype-corsiva.ttf" })
 // Disable automatic word-hyphenation (e.g. "Professor" -> "Profes-sor").
 Font.registerHyphenationCallback((word) => [word]);
 const BORDER = "#000000";
-const BW = 1; // border width, increased from 0.5
+const BW = 0.75;
 const styles = StyleSheet.create({
   page: { paddingTop: 30, paddingBottom: 110, paddingHorizontal: 36, fontSize: 10, fontFamily: "Times-Roman" },
   headerBlock: { textAlign: "center", marginBottom: 14 },
@@ -67,13 +68,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   cellLeftEdge: { borderLeftWidth: BW },
-  rowTopEdge: { borderTopWidth: BW, borderBottomWidth: BW, borderColor: BORDER },
+  cellNoRightEdge: { borderRightWidth: 0 },
+  rowTopEdge: { borderTopWidth: BW, borderColor: BORDER },
   // Each grouped row is a complete, page-safe fragment. The negative top
   // margin overlaps adjacent horizontal borders so the table reads as one
   // continuous grid instead of a stack of double-bordered boxes.
   groupedRow: {
     borderTopWidth: BW,
     borderBottomWidth: BW,
+    borderLeftWidth: BW,
+    borderRightWidth: BW,
     borderColor: BORDER,
     marginTop: -BW,
   },
@@ -205,7 +209,7 @@ function GroupedTable({
 
       {groups.map((group, groupIndex) => (
         <View key={groupIndex} style={[styles.row, styles.groupedRow, { alignItems: "stretch" }]} wrap={false}>
-          <View style={[styles.cell, { width: `${normalizedCourseWidth}%`, justifyContent: "center" }, styles.cellLeftEdge]}>
+          <View style={[styles.cell, { width: `${normalizedCourseWidth}%`, justifyContent: "center" }]}>
             <Text>{group.courseCode}</Text>
             <Text>{group.courseTitle}</Text>
           </View>
@@ -213,14 +217,20 @@ function GroupedTable({
             {group.entries.map((entry, ei) => (
               <View
                 key={ei}
-                style={[{ flexDirection: "row" }, ei > 0 ? styles.innerRowDivider : {}]}
+                style={[
+                  { flexDirection: "row", flexGrow: 1, alignItems: "stretch" },
+                  ei > 0 ? styles.innerRowDivider : {},
+                ]}
               >
-                {normalizedEntryColumns.map((c) => (
+                {normalizedEntryColumns.map((c, columnIndex) => (
                   <View
                     key={c.key}
                     style={[
                       styles.cell,
                       { width: `${(c.width / entryTotal) * 100}%` },
+                      !normalizedMergeColumn && columnIndex === normalizedEntryColumns.length - 1
+                        ? styles.cellNoRightEdge
+                        : {},
                     ]}
                   >
                     <Text style={c.align === "center" ? styles.center : undefined}>{formatCell(entry[c.key])}</Text>
@@ -230,7 +240,7 @@ function GroupedTable({
             ))}
           </View>
           {normalizedMergeColumn && groupMergeColumn && (
-            <View style={[styles.cell, { width: `${normalizedMergeColumn.width}%`, justifyContent: "center" }]}>
+            <View style={[styles.cell, styles.cellNoRightEdge, { width: `${normalizedMergeColumn.width}%`, justifyContent: "center" }]}>
               <Text style={styles.center}>{groupMergeColumn.value()}</Text>
             </View>
           )}
@@ -321,13 +331,18 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
   const isVerificationApplicable = bill.billInfo.hasGraduatingStudents === "yes";
   const isCourseCoordinatorApplicable = isThesisApplicable;
   const isMixedEvaluation = bill.billInfo.evaluationSystem === "mixed";
-  const allCourseDuties = [...bill.courseDuties.obe, ...bill.courseDuties.nonObe];
   const obePaperSetterRows = flattenPaperSetter(bill.courseDuties.obe);
   const nonObePaperSetterRows = flattenPaperSetter(bill.courseDuties.nonObe);
   const paperSetterRows = isMixedEvaluation
     ? [...obePaperSetterRows, ...nonObePaperSetterRows]
     : obePaperSetterRows;
-  const classTestRows = flattenClassTest(allCourseDuties);
+  const obeClassTestRows = flattenClassTest(bill.courseDuties.obe);
+  const classTestRows = isMixedEvaluation
+    ? combineClassTestRows(
+        obeClassTestRows,
+        flattenClassTest(bill.courseDuties.nonObe)
+      )
+    : obeClassTestRows;
   const assignmentRows = flattenAssignment(bill.courseDuties.obe);
   const courseFileRows = flattenCourseFile(bill.courseDuties.obe, bill.sessionalDuties);
   const sessionalRows = flattenSessional(bill.sessionalDuties);
@@ -351,10 +366,17 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     designationDept: formatDesignationDept(m.designation, m.department),
     role: m.role,
   }));
-  type Section = { title: string; hasData: boolean; content: React.ReactNode; includeInBacklog: boolean };
+  type Section = {
+    title: string;
+    breakAfterKey: string;
+    hasData: boolean;
+    content: React.ReactNode;
+    includeInBacklog: boolean;
+  };
   const sections: Section[] = [
     {
       title: "Examination Committee",
+      breakAfterKey: "committee",
       hasData: bill.committees.some((m) => m.name.trim() !== ""),
       includeInBacklog: true,
       content: (
@@ -372,6 +394,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     },
     {
       title: "List of Teachers Associated with Paper Setter & Examiner",
+      breakAfterKey: isMixedEvaluation ? "paperSetterNonObe" : "paperSetterObe",
       hasData: paperSetterRows.length > 0,
       includeInBacklog: true,
       content: (
@@ -388,7 +411,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
             groups={obePaperSetterGroups}
           />
           {isMixedEvaluation && (
-            <View>
+            <View break={Boolean(bill.pageBreakAfter?.paperSetterObe)}>
               <Text style={styles.subSectionTitle}>2.2 Non-OBE (Old Syllabus)</Text>
               <GroupedTable
                 courseWidth={lw.paperSetterNonObe.course ?? 30}
@@ -407,6 +430,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     },
     {
       title: "List of Teachers Associated with Class Test",
+      breakAfterKey: "classTest",
       hasData: classTestRows.length > 0,
       includeInBacklog: false,
       content: (
@@ -423,6 +447,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     },
     {
       title: "List of Teachers Associated with Assignment",
+      breakAfterKey: "assignment",
       hasData: assignmentRows.length > 0,
       includeInBacklog: false,
       content: (
@@ -438,6 +463,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     },
     {
       title: "List of Teachers Associated with Course File",
+      breakAfterKey: "courseFile",
       hasData: courseFileRows.length > 0,
       includeInBacklog: false,
       content: (
@@ -461,6 +487,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       title: isBacklog
         ? "List of Teachers Associated with Question Typing, Sketching & Printing"
         : "List of Teachers Associated with Question Typing, Sketching, Comparing & Printing",
+      breakAfterKey: "questionWork",
       hasData: questionTeachers.length > 0,
       includeInBacklog: true,
       content: (
@@ -480,6 +507,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     },
     {
       title: "List of Teachers Associated with Scrutiny",
+      breakAfterKey: isMixedEvaluation ? "scrutinyNonObe" : "scrutinyObe",
       hasData: allScrutiny.length > 0,
       includeInBacklog: true,
       content: (
@@ -497,7 +525,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
             }))}
           />
           {isMixedEvaluation && (
-            <View>
+            <View break={Boolean(bill.pageBreakAfter?.scrutinyObe)}>
               <Text style={styles.subSectionTitle}>7.2 Non-OBE (Old Syllabus)</Text>
               <SimpleTable
                 columns={[
@@ -517,6 +545,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     },
     {
       title: "List of Teachers Associated with Sessional",
+      breakAfterKey: "sessionalDuty",
       hasData: sessionalRows.length > 0,
       includeInBacklog: false,
       content: (
@@ -533,6 +562,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     },
     {
       title: "List of Teachers Associated with Board Viva",
+      breakAfterKey: "boardViva",
       hasData: boardVivaRows.length > 0,
       includeInBacklog: true,
       content: (
@@ -548,6 +578,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     },
     {
   title: "List of Teachers Associated with Tabulation",
+  breakAfterKey: "tabulation",
   hasData: tabulationRows.length > 0,
   includeInBacklog: true,
   content: (
@@ -567,6 +598,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
   title: isBacklog
     ? "List of Teachers Associated with Grade Sheet Preparation & Verification"
     : "List of Teachers Associated with Grade Sheet Preparation",
+  breakAfterKey: "gradeSheetPreparation",
   hasData: gradeSheetRows.length > 0,
   includeInBacklog: true,
   content: (
@@ -584,6 +616,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
 },
 {
   title: "List of Teachers Associated with Grade Sheet Verification",
+  breakAfterKey: "gradeSheetVerification",
   hasData: !isBacklog && gradeSheetRows.length > 0,
   includeInBacklog: false,
   content: (
@@ -601,10 +634,11 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
 },
     {
       title: "List of Course Advisers",
+      breakAfterKey: "courseAdviser",
       hasData: bill.courseAdvisers.length > 0,
       includeInBacklog: false,
       content: (
-        <SimpleTable
+        <MergedColumnTable
           columns={[
             { key: "sl", label: "Sl. No.", width: lw.courseAdviser.sl ?? 10, align: "center" },
             { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.courseAdviser.teacherLine ?? 65 },
@@ -612,13 +646,19 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
           ]}
           rows={bill.courseAdvisers.map((a) => ({
             teacherLine: formatTeacher(a.name, a.designation, a.department),
-            students: a.students,
           }))}
+          mergeKey="students"
+          mergeValue={
+            bill.courseAdviserStudentCount
+              ? `${bill.courseAdviserStudentCount}/${bill.courseAdvisers.filter((a) => a.name.trim()).length || 1}`
+              : "—"
+          }
         />
       ),
     },
     {
       title: "List of Teachers Associated with Course Coordinator",
+      breakAfterKey: "courseCoordinator",
       hasData: isCourseCoordinatorApplicable && bill.courseCoordinatorTeachers.length > 0,
       includeInBacklog: false,
       content: (
@@ -635,6 +675,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     },
     {
       title: "List of Teachers Associated with Thesis/Project Examination",
+      breakAfterKey: "thesis",
       hasData: isThesisApplicable && bill.thesisTeachers.length > 0,
       includeInBacklog: false,
       content: (
@@ -658,6 +699,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     },
     {
       title: "List of Teachers Associated with Verification of Final Result",
+      breakAfterKey: "verification",
       hasData: isVerificationApplicable && bill.verificationTeachers.length > 0,
       includeInBacklog: true,
       content: (
@@ -698,7 +740,14 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
           </Text>
         </View>
         {visible.map((section, i) => (
-          <View key={section.title} style={{ marginBottom: 6 }}>
+          <View
+            key={section.title}
+            style={{ marginBottom: 6 }}
+            break={
+              i > 0 &&
+              Boolean(bill.pageBreakAfter?.[visible[i - 1].breakAfterKey])
+            }
+          >
             <Text style={styles.sectionTitle}>
               {i + 1}. {section.title}
             </Text>

@@ -125,7 +125,7 @@ export interface ClassTestRow {
 }
 
 export function flattenClassTest(courses: CourseDuty[]): ClassTestRow[] {
-  const rows: ClassTestRow[] = [];
+  const rows = new Map<string, ClassTestRow>();
   courses.forEach((course) => {
     course.parts.forEach((part) => {
       const entries = [
@@ -146,21 +146,66 @@ export function flattenClassTest(courses: CourseDuty[]): ClassTestRow[] {
       ];
       entries.forEach((entry) => {
         if (!entry.duties.classTest) return;
-        rows.push({
+        const teacherLine = formatTeacher(
+          entry.name,
+          entry.designation,
+          entry.department
+        );
+        const key = `${course.courseCode}\u0000${course.courseTitle}\u0000${teacherLine}`;
+        const current = rows.get(key);
+        const students = Number(entry.students.classTestStudents) || 0;
+        rows.set(key, {
           courseCode: course.courseCode,
           courseTitle: course.courseTitle,
-          teacherLine: formatTeacher(
-            entry.name,
-            entry.designation,
-            entry.department
-          ),
-          classTestCount: entry.students.classTestCount,
-          students: entry.students.classTestStudents,
+          teacherLine,
+          classTestCount: 2,
+          // Repeated parts in the same syllabus represent the same student
+          // cohort, so retain the larger total instead of duplicating it.
+          students: Math.max(Number(current?.students) || 0, students) || "",
         });
       });
     });
   });
-  return rows;
+  return Array.from(rows.values());
+}
+
+export function combineClassTestRows(
+  obeRows: ClassTestRow[],
+  nonObeRows: ClassTestRow[]
+): ClassTestRow[] {
+  const courseKey = (row: ClassTestRow) =>
+    `${row.courseCode}\u0000${row.courseTitle}`;
+  const obeCourses = new Set(obeRows.map(courseKey));
+  const nonObeStudentTotals = new Map<string, number>();
+
+  nonObeRows.forEach((row) => {
+    const key = courseKey(row);
+    // Multiple teachers in one syllabus refer to the same cohort, so the
+    // course total is represented once rather than summed per teacher.
+    nonObeStudentTotals.set(
+      key,
+      Math.max(nonObeStudentTotals.get(key) || 0, Number(row.students) || 0)
+    );
+  });
+
+  const combinedObeRows: ClassTestRow[] = obeRows.map((row) => {
+    const totalStudents =
+      (Number(row.students) || 0) +
+      (nonObeStudentTotals.get(courseKey(row)) || 0);
+    return {
+      ...row,
+      classTestCount: 2,
+      students: totalStudents || "",
+    };
+  });
+
+  // A Non-OBE teacher is shown only when that course has no OBE Class Test
+  // entry to carry the combined student total.
+  const nonObeOnlyRows = nonObeRows.filter(
+    (row) => !obeCourses.has(courseKey(row))
+  );
+
+  return [...combinedObeRows, ...nonObeOnlyRows];
 }
 
 // ------------------------------

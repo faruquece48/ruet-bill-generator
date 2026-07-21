@@ -207,6 +207,10 @@ export default function Home() {
 
           <CourseAdviserManager
             courseAdvisers={billData.courseAdvisers}
+            totalStudents={billData.courseAdviserStudentCount}
+            setTotalStudents={(value) =>
+              setBillData((prev) => ({ ...prev, courseAdviserStudentCount: value }))
+            }
             setCourseAdvisers={(data) =>
               setBillData((prev) => ({ ...prev, courseAdvisers: data }))
             }

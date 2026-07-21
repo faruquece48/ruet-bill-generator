@@ -166,6 +166,15 @@ export default function PreviewPage() {
     }));
   };
 
+  const pageBreakControl = (key: string) => ({
+    pageBreakAfter: Boolean(billData.pageBreakAfter?.[key]),
+    onPageBreakAfterChange: (checked: boolean) =>
+      setBillData((prev) => ({
+        ...prev,
+        pageBreakAfter: { ...prev.pageBreakAfter, [key]: checked },
+      })),
+  });
+
   const handleGeneratePdf = async () => {
     try {
       const blob = await pdf(<BillPdfDocument bill={billData} />).toBlob();
@@ -199,7 +208,7 @@ export default function PreviewPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6 items-start">
           {/* LEFT: customization accordion */}
           <div className="space-y-3">
-            <SectionPanel title="1. Examination Committee">
+            <SectionPanel title="1. Examination Committee" {...pageBreakControl("committee")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.committee}
                 setWidths={(v) => updateLayout("committee", v)}
@@ -213,6 +222,7 @@ export default function PreviewPage() {
                   ? "2.1 OBE (New Syllabus) — Paper Setter & Examiner"
                   : "2. List of Teachers Associated with Paper Setter & Examiner"
               }
+              {...pageBreakControl("paperSetterObe")}
             >
               <ColumnWidthEditor
                 widths={billData.layoutSettings.paperSetter}
@@ -222,7 +232,7 @@ export default function PreviewPage() {
             </SectionPanel>
 
             {billData.billInfo.evaluationSystem === "mixed" && (
-              <SectionPanel title="2.2 Non-OBE (Old Syllabus) — Paper Setter & Examiner">
+              <SectionPanel title="2.2 Non-OBE (Old Syllabus) — Paper Setter & Examiner" {...pageBreakControl("paperSetterNonObe")}>
                 <ColumnWidthEditor
                   widths={billData.layoutSettings.paperSetterNonObe}
                   setWidths={(v) => updateLayout("paperSetterNonObe", v)}
@@ -231,7 +241,7 @@ export default function PreviewPage() {
               </SectionPanel>
             )}
 
-            <SectionPanel title="3. List of Teachers Associated with Class Test">
+            <SectionPanel title="3. List of Teachers Associated with Class Test" {...pageBreakControl("classTest")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.classTest}
                 setWidths={(v) => updateLayout("classTest", v)}
@@ -239,15 +249,15 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="4. List of Teachers Associated with Assignment">
+            <SectionPanel title="4. List of Teachers Associated with Assignment" {...pageBreakControl("assignment")}>
               <ColumnWidthEditor widths={billData.layoutSettings.assignment} setWidths={(v) => updateLayout("assignment", v)} labels={assignmentLabels} />
             </SectionPanel>
 
-            <SectionPanel title="5. List of Teachers Associated with Course File">
+            <SectionPanel title="5. List of Teachers Associated with Course File" {...pageBreakControl("courseFile")}>
               <ColumnWidthEditor widths={billData.layoutSettings.courseFile} setWidths={(v) => updateLayout("courseFile", v)} labels={courseFileLabels} />
             </SectionPanel>
 
-            <SectionPanel title="6. List of Teachers Associated with Question Typing / Sketching / Printing">
+            <SectionPanel title="6. List of Teachers Associated with Question Typing / Sketching / Printing" {...pageBreakControl("questionWork")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.questionWork}
                 setWidths={(v) => updateLayout("questionWork", v)}
@@ -261,6 +271,7 @@ export default function PreviewPage() {
                   ? "7.1 OBE (New Syllabus) — Scrutiny"
                   : "7. List of Teachers Associated with Scrutiny"
               }
+              {...pageBreakControl("scrutinyObe")}
             >
               <ColumnWidthEditor
                 widths={billData.layoutSettings.scrutinyObe}
@@ -270,7 +281,7 @@ export default function PreviewPage() {
             </SectionPanel>
 
             {billData.billInfo.evaluationSystem === "mixed" && (
-              <SectionPanel title="7.2 Non-OBE (Old Syllabus) — Scrutiny">
+              <SectionPanel title="7.2 Non-OBE (Old Syllabus) — Scrutiny" {...pageBreakControl("scrutinyNonObe")}>
                 <ColumnWidthEditor
                   widths={billData.layoutSettings.scrutinyNonObe}
                   setWidths={(v) => updateLayout("scrutinyNonObe", v)}
@@ -279,7 +290,7 @@ export default function PreviewPage() {
               </SectionPanel>
             )}
 
-            <SectionPanel title="8. List of Teachers Associated with Sessional">
+            <SectionPanel title="8. List of Teachers Associated with Sessional" {...pageBreakControl("sessionalDuty")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.sessionalDuty}
                 setWidths={(v) => updateLayout("sessionalDuty", v)}
@@ -287,11 +298,11 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="9. List of Teachers Associated with Board Viva">
+            <SectionPanel title="9. List of Teachers Associated with Board Viva" {...pageBreakControl("boardViva")}>
               <ColumnWidthEditor widths={billData.layoutSettings.boardViva} setWidths={(v) => updateLayout("boardViva", v)} labels={studentDutyLabels} />
             </SectionPanel>
 
-            <SectionPanel title="10. List of Teachers Associated with Tabulation">
+            <SectionPanel title="10. List of Teachers Associated with Tabulation" {...pageBreakControl("tabulation")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.tabulation}
                 setWidths={(v) => updateLayout("tabulation", v)}
@@ -299,15 +310,15 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="11. List of Teachers Associated with Grade Sheet Preparation">
+            <SectionPanel title="11. List of Teachers Associated with Grade Sheet Preparation" {...pageBreakControl("gradeSheetPreparation")}>
               <ColumnWidthEditor widths={billData.layoutSettings.gradeSheetPreparation} setWidths={(v) => updateLayout("gradeSheetPreparation", v)} labels={gradeSheetLabels} />
             </SectionPanel>
 
-            <SectionPanel title="12. List of Teachers Associated with Grade Sheet Verification">
+            <SectionPanel title="12. List of Teachers Associated with Grade Sheet Verification" {...pageBreakControl("gradeSheetVerification")}>
               <ColumnWidthEditor widths={billData.layoutSettings.gradeSheetVerification} setWidths={(v) => updateLayout("gradeSheetVerification", v)} labels={gradeSheetLabels} />
             </SectionPanel>
 
-            <SectionPanel title="13. List of Course Advisers">
+            <SectionPanel title="13. List of Course Advisers" {...pageBreakControl("courseAdviser")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.courseAdviser}
                 setWidths={(v) => updateLayout("courseAdviser", v)}
@@ -315,7 +326,7 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="14. List of Teachers Associated with Course Coordinator">
+            <SectionPanel title="14. List of Teachers Associated with Course Coordinator" {...pageBreakControl("courseCoordinator")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.courseCoordinator}
                 setWidths={(v) => updateLayout("courseCoordinator", v)}
@@ -323,7 +334,7 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="15. List of Teachers Associated with Thesis/Project Examination">
+            <SectionPanel title="15. List of Teachers Associated with Thesis/Project Examination" {...pageBreakControl("thesis")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.thesis}
                 setWidths={(v) => updateLayout("thesis", v)}
@@ -331,7 +342,7 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="16. List of Teachers Associated with Verification of Final Result">
+            <SectionPanel title="16. List of Teachers Associated with Verification of Final Result" {...pageBreakControl("verification")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.verification}
                 setWidths={(v) => updateLayout("verification", v)}
@@ -344,7 +355,6 @@ export default function PreviewPage() {
           <div className="lg:sticky lg:top-20">
             <div className="h-[calc(100vh-7rem)] min-h-[720px] overflow-hidden rounded-xl border bg-slate-200 shadow-sm">
               <PdfPreviewViewer
-                key={JSON.stringify(billData)}
                 bill={billData}
               />
             </div>

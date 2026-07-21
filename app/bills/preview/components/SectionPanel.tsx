@@ -6,12 +6,16 @@ interface Props {
   title: string;
   defaultOpen?: boolean;
   children: React.ReactNode;
+  pageBreakAfter?: boolean;
+  onPageBreakAfterChange?: (checked: boolean) => void;
 }
 
 export default function SectionPanel({
   title,
   defaultOpen = false,
   children,
+  pageBreakAfter = false,
+  onPageBreakAfterChange,
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -29,7 +33,26 @@ export default function SectionPanel({
           <ChevronDown className="h-4 w-4 text-gray-500" />
         )}
       </button>
-      {open && <div className="border-t p-4 space-y-4">{children}</div>}
+      {open && (
+        <div className="border-t p-4 space-y-4">
+          {children}
+          {onPageBreakAfterChange && (
+            <label className="flex cursor-pointer items-start gap-2 rounded-lg border bg-slate-50 p-3 text-xs text-slate-700">
+              <input
+                type="checkbox"
+                checked={pageBreakAfter}
+                onChange={(event) =>
+                  onPageBreakAfterChange(event.target.checked)
+                }
+                className="mt-0.5"
+              />
+              <span>
+                Start the next table on a new PDF page
+              </span>
+            </label>
+          )}
+        </div>
+      )}
     </div>
   );
 }

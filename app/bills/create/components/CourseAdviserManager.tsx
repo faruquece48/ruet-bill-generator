@@ -21,11 +21,15 @@ const designationList: Designation[] = [
 interface Props {
   courseAdvisers: CourseAdviser[];
   setCourseAdvisers: (data: CourseAdviser[]) => void;
+  totalStudents: string;
+  setTotalStudents: (value: string) => void;
 }
 
 export default function CourseAdviserManager({
   courseAdvisers,
   setCourseAdvisers,
+  totalStudents,
+  setTotalStudents,
 }: Props) {
   const advisers = courseAdvisers;
   const setAdvisers = (data: CourseAdviser[]) => {
@@ -66,22 +70,25 @@ export default function CourseAdviserManager({
     setAdvisers(updated);
   };
 
-  const updateStudentCount = (index: number, value: string) => {
-    const updated = [...advisers];
-    updated[index] = {
-      ...updated[index],
-      students: value === "" ? "" : Number(value),
-    };
-    setAdvisers(updated);
-  };
-
   return (
     <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
       <h2 className="text-xl font-bold">8. List of Course Advisers</h2>
-      <Button type="button" onClick={addAdviser}>
-        <Plus className="mr-2 h-4 w-4" />
-        Add Teacher
-      </Button>
+      <div className="flex flex-wrap items-end gap-4">
+        <label className="space-y-1 text-sm font-medium">
+          <span>Total Number of Students</span>
+          <Input
+            type="number"
+            min="0"
+            value={totalStudents}
+            onChange={(e) => setTotalStudents(e.target.value)}
+            className="w-48"
+          />
+        </label>
+        <Button type="button" onClick={addAdviser}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Teacher
+        </Button>
+      </div>
       <div className="space-y-4">
         {advisers.map((adviser, index) => (
           <div key={index} className="rounded-lg border bg-slate-50 p-4">
@@ -116,13 +123,6 @@ export default function CourseAdviserManager({
                 placeholder="Department"
                 value={adviser.department}
                 onChange={(e) => updateDepartment(index, e.target.value)}
-                className="flex-1 min-w-[160px]"
-              />
-              <Input
-                type="number"
-                placeholder="No. of Students"
-                value={adviser.students}
-                onChange={(e) => updateStudentCount(index, e.target.value)}
                 className="flex-1 min-w-[160px]"
               />
               <Button
