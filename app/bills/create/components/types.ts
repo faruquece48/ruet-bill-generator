@@ -198,6 +198,7 @@ export interface ExaminationBillData {
   verificationStudentCount: string;
   courseCoordinatorTeachers: CourseCoordinatorTeacher[];
   layoutSettings: TableLayoutSettings;
+  layoutSpacing: { sectionGap: number; footerArea: number };
 }
 
 // ------------------------------

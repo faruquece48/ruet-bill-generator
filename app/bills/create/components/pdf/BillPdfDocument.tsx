@@ -30,7 +30,7 @@ Font.registerHyphenationCallback((word) => [word]);
 const BORDER = "#000000";
 const BW = 0.75;
 const styles = StyleSheet.create({
-  page: { paddingTop: 30, paddingBottom: 110, paddingHorizontal: 36, fontSize: 10, fontFamily: "Times-Roman" },
+  page: { paddingTop: 30, paddingBottom: 68, paddingHorizontal: 36, fontSize: 10, fontFamily: "Times-Roman" },
   headerBlock: { textAlign: "center", marginBottom: 14 },
   scriptLine: { fontSize: 9, fontFamily: "MonotypeCorsiva", marginBottom: 2 },
   deptLine: { fontSize: 10, marginBottom: 2 },
@@ -86,10 +86,9 @@ const styles = StyleSheet.create({
   cellBottomEdge: { borderBottomWidth: BW },
   center: { textAlign: "center" },
   // Right-corner footer block: fixed width, anchored to the bottom-right,
-  // text centered within that block. A blank spacer sits above "Chairman"
-  // to leave room for an actual pen signature.
+  // text centered within that block. The page's reserved footer area is
+  // controlled from Preview & Layout Customization.
   footer: { position: "absolute", bottom: 24, right: 36, width: 190, textAlign: "center", fontSize: 10 },
-  signatureSpace: { height: 12 },
 });
 interface Col {
   key: string;
@@ -328,7 +327,6 @@ function MergedColumnTable({
 function Footer({ bill }: { bill: ExaminationBillData["billInfo"] }) {
   return (
     <View style={styles.footer} fixed>
-      <View style={styles.signatureSpace} />
       <Text>Chairman</Text>
       <Text>Examination Committee</Text>
       <Text>{buildExamLine(bill)}</Text>
@@ -410,7 +408,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     },
     {
       title: "List of Teachers Associated with Paper Setter & Examiner",
-      breakAfterKey: isMixedEvaluation ? "paperSetterNonObe" : "paperSetterObe",
+      breakAfterKey: "paperSetterObe",
       hasData: paperSetterRows.length > 0,
       includeInBacklog: true,
       content: (
@@ -427,7 +425,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
             groups={obePaperSetterGroups}
           />
           {isMixedEvaluation && (
-            <View break={Boolean(bill.pageBreakAfter?.paperSetterObe)}>
+            <View break={Boolean(bill.pageBreakAfter?.paperSetterNonObe)}>
               <Text style={styles.subSectionTitle}>2.2 Non-OBE (Old Syllabus)</Text>
               <GroupedTable
                 courseWidth={lw.paperSetterNonObe.course ?? 30}
@@ -507,23 +505,25 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       hasData: questionTeachers.length > 0,
       includeInBacklog: true,
       content: (
-        <MergedColumnTable
+        <SimpleTable
           columns={[
             { key: "sl", label: "Sl. No.", width: lw.questionWork.sl ?? 10, align: "center" },
             { key: "teacherLine", label: "Name of The Teachers & Designation", width: lw.questionWork.teacherLine ?? 65 },
             { key: "questionNumber", label: "No. of Question", width: lw.questionWork.questionNumber ?? 25, align: "center" },
           ]}
-          rows={questionTeachers.map((q) => ({
+          rows={questionTeachers.map((q, index) => ({
             teacherLine: formatTeacher(q.name, q.designation, q.department),
+            questionNumber:
+              index === Math.floor((questionTeachers.length - 1) / 2)
+                ? questionShare
+                : "\u200B",
           }))}
-          mergeKey="questionNumber"
-          mergeValue={questionShare}
         />
       ),
     },
     {
       title: "List of Teachers Associated with Scrutiny",
-      breakAfterKey: isMixedEvaluation ? "scrutinyNonObe" : "scrutinyObe",
+      breakAfterKey: "scrutinyObe",
       hasData: allScrutiny.length > 0,
       includeInBacklog: true,
       content: (
@@ -541,7 +541,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
             }))}
           />
           {isMixedEvaluation && (
-            <View break={Boolean(bill.pageBreakAfter?.scrutinyObe)}>
+            <View break={Boolean(bill.pageBreakAfter?.scrutinyNonObe)}>
               <Text style={styles.subSectionTitle}>7.2 Non-OBE (Old Syllabus)</Text>
               <SimpleTable
                 columns={[
@@ -766,6 +766,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
           mergeValue={`${bill.practicalSurveyingStudentCount || "27"}/${
             bill.practicalSurveyingTeachers.filter((teacher) => teacher.name.trim()).length || 1
           }`}
+          keepTogether
         />
       ),
     },
@@ -777,7 +778,14 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
   });
   return (
     <Document>
-      <Page size="LEGAL" style={styles.page} wrap>
+      <Page
+        size="LEGAL"
+        style={[
+          styles.page,
+          { paddingBottom: Math.max(45, bill.layoutSpacing?.footerArea ?? 68) },
+        ]}
+        wrap
+      >
         <View style={styles.billNo}>
           <Text>Bill No.: {bill.billInfo.billNo || "—"}</Text>
         </View>
@@ -794,11 +802,8 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
         {visible.map((section, i) => (
           <View
             key={section.title}
-            style={{ marginBottom: 6 }}
-            break={
-              i > 0 &&
-              Boolean(bill.pageBreakAfter?.[visible[i - 1].breakAfterKey])
-            }
+            style={{ marginBottom: 6 + (bill.layoutSpacing?.sectionGap ?? 0) }}
+            break={Boolean(bill.pageBreakAfter?.[section.breakAfterKey])}
           >
             <Text style={styles.sectionTitle}>
               {i + 1}. {section.title}

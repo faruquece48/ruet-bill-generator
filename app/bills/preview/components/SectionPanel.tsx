@@ -8,6 +8,7 @@ interface Props {
   children: React.ReactNode;
   pageBreakAfter?: boolean;
   onPageBreakAfterChange?: (checked: boolean) => void;
+  visible?: boolean;
 }
 
 export default function SectionPanel({
@@ -16,8 +17,10 @@ export default function SectionPanel({
   children,
   pageBreakAfter = false,
   onPageBreakAfterChange,
+  visible = true,
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
+  if (!visible) return null;
 
   return (
     <div className="rounded-xl border bg-white shadow-sm">
@@ -47,7 +50,7 @@ export default function SectionPanel({
                 className="mt-0.5"
               />
               <span>
-                Start the next table on a new PDF page
+                Start this table on a new PDF page
               </span>
             </label>
           )}

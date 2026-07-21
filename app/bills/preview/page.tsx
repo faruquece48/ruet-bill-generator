@@ -12,6 +12,17 @@ import { pdf } from "@react-pdf/renderer";
 import BillPdfDocument from "../create/components/pdf/BillPdfDocument";
 import SectionPanel from "./components/SectionPanel";
 import ColumnWidthEditor from "./components/ColumnWidthEditor";
+import {
+  combineClassTestRows,
+  deriveGradeSheetRows,
+  flattenAssignment,
+  flattenBoardViva,
+  flattenClassTest,
+  flattenCourseFile,
+  flattenPaperSetter,
+  flattenSessional,
+  flattenTabulation,
+} from "../create/components/pdf/pdfHelpers";
 
 const PdfPreviewViewer = dynamic(
   () => import("./components/PdfPreviewViewer"),
@@ -136,6 +147,26 @@ function mergeLayoutSettings(
 export default function PreviewPage() {
   const [billData, setBillData] = useState<ExaminationBillData>(emptyBill);
   const hydrated = useRef(false);
+  const isBacklog = billData.billInfo.examType === "backlog";
+  const isMixedEvaluation = billData.billInfo.evaluationSystem === "mixed";
+  const paperSetterRows = isMixedEvaluation
+    ? [...flattenPaperSetter(billData.courseDuties.obe), ...flattenPaperSetter(billData.courseDuties.nonObe)]
+    : flattenPaperSetter(billData.courseDuties.obe);
+  const obeClassTestRows = flattenClassTest(billData.courseDuties.obe);
+  const classTestRows = isMixedEvaluation
+    ? combineClassTestRows(obeClassTestRows, flattenClassTest(billData.courseDuties.nonObe))
+    : obeClassTestRows;
+  const assignmentRows = flattenAssignment(billData.courseDuties.obe);
+  const courseFileRows = flattenCourseFile(billData.courseDuties.obe, billData.sessionalDuties);
+  const sessionalRows = flattenSessional(billData.sessionalDuties);
+  const boardVivaRows = flattenBoardViva(billData.sessionalDuties);
+  const tabulationRows = flattenTabulation(billData.studentDuties);
+  const gradeSheetRows = deriveGradeSheetRows(billData.studentDuties, billData.tabulationStudentCount);
+  const hasScrutiny = isMixedEvaluation
+    ? billData.scrutinies.obe.length + billData.scrutinies.nonObe.length > 0
+    : billData.scrutinies.obe.length > 0;
+  const isFourthYearEven = billData.billInfo.year === "4th Year" && billData.billInfo.semester === "Even";
+  const isFirstYearEven = billData.billInfo.year === "1st Year" && billData.billInfo.semester === "Even";
 
   useEffect(() => {
     const saved = loadCurrentWork();
@@ -208,7 +239,7 @@ export default function PreviewPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6 items-start">
           {/* LEFT: customization accordion */}
           <div className="space-y-3">
-            <SectionPanel title="1. Examination Committee" {...pageBreakControl("committee")}>
+            <SectionPanel visible={billData.committees.some((member) => member.name.trim() !== "")} title="1. Examination Committee" {...pageBreakControl("committee")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.committee}
                 setWidths={(v) => updateLayout("committee", v)}
@@ -216,7 +247,56 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
+            <SectionPanel title="Page Spacing">
+              <div>
+                <label className="space-y-1 text-sm font-medium">
+                  <span>Gap after each table section (pt)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={billData.layoutSpacing.sectionGap}
+                    onChange={(event) =>
+                      setBillData((prev) => ({
+                        ...prev,
+                        layoutSpacing: {
+                          ...prev.layoutSpacing,
+                          sectionGap: Number(event.target.value) || 0,
+                        },
+                      }))
+                    }
+                    className="w-full rounded-md border px-3 py-2 text-sm"
+                  />
+                </label>
+              </div>
+            </SectionPanel>
+
+            <SectionPanel title="Footer Area">
+              <div>
+                <label className="space-y-1 text-sm font-medium">
+                  <span>Reserved footer area (pt)</span>
+                  <input
+                    type="number"
+                    min="45"
+                    max="200"
+                    value={billData.layoutSpacing.footerArea ?? 68}
+                    onChange={(event) =>
+                      setBillData((prev) => ({
+                        ...prev,
+                        layoutSpacing: {
+                          ...prev.layoutSpacing,
+                          footerArea: Number(event.target.value) || 68,
+                        },
+                      }))
+                    }
+                    className="w-full rounded-md border px-3 py-2 text-sm"
+                  />
+                </label>
+              </div>
+            </SectionPanel>
+
             <SectionPanel
+              visible={paperSetterRows.length > 0}
               title={
                 billData.billInfo.evaluationSystem === "mixed"
                   ? "2.1 OBE (New Syllabus) — Paper Setter & Examiner"
@@ -232,7 +312,7 @@ export default function PreviewPage() {
             </SectionPanel>
 
             {billData.billInfo.evaluationSystem === "mixed" && (
-              <SectionPanel title="2.2 Non-OBE (Old Syllabus) — Paper Setter & Examiner" {...pageBreakControl("paperSetterNonObe")}>
+              <SectionPanel visible={paperSetterRows.length > 0} title="2.2 Non-OBE (Old Syllabus) — Paper Setter & Examiner" {...pageBreakControl("paperSetterNonObe")}>
                 <ColumnWidthEditor
                   widths={billData.layoutSettings.paperSetterNonObe}
                   setWidths={(v) => updateLayout("paperSetterNonObe", v)}
@@ -241,7 +321,7 @@ export default function PreviewPage() {
               </SectionPanel>
             )}
 
-            <SectionPanel title="3. List of Teachers Associated with Class Test" {...pageBreakControl("classTest")}>
+            <SectionPanel visible={!isBacklog && classTestRows.length > 0} title="3. List of Teachers Associated with Class Test" {...pageBreakControl("classTest")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.classTest}
                 setWidths={(v) => updateLayout("classTest", v)}
@@ -249,15 +329,15 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="4. List of Teachers Associated with Assignment" {...pageBreakControl("assignment")}>
+            <SectionPanel visible={!isBacklog && assignmentRows.length > 0} title="4. List of Teachers Associated with Assignment" {...pageBreakControl("assignment")}>
               <ColumnWidthEditor widths={billData.layoutSettings.assignment} setWidths={(v) => updateLayout("assignment", v)} labels={assignmentLabels} />
             </SectionPanel>
 
-            <SectionPanel title="5. List of Teachers Associated with Course File" {...pageBreakControl("courseFile")}>
+            <SectionPanel visible={!isBacklog && courseFileRows.length > 0} title="5. List of Teachers Associated with Course File" {...pageBreakControl("courseFile")}>
               <ColumnWidthEditor widths={billData.layoutSettings.courseFile} setWidths={(v) => updateLayout("courseFile", v)} labels={courseFileLabels} />
             </SectionPanel>
 
-            <SectionPanel title="6. List of Teachers Associated with Question Typing / Sketching / Printing" {...pageBreakControl("questionWork")}>
+            <SectionPanel visible={billData.questionWorks.some((teacher) => teacher.name.trim() !== "")} title="6. List of Teachers Associated with Question Typing / Sketching / Printing" {...pageBreakControl("questionWork")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.questionWork}
                 setWidths={(v) => updateLayout("questionWork", v)}
@@ -266,6 +346,7 @@ export default function PreviewPage() {
             </SectionPanel>
 
             <SectionPanel
+              visible={hasScrutiny}
               title={
                 billData.billInfo.evaluationSystem === "mixed"
                   ? "7.1 OBE (New Syllabus) — Scrutiny"
@@ -281,7 +362,7 @@ export default function PreviewPage() {
             </SectionPanel>
 
             {billData.billInfo.evaluationSystem === "mixed" && (
-              <SectionPanel title="7.2 Non-OBE (Old Syllabus) — Scrutiny" {...pageBreakControl("scrutinyNonObe")}>
+              <SectionPanel visible={hasScrutiny} title="7.2 Non-OBE (Old Syllabus) — Scrutiny" {...pageBreakControl("scrutinyNonObe")}>
                 <ColumnWidthEditor
                   widths={billData.layoutSettings.scrutinyNonObe}
                   setWidths={(v) => updateLayout("scrutinyNonObe", v)}
@@ -290,7 +371,7 @@ export default function PreviewPage() {
               </SectionPanel>
             )}
 
-            <SectionPanel title="8. List of Teachers Associated with Sessional" {...pageBreakControl("sessionalDuty")}>
+            <SectionPanel visible={!isBacklog && sessionalRows.length > 0} title="8. List of Teachers Associated with Sessional" {...pageBreakControl("sessionalDuty")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.sessionalDuty}
                 setWidths={(v) => updateLayout("sessionalDuty", v)}
@@ -298,11 +379,11 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="9. List of Teachers Associated with Board Viva" {...pageBreakControl("boardViva")}>
+            <SectionPanel visible={boardVivaRows.length > 0} title="9. List of Teachers Associated with Board Viva" {...pageBreakControl("boardViva")}>
               <ColumnWidthEditor widths={billData.layoutSettings.boardViva} setWidths={(v) => updateLayout("boardViva", v)} labels={studentDutyLabels} />
             </SectionPanel>
 
-            <SectionPanel title="10. List of Teachers Associated with Tabulation" {...pageBreakControl("tabulation")}>
+            <SectionPanel visible={tabulationRows.length > 0} title="10. List of Teachers Associated with Tabulation" {...pageBreakControl("tabulation")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.tabulation}
                 setWidths={(v) => updateLayout("tabulation", v)}
@@ -310,15 +391,15 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="11. List of Teachers Associated with Grade Sheet Preparation" {...pageBreakControl("gradeSheetPreparation")}>
+            <SectionPanel visible={gradeSheetRows.length > 0} title="11. List of Teachers Associated with Grade Sheet Preparation" {...pageBreakControl("gradeSheetPreparation")}>
               <ColumnWidthEditor widths={billData.layoutSettings.gradeSheetPreparation} setWidths={(v) => updateLayout("gradeSheetPreparation", v)} labels={gradeSheetLabels} />
             </SectionPanel>
 
-            <SectionPanel title="12. List of Teachers Associated with Grade Sheet Verification" {...pageBreakControl("gradeSheetVerification")}>
+            <SectionPanel visible={!isBacklog && gradeSheetRows.length > 0} title="12. List of Teachers Associated with Grade Sheet Verification" {...pageBreakControl("gradeSheetVerification")}>
               <ColumnWidthEditor widths={billData.layoutSettings.gradeSheetVerification} setWidths={(v) => updateLayout("gradeSheetVerification", v)} labels={gradeSheetLabels} />
             </SectionPanel>
 
-            <SectionPanel title="13. List of Course Advisers" {...pageBreakControl("courseAdviser")}>
+            <SectionPanel visible={!isBacklog && billData.courseAdvisers.length > 0} title="13. List of Course Advisers" {...pageBreakControl("courseAdviser")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.courseAdviser}
                 setWidths={(v) => updateLayout("courseAdviser", v)}
@@ -326,7 +407,7 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="14. List of Teachers Associated with Course Coordinator" {...pageBreakControl("courseCoordinator")}>
+            <SectionPanel visible={!isBacklog && isFourthYearEven && billData.courseCoordinatorTeachers.length > 0} title="14. List of Teachers Associated with Course Coordinator" {...pageBreakControl("courseCoordinator")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.courseCoordinator}
                 setWidths={(v) => updateLayout("courseCoordinator", v)}
@@ -334,7 +415,7 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="15. List of Teachers Associated with Thesis/Project Examination" {...pageBreakControl("thesis")}>
+            <SectionPanel visible={!isBacklog && isFourthYearEven && billData.thesisTeachers.length > 0} title="15. List of Teachers Associated with Thesis/Project Examination" {...pageBreakControl("thesis")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.thesis}
                 setWidths={(v) => updateLayout("thesis", v)}
@@ -342,7 +423,7 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel title="16. List of Teachers Associated with Verification of Final Result" {...pageBreakControl("verification")}>
+            <SectionPanel visible={billData.billInfo.hasGraduatingStudents === "yes" && billData.verificationTeachers.length > 0} title="16. List of Teachers Associated with Verification of Final Result" {...pageBreakControl("verification")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.verification}
                 setWidths={(v) => updateLayout("verification", v)}
@@ -350,8 +431,7 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            {billData.billInfo.year === "1st Year" &&
-              billData.billInfo.semester === "Even" && (
+            {isFirstYearEven && !isBacklog && billData.practicalSurveyingTeachers.some((teacher) => teacher.name.trim() !== "") && (
                 <SectionPanel
                   title="17. List of Teachers Associated with Practical Surveying (CE 1226)"
                   {...pageBreakControl("practicalSurveying")}
