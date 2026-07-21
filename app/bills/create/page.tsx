@@ -11,6 +11,7 @@ import CourseAdviserManager from "./components/CourseAdviserManager";
 import ThesisManager from "./components/ThesisManager";
 import VerificationManager from "./components/VerificationManager";
 import CourseCoordinatorManager from "./components/CourseCoordinatorManager";
+import PracticalSurveyingManager from "./components/PracticalSurveyingManager";
 import Toolbar from "./components/Toolbar";
 import DraftDialog from "./components/DraftDialog";
 import type { ExaminationBillData } from "./components/types";
@@ -57,6 +58,9 @@ export default function Home() {
   const isVerificationApplicable =
     billData.billInfo.hasGraduatingStudents === "yes";
   const isCourseCoordinatorApplicable = isThesisApplicable;
+  const isPracticalSurveyingApplicable =
+    billData.billInfo.year === "1st Year" &&
+    billData.billInfo.semester === "Even";
 
   let sectionCounter = 9;
   const thesisSectionNumber = sectionCounter;
@@ -215,6 +219,26 @@ export default function Home() {
               setBillData((prev) => ({ ...prev, courseAdvisers: data }))
             }
           />
+
+          {isPracticalSurveyingApplicable && (
+            <PracticalSurveyingManager
+              sectionNumber={14}
+              teachers={billData.practicalSurveyingTeachers}
+              setTeachers={(teachers) =>
+                setBillData((prev) => ({
+                  ...prev,
+                  practicalSurveyingTeachers: teachers,
+                }))
+              }
+              totalStudents={billData.practicalSurveyingStudentCount}
+              setTotalStudents={(value) =>
+                setBillData((prev) => ({
+                  ...prev,
+                  practicalSurveyingStudentCount: value,
+                }))
+              }
+            />
+          )}
 
           {isThesisApplicable && (
             <ThesisManager

@@ -190,6 +190,8 @@ export interface ExaminationBillData {
   studentDuties: StudentDuty[];
   courseAdvisers: CourseAdviser[];
   courseAdviserStudentCount: string;
+  practicalSurveyingTeachers: VerificationTeacher[];
+  practicalSurveyingStudentCount: string;
   thesisTeachers: ThesisTeacher[];
   verificationTeachers: VerificationTeacher[];
   verificationStudentCount: string;
@@ -224,6 +226,7 @@ export interface TableLayoutSettings {
   gradeSheetPreparation: ColumnWidths;
   gradeSheetVerification: ColumnWidths;
   courseAdviser: ColumnWidths;
+  practicalSurveying: ColumnWidths;
   thesis: ColumnWidths;
   verification: ColumnWidths;
   courseCoordinator: ColumnWidths;
@@ -300,6 +303,7 @@ export const defaultLayoutSettings: TableLayoutSettings = {
   gradeSheetPreparation: { sl: 10, teacherLine: 65, studentsDisplay: 25 },
   gradeSheetVerification: { sl: 10, teacherLine: 65, studentsDisplay: 25 },
   courseAdviser: { sl: 10, teacherLine: 65, students: 25 },
+  practicalSurveying: { sl: 8, teacherLine: 72, students: 20 },
   thesis: {
     sl: 8,
     teacherLine: 42,

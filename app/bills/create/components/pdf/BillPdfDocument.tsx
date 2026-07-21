@@ -330,6 +330,8 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
   const isThesisApplicable = bill.billInfo.year === "4th Year" && bill.billInfo.semester === "Even";
   const isVerificationApplicable = bill.billInfo.hasGraduatingStudents === "yes";
   const isCourseCoordinatorApplicable = isThesisApplicable;
+  const isPracticalSurveyingApplicable =
+    bill.billInfo.year === "1st Year" && bill.billInfo.semester === "Even";
   const isMixedEvaluation = bill.billInfo.evaluationSystem === "mixed";
   const obePaperSetterRows = flattenPaperSetter(bill.courseDuties.obe);
   const nonObePaperSetterRows = flattenPaperSetter(bill.courseDuties.nonObe);
@@ -653,6 +655,36 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
               ? `${bill.courseAdviserStudentCount}/${bill.courseAdvisers.filter((a) => a.name.trim()).length || 1}`
               : "—"
           }
+        />
+      ),
+    },
+    {
+      title: "List of Teachers Associated with Practical Surveying (CE 1226)",
+      breakAfterKey: "practicalSurveying",
+      hasData:
+        isPracticalSurveyingApplicable &&
+        bill.practicalSurveyingTeachers.some((teacher) => teacher.name.trim()),
+      includeInBacklog: false,
+      content: (
+        <MergedColumnTable
+          columns={[
+            { key: "sl", label: "SL No.", width: lw.practicalSurveying.sl ?? 8, align: "center" },
+            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.practicalSurveying.teacherLine ?? 72 },
+            { key: "students", label: "No. of Students", width: lw.practicalSurveying.students ?? 20, align: "center" },
+          ]}
+          rows={bill.practicalSurveyingTeachers
+            .filter((teacher) => teacher.name.trim())
+            .map((teacher) => ({
+              teacherLine: formatTeacher(
+                teacher.name,
+                teacher.designation,
+                teacher.department
+              ),
+            }))}
+          mergeKey="students"
+          mergeValue={`${bill.practicalSurveyingStudentCount || "27"}/${
+            bill.practicalSurveyingTeachers.filter((teacher) => teacher.name.trim()).length || 1
+          }`}
         />
       ),
     },

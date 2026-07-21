@@ -14,7 +14,7 @@ export function buildExamLine(bill: BillInfo): string {
   const semester = bill.examType === "semester" ? bill.semester || "" : "";
   const examYear = bill.examYear || "";
   const typeLabel = bill.examType === "semester" ? "Semester" : "Backlog";
-  return `${year} ${semester} ${typeLabel} Examination-${examYear}`
+  return `${year} ${semester} ${typeLabel} Examination ${examYear}`
     .replace(/\s+/g, " ")
     .trim();
 }
