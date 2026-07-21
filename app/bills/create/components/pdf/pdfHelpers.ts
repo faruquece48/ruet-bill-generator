@@ -438,18 +438,24 @@ export function flattenTabulation(duties: StudentDuty[]): TabulationRow[] {
 
 // ------------------------------
 // Grade Sheet Preparation & Verification
-// Same teacher list as Tabulation, but student count divided by 3,
-// displayed as "N/3" (e.g. tabulation students=31 -> "31/3")
+// Same teacher list and shared student total as Tabulation. The total is
+// divided by the number of teachers engaged in these sections.
 // ------------------------------
 export interface GradeSheetRow {
   teacherLine: string;
   studentsDisplay: string; // e.g. "31/3"
 }
 
-export function deriveGradeSheetRows(duties: StudentDuty[]): GradeSheetRow[] {
+export function deriveGradeSheetRows(
+  duties: StudentDuty[],
+  totalStudents: string
+): GradeSheetRow[] {
+  const studentsDisplay =
+    totalStudents && duties.length > 0 ? `${totalStudents}/${duties.length}` : "";
+
   return duties.map((d) => ({
     teacherLine: formatTeacher(d.name, d.designation, d.department),
-    studentsDisplay: d.students === "" ? "" : `${d.students}/3`,
+    studentsDisplay,
   }));
 }
 

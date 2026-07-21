@@ -22,12 +22,16 @@ interface Props {
   title?: string;
   studentDuties: StudentDuty[];
   setStudentDuties: (data: StudentDuty[]) => void;
+  totalStudents: string;
+  setTotalStudents: (value: string) => void;
 }
 
 export default function StudentDutyManager({
   title = "7. List of Teachers Associated with Tabulation",
   studentDuties,
   setStudentDuties,
+  totalStudents,
+  setTotalStudents,
 }: Props) {
   const records = studentDuties;
   const setRecords = (data: StudentDuty[]) => {
@@ -68,26 +72,29 @@ export default function StudentDutyManager({
     setRecords(updated);
   };
 
-  const updateStudent = (index: number, value: string) => {
-    const updated = [...records];
-    updated[index] = {
-      ...updated[index],
-      students: value === "" ? "" : Number(value),
-    };
-    setRecords(updated);
-  };
-
   return (
     <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
       <h2 className="text-xl font-bold">{title}</h2>
-      <Button type="button" onClick={addRecord}>
-        <Plus className="mr-2 h-4 w-4" />
-        Add Teacher
-      </Button>
+      <div className="flex flex-wrap items-end gap-4">
+        <label className="space-y-1 text-sm font-medium">
+          <span>Total Number of Students</span>
+          <Input
+            type="number"
+            min="0"
+            value={totalStudents}
+            onChange={(e) => setTotalStudents(e.target.value)}
+            className="w-48"
+          />
+        </label>
+        <Button type="button" onClick={addRecord}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Teacher
+        </Button>
+      </div>
       <div className="space-y-4">
         {records.map((teacher, index) => (
           <div key={index} className="rounded-lg border bg-slate-50 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_1fr_1fr_1fr_auto] gap-4 items-center">
+            <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_1fr_1fr_auto] gap-4 items-center">
               <div className="flex h-10 w-12 items-center justify-center rounded-md border bg-white text-sm font-semibold text-slate-700">
                 {String(index + 1).padStart(2, "0")}.
               </div>
@@ -117,12 +124,6 @@ export default function StudentDutyManager({
                 placeholder="Department"
                 value={teacher.department}
                 onChange={(e) => updateDepartment(index, e.target.value)}
-              />
-              <Input
-                type="number"
-                placeholder="No. of Students"
-                value={teacher.students}
-                onChange={(e) => updateStudent(index, e.target.value)}
               />
               <Button
                 type="button"

@@ -79,11 +79,11 @@ export default function VerificationManager({
       </h2>
       <div>
         <label className="mb-1 block text-sm text-gray-600">
-          No. of Students
+          Total Number of Students
         </label>
         <Input
           className="max-w-xs"
-          placeholder="e.g. 31/7"
+          placeholder="e.g. 31"
           value={studentCount}
           onChange={(e) => setStudentCount(e.target.value)}
         />

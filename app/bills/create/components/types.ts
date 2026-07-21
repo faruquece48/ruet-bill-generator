@@ -188,6 +188,7 @@ export interface ExaminationBillData {
   pageBreakAfter: Record<string, boolean>;
   scrutinies: { obe: ScrutinyTeacher[]; nonObe: ScrutinyTeacher[] };
   studentDuties: StudentDuty[];
+  tabulationStudentCount: string;
   courseAdvisers: CourseAdviser[];
   courseAdviserStudentCount: string;
   practicalSurveyingTeachers: VerificationTeacher[];

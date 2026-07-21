@@ -97,7 +97,10 @@ export default function PreviewDocument({ bill }: Props) {
   const sessionalRows = flattenSessional(bill.sessionalDuties);
   const boardVivaRows = flattenBoardViva(bill.sessionalDuties);
   const tabulationRows = flattenTabulation(bill.studentDuties);
-  const gradeSheetRows = deriveGradeSheetRows(bill.studentDuties);
+  const gradeSheetRows = deriveGradeSheetRows(
+    bill.studentDuties,
+    bill.tabulationStudentCount
+  );
   const allScrutiny = isMixedEvaluation
     ? [...bill.scrutinies.obe, ...bill.scrutinies.nonObe]
     : bill.scrutinies.obe;
@@ -307,7 +310,7 @@ export default function PreviewDocument({ bill }: Props) {
           widths={bill.layoutSettings.tabulation}
           showSerial
           mergeColumnKey="students"
-          mergeValue={tabulationRows[0]?.students ?? "—"}
+          mergeValue={bill.tabulationStudentCount || "—"}
         />
       ),
     },
@@ -411,7 +414,11 @@ export default function PreviewDocument({ bill }: Props) {
           widths={bill.layoutSettings.verification}
           showSerial
           mergeColumnKey="students"
-          mergeValue={bill.verificationStudentCount || "—"}
+          mergeValue={
+            bill.verificationStudentCount
+              ? `${bill.verificationStudentCount}/${bill.verificationTeachers.filter((teacher) => teacher.name.trim()).length || 1}`
+              : "—"
+          }
         />
       ),
     },

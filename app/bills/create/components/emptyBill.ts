@@ -60,6 +60,7 @@ export const emptyBill: ExaminationBillData = {
   pageBreakAfter: {},
   scrutinies: { obe: [], nonObe: [] },
   studentDuties: [],
+  tabulationStudentCount: "",
   courseAdvisers: [],
   courseAdviserStudentCount: "",
   practicalSurveyingTeachers: [

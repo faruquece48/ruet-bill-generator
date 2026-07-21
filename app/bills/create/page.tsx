@@ -68,6 +68,8 @@ export default function Home() {
   const verificationSectionNumber = sectionCounter;
   if (isVerificationApplicable) sectionCounter++;
   const courseCoordinatorSectionNumber = sectionCounter;
+  const practicalSurveyingSectionNumber =
+    courseCoordinatorSectionNumber + (isCourseCoordinatorApplicable ? 1 : 0);
 
   // ------------------------
   // Toolbar Handlers
@@ -204,6 +206,10 @@ export default function Home() {
 
           <StudentDutyManager
             studentDuties={billData.studentDuties}
+            totalStudents={billData.tabulationStudentCount}
+            setTotalStudents={(value) =>
+              setBillData((prev) => ({ ...prev, tabulationStudentCount: value }))
+            }
             setStudentDuties={(data) =>
               setBillData((prev) => ({ ...prev, studentDuties: data }))
             }
@@ -219,26 +225,6 @@ export default function Home() {
               setBillData((prev) => ({ ...prev, courseAdvisers: data }))
             }
           />
-
-          {isPracticalSurveyingApplicable && (
-            <PracticalSurveyingManager
-              sectionNumber={14}
-              teachers={billData.practicalSurveyingTeachers}
-              setTeachers={(teachers) =>
-                setBillData((prev) => ({
-                  ...prev,
-                  practicalSurveyingTeachers: teachers,
-                }))
-              }
-              totalStudents={billData.practicalSurveyingStudentCount}
-              setTotalStudents={(value) =>
-                setBillData((prev) => ({
-                  ...prev,
-                  practicalSurveyingStudentCount: value,
-                }))
-              }
-            />
-          )}
 
           {isThesisApplicable && (
             <ThesisManager
@@ -279,6 +265,26 @@ export default function Home() {
                 setBillData((prev) => ({
                   ...prev,
                   courseCoordinatorTeachers: data,
+                }))
+              }
+            />
+          )}
+
+          {isPracticalSurveyingApplicable && (
+            <PracticalSurveyingManager
+              sectionNumber={practicalSurveyingSectionNumber}
+              teachers={billData.practicalSurveyingTeachers}
+              setTeachers={(teachers) =>
+                setBillData((prev) => ({
+                  ...prev,
+                  practicalSurveyingTeachers: teachers,
+                }))
+              }
+              totalStudents={billData.practicalSurveyingStudentCount}
+              setTotalStudents={(value) =>
+                setBillData((prev) => ({
+                  ...prev,
+                  practicalSurveyingStudentCount: value,
                 }))
               }
             />

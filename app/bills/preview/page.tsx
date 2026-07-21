@@ -326,20 +326,6 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            {billData.billInfo.year === "1st Year" &&
-              billData.billInfo.semester === "Even" && (
-                <SectionPanel
-                  title="14. List of Teachers Associated with Practical Surveying (CE 1226)"
-                  {...pageBreakControl("practicalSurveying")}
-                >
-                  <ColumnWidthEditor
-                    widths={billData.layoutSettings.practicalSurveying}
-                    setWidths={(v) => updateLayout("practicalSurveying", v)}
-                    labels={studentDutyLabels}
-                  />
-                </SectionPanel>
-              )}
-
             <SectionPanel title="14. List of Teachers Associated with Course Coordinator" {...pageBreakControl("courseCoordinator")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.courseCoordinator}
@@ -363,6 +349,20 @@ export default function PreviewPage() {
                 labels={verificationLabels}
               />
             </SectionPanel>
+
+            {billData.billInfo.year === "1st Year" &&
+              billData.billInfo.semester === "Even" && (
+                <SectionPanel
+                  title="17. List of Teachers Associated with Practical Surveying (CE 1226)"
+                  {...pageBreakControl("practicalSurveying")}
+                >
+                  <ColumnWidthEditor
+                    widths={billData.layoutSettings.practicalSurveying}
+                    setWidths={(v) => updateLayout("practicalSurveying", v)}
+                    labels={studentDutyLabels}
+                  />
+                </SectionPanel>
+              )}
           </div>
 
           {/* RIGHT: paginated preview rendered by the same PDF document */}

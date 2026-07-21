@@ -254,11 +254,13 @@ function MergedColumnTable({
   rows,
   mergeKey,
   mergeValue,
+  keepTogether = false,
 }: {
   columns: Col[];
   rows: Record<string, any>[];
   mergeKey: string;
   mergeValue: React.ReactNode;
+  keepTogether?: boolean;
 }) {
   const normalizedColumns = normalizeColumns(columns);
   const mergeCol = normalizedColumns.find((c) => c.key === mergeKey)!;
@@ -270,7 +272,7 @@ function MergedColumnTable({
   const hasLeft = leftCols.length > 0;
   const hasRight = rightCols.length > 0;
   return (
-    <View style={styles.table}>
+    <View style={styles.table} wrap={!keepTogether}>
       <View style={[styles.row, styles.rowTopEdge]} wrap={false}>
         {normalizedColumns.map((c, i) => (
           <View key={c.key} style={[styles.headerCell, { width: `${c.width}%` }, i === 0 ? styles.cellLeftEdge : {}]}>
@@ -350,7 +352,10 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
   const sessionalRows = flattenSessional(bill.sessionalDuties);
   const boardVivaRows = flattenBoardViva(bill.sessionalDuties);
   const tabulationRows = flattenTabulation(bill.studentDuties);
-  const gradeSheetRows = deriveGradeSheetRows(bill.studentDuties);
+  const gradeSheetRows = deriveGradeSheetRows(
+    bill.studentDuties,
+    bill.tabulationStudentCount
+  );
   const allScrutiny = isMixedEvaluation
     ? [...bill.scrutinies.obe, ...bill.scrutinies.nonObe]
     : bill.scrutinies.obe;
@@ -592,7 +597,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       ]}
       rows={tabulationRows}
       mergeKey="students"
-      mergeValue={tabulationRows[0]?.students ?? "—"}
+      mergeValue={bill.tabulationStudentCount || "—"}
     />
   ),
 },
@@ -655,36 +660,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
               ? `${bill.courseAdviserStudentCount}/${bill.courseAdvisers.filter((a) => a.name.trim()).length || 1}`
               : "—"
           }
-        />
-      ),
-    },
-    {
-      title: "List of Teachers Associated with Practical Surveying (CE 1226)",
-      breakAfterKey: "practicalSurveying",
-      hasData:
-        isPracticalSurveyingApplicable &&
-        bill.practicalSurveyingTeachers.some((teacher) => teacher.name.trim()),
-      includeInBacklog: false,
-      content: (
-        <MergedColumnTable
-          columns={[
-            { key: "sl", label: "SL No.", width: lw.practicalSurveying.sl ?? 8, align: "center" },
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.practicalSurveying.teacherLine ?? 72 },
-            { key: "students", label: "No. of Students", width: lw.practicalSurveying.students ?? 20, align: "center" },
-          ]}
-          rows={bill.practicalSurveyingTeachers
-            .filter((teacher) => teacher.name.trim())
-            .map((teacher) => ({
-              teacherLine: formatTeacher(
-                teacher.name,
-                teacher.designation,
-                teacher.department
-              ),
-            }))}
-          mergeKey="students"
-          mergeValue={`${bill.practicalSurveyingStudentCount || "27"}/${
-            bill.practicalSurveyingTeachers.filter((teacher) => teacher.name.trim()).length || 1
-          }`}
+          keepTogether
         />
       ),
     },
@@ -745,7 +721,41 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
             teacherLine: formatTeacher(t.name, t.designation, t.department),
           }))}
           mergeKey="students"
-          mergeValue={bill.verificationStudentCount || "—"}
+          mergeValue={
+            bill.verificationStudentCount
+              ? `${bill.verificationStudentCount}/${bill.verificationTeachers.filter((teacher) => teacher.name.trim()).length || 1}`
+              : "—"
+          }
+        />
+      ),
+    },
+    {
+      title: "List of Teachers Associated with Practical Surveying (CE 1226)",
+      breakAfterKey: "practicalSurveying",
+      hasData:
+        isPracticalSurveyingApplicable &&
+        bill.practicalSurveyingTeachers.some((teacher) => teacher.name.trim()),
+      includeInBacklog: false,
+      content: (
+        <MergedColumnTable
+          columns={[
+            { key: "sl", label: "SL No.", width: lw.practicalSurveying.sl ?? 8, align: "center" },
+            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.practicalSurveying.teacherLine ?? 72 },
+            { key: "students", label: "No. of Students", width: lw.practicalSurveying.students ?? 20, align: "center" },
+          ]}
+          rows={bill.practicalSurveyingTeachers
+            .filter((teacher) => teacher.name.trim())
+            .map((teacher) => ({
+              teacherLine: formatTeacher(
+                teacher.name,
+                teacher.designation,
+                teacher.department
+              ),
+            }))}
+          mergeKey="students"
+          mergeValue={`${bill.practicalSurveyingStudentCount || "27"}/${
+            bill.practicalSurveyingTeachers.filter((teacher) => teacher.name.trim()).length || 1
+          }`}
         />
       ),
     },
