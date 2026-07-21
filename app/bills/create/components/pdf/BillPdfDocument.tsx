@@ -115,7 +115,15 @@ function normalizeColumns(columns: Col[]): Col[] {
 
 function formatCell(value: any): string {
   if (value === true) return "Yes";
-  if (value === false || value === "" || value === undefined || value === null) return "—";
+  if (
+    value === false ||
+    value === 0 ||
+    value === "0" ||
+    (typeof value === "string" && value.trim() === "") ||
+    value === undefined ||
+    value === null
+  )
+    return "-";
   return String(value);
 }
 function SimpleTable({
@@ -211,8 +219,8 @@ function GroupedTable({
       {groups.map((group, groupIndex) => (
         <View key={groupIndex} style={[styles.row, styles.groupedRow, { alignItems: "stretch" }]} wrap={false}>
           <View style={[styles.cell, { width: `${normalizedCourseWidth}%`, justifyContent: "center" }]}>
-            <Text>{group.courseCode}</Text>
-            <Text>{group.courseTitle}</Text>
+            <Text>{formatCell(group.courseCode)}</Text>
+            <Text>{formatCell(group.courseTitle)}</Text>
           </View>
           <View style={{ width: `${entryTotal}%` }}>
             {group.entries.map((entry, ei) => (
@@ -242,7 +250,7 @@ function GroupedTable({
           </View>
           {normalizedMergeColumn && groupMergeColumn && (
             <View style={[styles.cell, styles.cellNoRightEdge, { width: `${normalizedMergeColumn.width}%`, justifyContent: "center" }]}>
-              <Text style={styles.center}>{groupMergeColumn.value()}</Text>
+              <Text style={styles.center}>{formatCell(groupMergeColumn.value())}</Text>
             </View>
           )}
         </View>
@@ -298,7 +306,7 @@ function MergedColumnTable({
           </View>
         )}
         <View style={[styles.cell, styles.rowTopEdge, styles.cellBottomEdge, { width: `${mergeCol.width}%`, justifyContent: "center", alignItems: "center" }, !hasLeft ? styles.cellLeftEdge : {}]}>
-          <Text style={styles.center}>{mergeValue ?? "—"}</Text>
+          <Text style={styles.center}>{formatCell(mergeValue)}</Text>
         </View>
         {hasRight && (
           <View style={{ width: `${rightTotal}%` }}>
@@ -594,7 +602,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       columns={[
         { key: "sl", label: "Sl. No.", width: lw.tabulation.sl ?? 10 },
         { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.tabulation.teacherLine ?? 65 },
-        { key: "students", label: "No. of Students", width: lw.tabulation.students ?? 25 },
+        { key: "students", label: "No. of Students", width: lw.tabulation.students ?? 25, align: "center" },
       ]}
       rows={tabulationRows}
       mergeKey="students"
@@ -614,7 +622,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       columns={[
         { key: "sl", label: "Sl. No.", width: lw.gradeSheetPreparation.sl ?? 10 },
         { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.gradeSheetPreparation.teacherLine ?? 65 },
-        { key: "studentsDisplay", label: "No. of Students", width: lw.gradeSheetPreparation.studentsDisplay ?? 25 },
+        { key: "studentsDisplay", label: "No. of Students", width: lw.gradeSheetPreparation.studentsDisplay ?? 25, align: "center" },
       ]}
       rows={gradeSheetRows}
       mergeKey="studentsDisplay"
@@ -632,7 +640,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       columns={[
         { key: "sl", label: "Sl. No.", width: lw.gradeSheetVerification.sl ?? 10 },
         { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.gradeSheetVerification.teacherLine ?? 65 },
-        { key: "studentsDisplay", label: "No. of Students", width: lw.gradeSheetVerification.studentsDisplay ?? 25 },
+        { key: "studentsDisplay", label: "No. of Students", width: lw.gradeSheetVerification.studentsDisplay ?? 25, align: "center" },
       ]}
       rows={gradeSheetRows}
       mergeKey="studentsDisplay"
@@ -717,7 +725,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
           columns={[
             { key: "sl", label: "Sl. No.", width: lw.verification.sl ?? 10 },
             { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.verification.teacherLine ?? 65 },
-            { key: "students", label: "No. of Students", width: lw.verification.students ?? 25 },
+            { key: "students", label: "No. of Students", width: lw.verification.students ?? 25, align: "center" },
           ]}
           rows={bill.verificationTeachers.map((t) => ({
             teacherLine: formatTeacher(t.name, t.designation, t.department),

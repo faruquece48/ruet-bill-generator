@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CourseDuty, DutyOption, Designation, DutyStudentCount } from "./types";
 
 const defaultDuty: DutyOption = {
@@ -31,6 +31,8 @@ const designationList: Designation[] = [
 ];
 
 const label = (s: string) => s.replace(/([A-Z])/g, " $1");
+const summaryValue = (value: string) =>
+  value.trim() === "" || Number(value) === 0 ? "-" : value;
 
 // Duty keys that use a free-text fraction value (e.g. "1", "1/2")
 type FractionDuty = "examiner" | "assignment";
@@ -49,6 +51,22 @@ export default function CourseDutyManager({
   const [minimizedCourses, setMinimizedCourses] = useState<Set<string>>(
     () => new Set()
   );
+  const initializedMinimized = useRef(false);
+
+  useEffect(() => {
+    if (
+      initializedMinimized.current ||
+      (courseDuties.obe.length === 0 && courseDuties.nonObe.length === 0)
+    )
+      return;
+    initializedMinimized.current = true;
+    setMinimizedCourses(
+      new Set([
+        ...courseDuties.obe.map((_, index) => `obe-${index}`),
+        ...courseDuties.nonObe.map((_, index) => `nonObe-${index}`),
+      ])
+    );
+  }, [courseDuties.obe, courseDuties.nonObe]);
 
   const toggleCourseMinimized = (type: "obe" | "nonObe", index: number) => {
     const key = `${type}-${index}`;
@@ -71,6 +89,7 @@ export default function CourseDutyManager({
   };
 
   const addCourse = (type: "obe" | "nonObe") => {
+    const newIndex = getList(type).length;
     setList(type, [
       ...getList(type),
       {
@@ -91,6 +110,7 @@ export default function CourseDutyManager({
         })) as CourseDuty["parts"],
       },
     ]);
+    setMinimizedCourses((current) => new Set(current).add(`${type}-${newIndex}`));
   };
 
   const deleteCourse = (type: "obe" | "nonObe", ci: number) => {
@@ -272,10 +292,10 @@ export default function CourseDutyManager({
               </span>
               <span className="min-w-0 flex-1 text-sm font-semibold text-gray-700">
                 <span className="mr-3 inline-block">
-                  {course.courseCode || "Course Code"}
+                  {summaryValue(course.courseCode)}
                 </span>
                 <span className="font-medium text-gray-500">
-                  {course.courseTitle || "Course Title"}
+                  {summaryValue(course.courseTitle)}
                 </span>
               </span>
               <Button

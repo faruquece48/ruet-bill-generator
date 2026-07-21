@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -39,6 +39,8 @@ const defaultStudent: StudentCount = {
 };
 
 const label = (s: string) => s.replace(/([A-Z])/g, " $1");
+const summaryValue = (value: string) =>
+  value.trim() === "" || Number(value) === 0 ? "-" : value;
 
 interface Props {
   sessionalDuties: SessionalCourse[];
@@ -50,8 +52,15 @@ export default function SessionalDutyManager({
   setSessionalDuties,
 }: Props) {
   const [minimizedCourses, setMinimizedCourses] = useState<Set<number>>(
-    () => new Set()
+    () => new Set(sessionalDuties.map((_, index) => index))
   );
+  const initializedMinimized = useRef(sessionalDuties.length > 0);
+
+  useEffect(() => {
+    if (initializedMinimized.current || sessionalDuties.length === 0) return;
+    initializedMinimized.current = true;
+    setMinimizedCourses(new Set(sessionalDuties.map((_, index) => index)));
+  }, [sessionalDuties]);
 
   const toggleCourseMinimized = (index: number) => {
     setMinimizedCourses((current) => {
@@ -68,6 +77,7 @@ export default function SessionalDutyManager({
   };
 
   const addCourse = () => {
+    const newIndex = courses.length;
     setCourses([
       ...courses,
       {
@@ -82,6 +92,7 @@ export default function SessionalDutyManager({
         additionalTeachers: [],
       },
     ]);
+    setMinimizedCourses((current) => new Set(current).add(newIndex));
   };
 
   const deleteCourse = (index: number) => {
@@ -199,10 +210,10 @@ export default function SessionalDutyManager({
             </span>
             <span className="min-w-0 flex-1 text-sm font-semibold text-gray-700">
               <span className="mr-3 inline-block">
-                {course.courseCode || "Course Code"}
+                {summaryValue(course.courseCode)}
               </span>
               <span className="font-medium text-gray-500">
-                {course.courseTitle || "Course Title"}
+                {summaryValue(course.courseTitle)}
               </span>
             </span>
             <Button

@@ -64,7 +64,7 @@ export default function PreviewTable({
                       rowSpan={rows.length}
                       className="border border-gray-400 px-2 py-1 text-center align-middle"
                     >
-                      {mergeValue ?? "—"}
+                      {formatCell(mergeValue)}
                     </td>
                   );
                 }
@@ -87,6 +87,14 @@ export default function PreviewTable({
 
 function formatCell(value: any): React.ReactNode {
   if (value === true) return "Yes";
-  if (value === false || value === "" || value === undefined || value === null) return "—";
+  if (
+    value === false ||
+    value === 0 ||
+    value === "0" ||
+    (typeof value === "string" && value.trim() === "") ||
+    value === undefined ||
+    value === null
+  )
+    return "-";
   return String(value);
 }

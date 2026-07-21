@@ -79,8 +79,8 @@ export default function GroupedCourseTable<T extends Record<string, any>>({
                       rowSpan={group.entries.length}
                       className="border border-gray-400 px-2 py-1 align-middle"
                     >
-                      <div>{group.courseCode}</div>
-                      <div>{group.courseTitle}</div>
+                      <div>{formatCell(group.courseCode)}</div>
+                      <div>{formatCell(group.courseTitle)}</div>
                     </td>
                   )}
                   {entryColumns.map((c) => (
@@ -100,7 +100,7 @@ export default function GroupedCourseTable<T extends Record<string, any>>({
                         groupMergeColumn.align
                       )}`}
                     >
-                      {groupMergeColumn.value(group)}
+                      {formatCell(groupMergeColumn.value(group))}
                     </td>
                   )}
                 </tr>
@@ -115,7 +115,14 @@ export default function GroupedCourseTable<T extends Record<string, any>>({
 
 function formatCell(value: any): React.ReactNode {
   if (value === true) return "Yes";
-  if (value === false || value === "" || value === undefined || value === null)
-    return "—";
+  if (
+    value === false ||
+    value === 0 ||
+    value === "0" ||
+    (typeof value === "string" && value.trim() === "") ||
+    value === undefined ||
+    value === null
+  )
+    return "-";
   return String(value);
 }
