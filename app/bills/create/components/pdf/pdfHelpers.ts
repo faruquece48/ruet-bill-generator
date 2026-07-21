@@ -459,6 +459,15 @@ export function deriveGradeSheetRows(
   }));
 }
 
+export function formatCourseAdviserStudents(
+  totalStudents: string,
+  adviserCount: number
+): string {
+  if (!totalStudents) return "";
+
+  return adviserCount > 1 ? `${totalStudents}/${adviserCount}` : totalStudents;
+}
+
 // ------------------------------
 // Group flattened rows by course (courseCode + courseTitle), so Part A
 // and Part B of the same course share a single serial number and a

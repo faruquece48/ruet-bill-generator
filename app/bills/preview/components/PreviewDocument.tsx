@@ -12,6 +12,7 @@ import {
   flattenBoardViva,
   flattenTabulation,
   deriveGradeSheetRows,
+  formatCourseAdviserStudents,
   groupByCourse,
   computeThesisVivaFormula,
   formatTeacher,
@@ -360,9 +361,10 @@ export default function PreviewDocument({ bill }: Props) {
           showSerial
           mergeColumnKey="students"
           mergeValue={
-            bill.courseAdviserStudentCount
-              ? `${bill.courseAdviserStudentCount}/${bill.courseAdvisers.filter((a) => a.name.trim()).length || 1}`
-              : "—"
+            formatCourseAdviserStudents(
+              bill.courseAdviserStudentCount,
+              bill.courseAdvisers.filter((a) => a.name.trim()).length
+            ) || "—"
           }
         />
       ),

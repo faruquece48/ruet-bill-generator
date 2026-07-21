@@ -12,6 +12,7 @@ import {
   flattenBoardViva,
   flattenTabulation,
   deriveGradeSheetRows,
+  formatCourseAdviserStudents,
   groupByCourse,
   computeThesisVivaFormula,
   formatTeacher,
@@ -656,9 +657,10 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
           }))}
           mergeKey="students"
           mergeValue={
-            bill.courseAdviserStudentCount
-              ? `${bill.courseAdviserStudentCount}/${bill.courseAdvisers.filter((a) => a.name.trim()).length || 1}`
-              : "—"
+            formatCourseAdviserStudents(
+              bill.courseAdviserStudentCount,
+              bill.courseAdvisers.filter((a) => a.name.trim()).length
+            ) || "—"
           }
           keepTogether
         />
