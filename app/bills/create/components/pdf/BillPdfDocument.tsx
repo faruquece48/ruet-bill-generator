@@ -771,7 +771,15 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       ),
     },
   ];
-  const visible = sections.filter((s) => {
+  const sectionOrder = bill.sectionOrder ?? [];
+  const orderedSections = [...sections].sort((a, b) => {
+    if (a.breakAfterKey === "committee") return -1;
+    if (b.breakAfterKey === "committee") return 1;
+    const ai = sectionOrder.indexOf(a.breakAfterKey);
+    const bi = sectionOrder.indexOf(b.breakAfterKey);
+    return (ai < 0 ? Number.MAX_SAFE_INTEGER : ai) - (bi < 0 ? Number.MAX_SAFE_INTEGER : bi);
+  });
+  const visible = orderedSections.filter((s) => {
     if (!s.hasData) return false;
     if (isBacklog && !s.includeInBacklog) return false;
     return true;
@@ -802,13 +810,23 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
         {visible.map((section, i) => (
           <View
             key={section.title}
-            style={{ marginBottom: 6 + (bill.layoutSpacing?.sectionGap ?? 0) }}
+            style={{ marginBottom: 0 }}
             break={Boolean(bill.pageBreakAfter?.[section.breakAfterKey])}
           >
             <Text style={styles.sectionTitle}>
               {i + 1}. {section.title}
             </Text>
             {section.content}
+            <View
+              style={{
+                height: Math.max(
+                  0,
+                  bill.tableSpacing?.[section.breakAfterKey] ??
+                    bill.layoutSpacing?.sectionGap ??
+                    0
+                ),
+              }}
+            />
           </View>
         ))}
         <Footer bill={bill.billInfo} />

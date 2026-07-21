@@ -9,6 +9,8 @@ interface Props {
   pageBreakAfter?: boolean;
   onPageBreakAfterChange?: (checked: boolean) => void;
   visible?: boolean;
+  tableSpacing?: number;
+  onTableSpacingChange?: (value: number) => void;
 }
 
 export default function SectionPanel({
@@ -18,6 +20,8 @@ export default function SectionPanel({
   pageBreakAfter = false,
   onPageBreakAfterChange,
   visible = true,
+  tableSpacing,
+  onTableSpacingChange,
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
   if (!visible) return null;
@@ -39,6 +43,19 @@ export default function SectionPanel({
       {open && (
         <div className="border-t p-4 space-y-4">
           {children}
+          {onTableSpacingChange && (
+            <label className="block space-y-1 rounded-lg border bg-slate-50 p-3 text-xs text-slate-700">
+              <span>Table Spacing (pt)</span>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={tableSpacing ?? 6}
+                onChange={(event) => onTableSpacingChange(Number(event.target.value) || 0)}
+                className="w-full rounded-md border bg-white px-3 py-2 text-sm"
+              />
+            </label>
+          )}
           {onPageBreakAfterChange && (
             <label className="flex cursor-pointer items-start gap-2 rounded-lg border bg-slate-50 p-3 text-xs text-slate-700">
               <input

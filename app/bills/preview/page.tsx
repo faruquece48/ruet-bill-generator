@@ -146,6 +146,7 @@ function mergeLayoutSettings(
 
 export default function PreviewPage() {
   const [billData, setBillData] = useState<ExaminationBillData>(emptyBill);
+  const [draggedSection, setDraggedSection] = useState<string | null>(null);
   const hydrated = useRef(false);
   const isBacklog = billData.billInfo.examType === "backlog";
   const isMixedEvaluation = billData.billInfo.evaluationSystem === "mixed";
@@ -189,6 +190,61 @@ export default function PreviewPage() {
   const pdfNumber = (key: (typeof visibleSectionKeys)[number][0]) =>
     visibleSectionKeys.filter(([, visible]) => visible).findIndex(([sectionKey]) => sectionKey === key) + 1;
 
+  const dragSectionVisibility: Record<string, boolean> = {
+    committee: billData.committees.some((member) => member.name.trim() !== ""),
+    paperSetterObe: paperSetterRows.length > 0,
+    classTest: !isBacklog && classTestRows.length > 0,
+    assignment: !isBacklog && assignmentRows.length > 0,
+    courseFile: !isBacklog && courseFileRows.length > 0,
+    questionWork: billData.questionWorks.some((teacher) => teacher.name.trim() !== ""),
+    scrutinyObe: hasScrutiny,
+    sessionalDuty: !isBacklog && sessionalRows.length > 0,
+    boardViva: boardVivaRows.length > 0,
+    tabulation: tabulationRows.length > 0,
+    gradeSheetPreparation: gradeSheetRows.length > 0,
+    gradeSheetVerification: !isBacklog && gradeSheetRows.length > 0,
+    courseAdviser: !isBacklog && billData.courseAdvisers.length > 0,
+    courseCoordinator: !isBacklog && isFourthYearEven && billData.courseCoordinatorTeachers.length > 0,
+    thesis: !isBacklog && isFourthYearEven && billData.thesisTeachers.length > 0,
+    verification: billData.billInfo.hasGraduatingStudents === "yes" && billData.verificationTeachers.length > 0,
+    practicalSurveying: isFirstYearEven && !isBacklog && billData.practicalSurveyingTeachers.some((teacher) => teacher.name.trim() !== ""),
+  };
+  const dragSectionLabels: Record<string, string> = {
+    committee: "Examination Committee",
+    paperSetterObe: "Paper Setter & Examiner (OBE/Non-OBE)",
+    classTest: "Class Test",
+    assignment: "Assignment",
+    courseFile: "Course File",
+    questionWork: "Question Typing / Sketching / Printing",
+    scrutinyObe: "Scrutiny (OBE/Non-OBE)",
+    sessionalDuty: "Sessional",
+    boardViva: "Board Viva",
+    tabulation: "Tabulation",
+    gradeSheetPreparation: "Grade Sheet Preparation",
+    gradeSheetVerification: "Grade Sheet Verification",
+    courseAdviser: "Course Advisers",
+    courseCoordinator: "Course Coordinator",
+    thesis: "Thesis/Project Examination",
+    verification: "Verification of Final Result",
+    practicalSurveying: "Practical Surveying (CE 1226)",
+  };
+
+  const moveSection = (from: string, to: string) => {
+    setBillData((prev) => {
+      if (from === "committee" || to === "committee") return prev;
+      const order = [
+        "committee",
+        ...(prev.sectionOrder ?? emptyBill.sectionOrder).filter((key) => key !== "committee"),
+      ];
+      const fromIndex = order.indexOf(from);
+      const toIndex = order.indexOf(to);
+      if (fromIndex < 0 || toIndex < 0) return prev;
+      order.splice(fromIndex, 1);
+      order.splice(toIndex, 0, from);
+      return { ...prev, sectionOrder: order };
+    });
+  };
+
   useEffect(() => {
     const saved = loadCurrentWork();
     if (saved) {
@@ -197,6 +253,7 @@ export default function PreviewPage() {
       setBillData({
         ...emptyBill,
         ...saved,
+        sectionOrder: saved.sectionOrder ?? emptyBill.sectionOrder,
         layoutSettings: mergeLayoutSettings(saved.layoutSettings),
       });
     }
@@ -224,6 +281,12 @@ export default function PreviewPage() {
       setBillData((prev) => ({
         ...prev,
         pageBreakAfter: { ...prev.pageBreakAfter, [key]: checked },
+      })),
+    tableSpacing: billData.tableSpacing?.[key] ?? billData.layoutSpacing.sectionGap,
+    onTableSpacingChange: (value: number) =>
+      setBillData((prev) => ({
+        ...prev,
+        tableSpacing: { ...prev.tableSpacing, [key]: value },
       })),
   });
 
@@ -260,38 +323,30 @@ export default function PreviewPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6 items-start">
           {/* LEFT: customization accordion */}
           <div className="space-y-3">
-            <SectionPanel visible={billData.committees.some((member) => member.name.trim() !== "")} title={`${pdfNumber("committee")}. Examination Committee`} {...pageBreakControl("committee")}>
-              <ColumnWidthEditor
-                widths={billData.layoutSettings.committee}
-                setWidths={(v) => updateLayout("committee", v)}
-                labels={committeeLabels}
-              />
-            </SectionPanel>
-
-            <SectionPanel title="Page Spacing">
-              <div>
-                <label className="space-y-1 text-sm font-medium">
-                  <span>Gap after each table section (pt)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={billData.layoutSpacing.sectionGap}
-                    onChange={(event) =>
-                      setBillData((prev) => ({
-                        ...prev,
-                        layoutSpacing: {
-                          ...prev.layoutSpacing,
-                          sectionGap: Number(event.target.value) || 0,
-                        },
-                      }))
-                    }
-                    className="w-full rounded-md border px-3 py-2 text-sm"
-                  />
-                </label>
+            <SectionPanel title="PDF Table Order">
+              <p className="mb-3 text-xs text-slate-500">
+                Drag tables to change their order and numbering in the PDF. Customization card labels remain fixed.
+              </p>
+              <div className="space-y-1">
+                {["committee", ...(billData.sectionOrder ?? emptyBill.sectionOrder).filter((key) => key !== "committee")]
+                  .filter((key) => dragSectionVisibility[key])
+                  .map((key) => (
+                  <div
+                    key={key}
+                    draggable
+                    onDragStart={() => setDraggedSection(key)}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={() => {
+                      if (draggedSection) moveSection(draggedSection, key);
+                      setDraggedSection(null);
+                    }}
+                    className="cursor-grab rounded border bg-slate-50 px-3 py-2 text-xs active:cursor-grabbing"
+                  >
+                    {dragSectionLabels[key] ?? key}
+                  </div>
+                  ))}
               </div>
             </SectionPanel>
-
             <SectionPanel title="Footer Area">
               <div>
                 <label className="space-y-1 text-sm font-medium">
@@ -314,6 +369,14 @@ export default function PreviewPage() {
                   />
                 </label>
               </div>
+            </SectionPanel>
+
+            <SectionPanel visible={billData.committees.some((member) => member.name.trim() !== "")} title={`${pdfNumber("committee")}. Examination Committee`} {...pageBreakControl("committee")}>
+              <ColumnWidthEditor
+                widths={billData.layoutSettings.committee}
+                setWidths={(v) => updateLayout("committee", v)}
+                labels={committeeLabels}
+              />
             </SectionPanel>
 
             <SectionPanel

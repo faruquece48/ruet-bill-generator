@@ -58,6 +58,13 @@ export const emptyBill: ExaminationBillData = {
   questionWorks: [],
   questionWorkTotal: "5",
   pageBreakAfter: {},
+  sectionOrder: [
+    "committee", "paperSetterObe", "classTest", "assignment", "courseFile",
+    "questionWork", "scrutinyObe", "sessionalDuty", "boardViva", "tabulation",
+    "gradeSheetPreparation", "gradeSheetVerification", "courseAdviser",
+    "courseCoordinator", "thesis", "verification", "practicalSurveying",
+  ],
+  tableSpacing: {},
   scrutinies: { obe: [], nonObe: [] },
   studentDuties: [],
   tabulationStudentCount: "",

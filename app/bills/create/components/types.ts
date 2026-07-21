@@ -186,6 +186,8 @@ export interface ExaminationBillData {
   questionWorks: QuestionWork[];
   questionWorkTotal: string;
   pageBreakAfter: Record<string, boolean>;
+  sectionOrder: string[];
+  tableSpacing: Record<string, number>;
   scrutinies: { obe: ScrutinyTeacher[]; nonObe: ScrutinyTeacher[] };
   studentDuties: StudentDuty[];
   tabulationStudentCount: string;
