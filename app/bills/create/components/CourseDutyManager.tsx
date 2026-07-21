@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { CourseDuty, DutyOption, Designation, DutyStudentCount } from "./types";
 
 const defaultDuty: DutyOption = {
@@ -45,6 +46,20 @@ export default function CourseDutyManager({
   courseDuties,
   setCourseDuties,
 }: Props) {
+  const [minimizedCourses, setMinimizedCourses] = useState<Set<string>>(
+    () => new Set()
+  );
+
+  const toggleCourseMinimized = (type: "obe" | "nonObe", index: number) => {
+    const key = `${type}-${index}`;
+    setMinimizedCourses((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   const getList = (type: "obe" | "nonObe") => {
     return courseDuties[type];
   };
@@ -83,6 +98,7 @@ export default function CourseDutyManager({
       type,
       getList(type).filter((_, i) => i !== ci)
     );
+    setMinimizedCourses(new Set());
   };
 
   const updateCourse = (
@@ -246,15 +262,36 @@ export default function CourseDutyManager({
     const courses = getList(type);
     return (
       <>
-        <Button type="button" onClick={() => addCourse(type)}>
-          + Add Course
-        </Button>
-        {courses.map((course, cIndex) => (
+        {courses.map((course, cIndex) => {
+          const minimized = minimizedCourses.has(`${type}-${cIndex}`);
+          return (
           <div key={cIndex} className="rounded-xl border p-5 space-y-4">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3">
               <span className="flex items-center justify-center rounded-md border bg-white px-3 py-1 text-sm font-semibold text-gray-700">
                 {String(cIndex + 1).padStart(2, "0")}.
               </span>
+              <span className="min-w-0 flex-1 text-sm font-semibold text-gray-700">
+                <span className="mr-3 inline-block">
+                  {course.courseCode || "Course Code"}
+                </span>
+                <span className="font-medium text-gray-500">
+                  {course.courseTitle || "Course Title"}
+                </span>
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => toggleCourseMinimized(type, cIndex)}
+                aria-label={minimized ? "Expand course details" : "Minimize course details"}
+                title={minimized ? "Expand course details" : "Minimize course details"}
+              >
+                {minimized ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronUp className="h-4 w-4" />
+                )}
+              </Button>
               <Button
                 type="button"
                 variant="ghost"
@@ -266,6 +303,8 @@ export default function CourseDutyManager({
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
+            {!minimized && (
+              <>
             <div className="grid md:grid-cols-2 gap-4">
               <Input
                 placeholder="Course Code"
@@ -610,8 +649,14 @@ export default function CourseDutyManager({
                 </div>
               </div>
             ))}
+              </>
+            )}
           </div>
-        ))}
+          );
+        })}
+        <Button type="button" onClick={() => addCourse(type)}>
+          + Add Course
+        </Button>
       </>
     );
   };

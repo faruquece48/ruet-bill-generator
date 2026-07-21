@@ -3,7 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { useState } from "react";
 import {
   Select,
   SelectContent,
@@ -48,6 +49,19 @@ export default function SessionalDutyManager({
   sessionalDuties,
   setSessionalDuties,
 }: Props) {
+  const [minimizedCourses, setMinimizedCourses] = useState<Set<number>>(
+    () => new Set()
+  );
+
+  const toggleCourseMinimized = (index: number) => {
+    setMinimizedCourses((current) => {
+      const next = new Set(current);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
   const courses = sessionalDuties;
   const setCourses = (data: SessionalCourse[]) => {
     setSessionalDuties(data);
@@ -72,6 +86,7 @@ export default function SessionalDutyManager({
 
   const deleteCourse = (index: number) => {
     setCourses(courses.filter((_, i) => i !== index));
+    setMinimizedCourses(new Set());
   };
 
   const updateCourse = (
@@ -170,24 +185,40 @@ export default function SessionalDutyManager({
       <h2 className="text-xl font-bold">
         4. List of Teachers Associated with Sessional Courses
       </h2>
-      <Button type="button" onClick={addCourse}>
-        + Add Sessional Course
-      </Button>
-      {courses.map((course, cIndex) => (
+      {courses.map((course, cIndex) => {
+        const minimized = minimizedCourses.has(cIndex);
+        return (
         <div
           key={cIndex}
           className="rounded-xl border bg-slate-50 p-5 space-y-5"
         >
           {/* Serial Number */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="flex items-center justify-center rounded-md border bg-white px-3 py-1 text-sm font-semibold text-gray-700">
-                {String(cIndex + 1).padStart(2, "0")}.
+          <div className="flex items-center gap-3">
+            <span className="flex items-center justify-center rounded-md border bg-white px-3 py-1 text-sm font-semibold text-gray-700">
+              {String(cIndex + 1).padStart(2, "0")}.
+            </span>
+            <span className="min-w-0 flex-1 text-sm font-semibold text-gray-700">
+              <span className="mr-3 inline-block">
+                {course.courseCode || "Course Code"}
               </span>
-              <span className="text-sm font-medium text-gray-500">
-                Sessional Course
+              <span className="font-medium text-gray-500">
+                {course.courseTitle || "Course Title"}
               </span>
-            </div>
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => toggleCourseMinimized(cIndex)}
+              aria-label={minimized ? "Expand course details" : "Minimize course details"}
+              title={minimized ? "Expand course details" : "Minimize course details"}
+            >
+              {minimized ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronUp className="h-4 w-4" />
+              )}
+            </Button>
             <Button
               type="button"
               variant="ghost"
@@ -199,6 +230,8 @@ export default function SessionalDutyManager({
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
+          {!minimized && (
+            <>
           {/* Course Information */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
@@ -361,8 +394,14 @@ export default function SessionalDutyManager({
               </div>
             </div>
           )}
+            </>
+          )}
         </div>
-      ))}
+        );
+      })}
+      <Button type="button" onClick={addCourse}>
+        + Add Sessional Course
+      </Button>
     </div>
   );
 }
