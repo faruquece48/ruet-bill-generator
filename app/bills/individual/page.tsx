@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { emptyBill } from "../create/components/emptyBill";
 import type { ExaminationBillData } from "../create/components/types";
 import { loadCurrentWork } from "@/lib/storage/draft";
+import ColumnWidthEditor from "../preview/components/ColumnWidthEditor";
+import type { ColumnWidths } from "../create/components/types";
 import {
   amountInBanglaWords,
   collectTeacherNames,
@@ -26,6 +28,8 @@ export default function IndividualTeacherBillPage() {
   const [addressBangla, setAddressBangla] = useState("বিইসিএম বিভাগ, রুয়েট।");
   const [accountNumber, setAccountNumber] = useState("");
   const [rows, setRows] = useState<IndividualBillRow[]>([]);
+  const [metaWidths, setMetaWidths] = useState<ColumnWidths>({ qualifications: 42, examination: 42, billNumber: 16 });
+  const [tableWidths, setTableWidths] = useState<ColumnWidths>({ serial: 5, description: 27, course: 17, quantity: 12, courseCount: 10, classTestCount: 10, rate: 9, amount: 10 });
 
   useEffect(() => {
     const saved = loadCurrentWork();
@@ -93,6 +97,10 @@ export default function IndividualTeacherBillPage() {
                 </div>
               ))}
             </div>
+            <div className="space-y-4 border-t pt-4">
+              <div><h2 className="mb-2 font-semibold">Information table widths</h2><ColumnWidthEditor widths={metaWidths} setWidths={setMetaWidths} labels={{ qualifications: "Qualifications", examination: "Examination", billNumber: "Bill number" }} /></div>
+              <div><h2 className="mb-2 font-semibold">Remuneration table widths</h2><ColumnWidthEditor widths={tableWidths} setWidths={setTableWidths} labels={{ serial: "Serial", description: "Description", course: "Course", quantity: "Scripts/students", courseCount: "Courses", classTestCount: "Class tests", rate: "Rate", amount: "Amount" }} /></div>
+            </div>
           </section>
 
           <section className="preview-shell overflow-auto rounded-xl bg-slate-300 p-5">
@@ -103,10 +111,10 @@ export default function IndividualTeacherBillPage() {
                 <h1 className="mt-2 text-[17px] font-bold">পরীক্ষা সংক্রান্ত পারিশ্রমিকের বিল ফরম</h1>
               </header>
               <div className="teacher-info grid grid-cols-2 text-[12px]"><div><p>নামঃ <span className="font-semibold">{nameBangla || "................................"}</span></p><p>ঠিকানাঃ <span className="font-semibold">{addressBangla}</span></p></div><div className="text-right"><p>পদবীঃ <span className="font-semibold">{designationBangla || "................................"}</span></p><p>হিসাব নংঃ <span className="font-semibold">{accountNumber || "........................"}</span></p></div></div>
-              <table className="bill-meta w-full table-fixed border-collapse text-[10px]"><tbody><tr><td className="w-[42%] align-top">{degreeOptions.map((degree, index) => <span key={degree.key} className={selectedDegreeKey && selectedDegreeKey !== degree.key ? "line-through" : undefined}>{index > 0 ? "/" : ""}{degree.label}</span>)}<br/><span>বিভাগঃ বিইসিএম বিভাগ</span></td><td className="w-[42%] text-center font-bold">{examTitle}</td><td className="w-[8%] text-center">বিল নং-</td><td className="w-[8%] text-center font-bold">{toBengaliDigits(bill.billInfo.billNo || "০১")}</td></tr></tbody></table>
+              <table className="bill-meta w-full table-fixed border-collapse text-[10px]"><colgroup><col style={{ width: `${metaWidths.qualifications}%` }}/><col style={{ width: `${metaWidths.examination}%` }}/><col style={{ width: `${metaWidths.billNumber}%` }}/></colgroup><tbody><tr><td className="align-top">{degreeOptions.map((degree, index) => <span key={degree.key} className={selectedDegreeKey && selectedDegreeKey !== degree.key ? "line-through" : undefined}>{index > 0 ? "/" : ""}{degree.label}</span>)}<br/><span>বিভাগঃ বিইসিএম বিভাগ</span></td><td className="text-center font-bold">{examTitle}</td><td className="text-center font-bold">বিল নং- {toBengaliDigits(bill.billInfo.billNo || "০১")}</td></tr></tbody></table>
 
               <table className="bill-table w-full table-fixed border-collapse text-[10px]">
-                <colgroup><col className="w-[5%]"/><col className="w-[27%]"/><col className="w-[17%]"/><col className="w-[12%]"/><col className="w-[10%]"/><col className="w-[10%]"/><col className="w-[9%]"/><col className="w-[10%]"/></colgroup>
+                <colgroup><col style={{ width: `${tableWidths.serial}%` }}/><col style={{ width: `${tableWidths.description}%` }}/><col style={{ width: `${tableWidths.course}%` }}/><col style={{ width: `${tableWidths.quantity}%` }}/><col style={{ width: `${tableWidths.courseCount}%` }}/><col style={{ width: `${tableWidths.classTestCount}%` }}/><col style={{ width: `${tableWidths.rate}%` }}/><col style={{ width: `${tableWidths.amount}%` }}/></colgroup>
                 <thead><tr><th>ক্রমিক নং</th><th>কাজের বিবরণ</th><th>বিষয় / কোর্স</th><th>খাতা / ছাত্র সংখ্যা</th><th>কোর্স সংখ্যা</th><th>ক্লাস টেস্ট সংখ্যা</th><th>পারিশ্রমিকের হার</th><th>টাকার পরিমাণ</th></tr></thead>
                 <tbody>{rows.map((row, index) => <tr key={row.id}><td className="text-center">{index + 1}।</td><td>{row.description || "—"}</td><td className="text-center">{row.course || "—"}</td><td className="text-center">{row.quantity || "—"}</td><td className="text-center">{row.courseCount || "—"}</td><td className="text-center">{row.classTestCount || "—"}</td><td className="text-right">{row.rate || "—"}</td><td className="text-right">{rowAmount(row).toLocaleString("en-BD")}</td></tr>)}</tbody>
                 <tfoot><tr><td colSpan={2} className="font-semibold">কথায়ঃ {amountInBanglaWords(total)} টাকা মাত্র</td><td colSpan={5} className="text-right font-semibold">মোটঃ</td><td className="text-right font-bold">{total.toLocaleString("en-BD")}</td></tr></tfoot>
