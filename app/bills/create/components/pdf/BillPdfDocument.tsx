@@ -505,19 +505,17 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       hasData: questionTeachers.length > 0,
       includeInBacklog: true,
       content: (
-        <SimpleTable
+        <MergedColumnTable
           columns={[
             { key: "sl", label: "Sl. No.", width: lw.questionWork.sl ?? 10, align: "center" },
             { key: "teacherLine", label: "Name of The Teachers & Designation", width: lw.questionWork.teacherLine ?? 65 },
             { key: "questionNumber", label: "No. of Question", width: lw.questionWork.questionNumber ?? 25, align: "center" },
           ]}
-          rows={questionTeachers.map((q, index) => ({
+          rows={questionTeachers.map((q) => ({
             teacherLine: formatTeacher(q.name, q.designation, q.department),
-            questionNumber:
-              index === Math.floor((questionTeachers.length - 1) / 2)
-                ? questionShare
-                : "\u200B",
           }))}
+          mergeKey="questionNumber"
+          mergeValue={questionShare}
         />
       ),
     },

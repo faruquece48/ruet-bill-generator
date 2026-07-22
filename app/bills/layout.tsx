@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 const tabs = [
   { href: "/bills/create", label: "Bill" },
   { href: "/bills/preview", label: "Preview" },
+  { href: "/bills/individual", label: "Individual Teacher Bill" },
 ];
 
 function NavLink({ href, label }: { href: string; label: string }) {
