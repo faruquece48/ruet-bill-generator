@@ -97,15 +97,13 @@ export default function IndividualTeacherBillPage() {
 
           <section className="preview-shell overflow-auto rounded-xl bg-slate-300 p-5">
             <article className="bill-sheet mx-auto bg-white text-black shadow-xl" lang="bn">
-              <header className="relative text-center">
+              <header className="relative text-center bill-header">
                 <p className="text-[10px]">ঐশী জ্যোতিই আমাদের পথ প্রদর্শক</p>
                 <h2 className="mt-1 text-[18px] font-bold">রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</h2>
                 <h1 className="mt-2 text-[17px] font-bold">পরীক্ষা সংক্রান্ত পারিশ্রমিকের বিল ফরম</h1>
-                <div className="absolute right-0 top-10 text-right text-[11px]"><p>{designationBangla || "পদবী"}</p><p>{accountNumber || "হিসাব নং"}</p></div>
               </header>
-              <div className="mt-3 flex justify-between text-[11px]"><p>{degreeOptions.map((degree, index) => <span key={degree.key} className={selectedDegreeKey && selectedDegreeKey !== degree.key ? "line-through" : undefined}>{index > 0 ? "/" : ""}{degree.label}</span>)}</p><p className="font-semibold">{examTitle}</p><p>বিল নং- {toBengaliDigits(bill.billInfo.billNo || "০১")}</p></div>
-              <p className="mt-1 text-[11px]">বিভাগঃ বিইসিএম বিভাগ</p>
-              <div className="my-3 grid grid-cols-[1fr_1fr] gap-x-8 border-y border-black py-2 text-[12px]"><p>নামঃ <span className="font-semibold">{nameBangla || "................................"}</span></p><p>পদবীঃ <span className="font-semibold">{designationBangla || "................................"}</span></p><p>ঠিকানাঃ <span className="font-semibold">{addressBangla}</span></p><p>হিসাব নংঃ <span className="font-semibold">{accountNumber || "........................"}</span></p></div>
+              <div className="teacher-info grid grid-cols-2 text-[12px]"><div><p>নামঃ <span className="font-semibold">{nameBangla || "................................"}</span></p><p>ঠিকানাঃ <span className="font-semibold">{addressBangla}</span></p></div><div className="text-right"><p>পদবীঃ <span className="font-semibold">{designationBangla || "................................"}</span></p><p>হিসাব নংঃ <span className="font-semibold">{accountNumber || "........................"}</span></p></div></div>
+              <table className="bill-meta w-full table-fixed border-collapse text-[10px]"><tbody><tr><td className="w-[42%] align-top">{degreeOptions.map((degree, index) => <span key={degree.key} className={selectedDegreeKey && selectedDegreeKey !== degree.key ? "line-through" : undefined}>{index > 0 ? "/" : ""}{degree.label}</span>)}<br/><span>বিভাগঃ বিইসিএম বিভাগ</span></td><td className="w-[42%] text-center font-bold">{examTitle}</td><td className="w-[8%] text-center">বিল নং-</td><td className="w-[8%] text-center font-bold">{toBengaliDigits(bill.billInfo.billNo || "০১")}</td></tr></tbody></table>
 
               <table className="bill-table w-full table-fixed border-collapse text-[10px]">
                 <colgroup><col className="w-[5%]"/><col className="w-[27%]"/><col className="w-[17%]"/><col className="w-[12%]"/><col className="w-[10%]"/><col className="w-[10%]"/><col className="w-[9%]"/><col className="w-[10%]"/></colgroup>
@@ -129,8 +127,12 @@ export default function IndividualTeacherBillPage() {
            encoding and renders Unicode text as scrambled glyphs, so use a
            Unicode Bengali font for the readable preview/print output. */
         .bill-sheet { width: 210mm; min-height: 297mm; padding: 12mm 13mm; font-family: "Nirmala UI", "Vrinda", "SolaimanLipi", sans-serif; }
+        .bill-header { margin-bottom: 26mm; }
+        .teacher-info { margin-bottom: 3mm; }
+        .bill-meta td { border: 1px solid #000; padding: 4px 5px; vertical-align: middle; }
+        .bill-table { margin-top: 3mm; }
         .bill-table th, .bill-table td { border: 1px solid #000; padding: 4px 5px; vertical-align: middle; }
-        .bill-table th { text-align: center; font-weight: 600; }
+        .bill-table th { text-align: center; vertical-align: top; font-weight: 600; }
         @media print {
           @page { size: A4 portrait; margin: 0; }
           html, body { background: #fff !important; }
