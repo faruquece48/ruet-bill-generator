@@ -10,12 +10,17 @@ export interface IndividualBillRow {
   rate: string;
 }
 
-const clean = (value: string) => value.trim().toLocaleLowerCase();
+const withoutCourtesyTitle = (value: string) =>
+  value.trim().replace(/^(mr|mrs|mst)\.?(?=\s)/i, "").trim();
+const clean = (value: string) => withoutCourtesyTitle(value).toLocaleLowerCase();
 const sameTeacher = (left: string, right: string) => clean(left) === clean(right);
 
 export function collectTeacherNames(bill: ExaminationBillData): string[] {
-  const names = new Set<string>();
-  const add = (name: string) => name.trim() && names.add(name.trim());
+  const names = new Map<string, string>();
+  const add = (name: string) => {
+    const displayName = withoutCourtesyTitle(name);
+    if (displayName) names.set(clean(displayName), displayName);
+  };
 
   bill.committees.forEach((teacher) => add(teacher.name));
   [...bill.courseDuties.obe, ...bill.courseDuties.nonObe].forEach((course) =>
@@ -40,7 +45,48 @@ export function collectTeacherNames(bill: ExaminationBillData): string[] {
     ...bill.practicalSurveyingTeachers,
   ].forEach((teacher) => add(teacher.name));
 
-  return Array.from(names).sort((a, b) => a.localeCompare(b));
+  return Array.from(names.values()).sort((a, b) => a.localeCompare(b));
+}
+
+export interface TeacherNameWarning {
+  name: string;
+  location: string;
+}
+
+export function collectTeacherNameWarnings(bill: ExaminationBillData): TeacherNameWarning[] {
+  const warnings: TeacherNameWarning[] = [];
+  const check = (name: string, location: string) => {
+    const trimmed = name.trim();
+    if (!trimmed || /(?:^|\s)dr\.?(?=\s|$)/i.test(trimmed) || /^(mr|mrs|mst)\.?(?=\s)/i.test(trimmed)) return;
+    warnings.push({ name: trimmed, location });
+  };
+
+  bill.committees.forEach((teacher, index) => check(teacher.name, `Examination Committee, row ${index + 1}`));
+  const checkCourses = (label: string, courses: ExaminationBillData["courseDuties"]["obe"]) =>
+    courses.forEach((course) => course.parts.forEach((part) => {
+      const courseLocation = `${label}, course ${course.courseCode || "(course code missing)"}, Part ${part.part}`;
+      check(part.teacher, courseLocation);
+      part.additionalTeachers.forEach((teacher, index) => check(teacher.name, `${courseLocation}, additional teacher ${index + 1}`));
+    }));
+  checkCourses("OBE course duties", bill.courseDuties.obe);
+  checkCourses("Non-OBE course duties", bill.courseDuties.nonObe);
+  bill.sessionalDuties.forEach((course) => {
+    const location = `Sessional duties, course ${course.courseCode || "(course code missing)"}`;
+    check(course.teacher, location);
+    course.additionalTeachers.forEach((teacher, index) => check(teacher.name, `${location}, additional teacher ${index + 1}`));
+  });
+  const checkList = (label: string, teachers: { name: string }[]) =>
+    teachers.forEach((teacher, index) => check(teacher.name, `${label}, row ${index + 1}`));
+  checkList("Question typing/sketching/printing", bill.questionWorks);
+  checkList("OBE scrutiny", bill.scrutinies.obe);
+  checkList("Non-OBE scrutiny", bill.scrutinies.nonObe);
+  checkList("Student duties", bill.studentDuties);
+  checkList("Course advisers", bill.courseAdvisers);
+  checkList("Thesis/project examination", bill.thesisTeachers);
+  checkList("Final-result verification", bill.verificationTeachers);
+  checkList("Course coordinators", bill.courseCoordinatorTeachers);
+  checkList("Practical surveying", bill.practicalSurveyingTeachers);
+  return warnings;
 }
 
 export function deriveTeacherRows(
@@ -67,7 +113,7 @@ export function deriveTeacherRows(
         if (entry.duties.paperSetter)
           add({ description: "প্রশ্নপত্র প্রণয়ন", course: course.courseCode, quantity: "", courseCount: "1", classTestCount: "", rate: "5000" });
         if (entry.duties.examiner)
-          add({ description: "উত্তরপত্র পরীক্ষণ", course: course.courseCode, quantity: entry.students.examiner, courseCount: "1", classTestCount: "", rate: "120" });
+          add({ description: "সেমিস্টার ফাইনাল", course: course.courseCode, quantity: entry.students.examiner, courseCount: "1", classTestCount: "", rate: "120" });
         if (entry.duties.classTest)
           add({ description: "ক্লাস টেস্ট", course: course.courseCode, quantity: String(entry.students.classTestStudents || ""), courseCount: "1", classTestCount: String(entry.students.classTestCount || 2), rate: "50" });
         if (entry.duties.assignment) {
@@ -107,8 +153,142 @@ export function deriveTeacherRows(
   return rows;
 }
 
-export function evaluateQuantity(value: string): number {
-  const normalized = value.trim();
+export interface RemunerationChartRow {
+  id: string;
+  description: string;
+  duty?: IndividualBillRow;
+}
+
+export interface RemunerationChartSection {
+  serial: number;
+  title: string;
+  rows: RemunerationChartRow[];
+}
+
+interface ChartTemplate {
+  label: string;
+  matches: (description: string) => boolean;
+}
+
+const exact = (label: string): ChartTemplate => ({
+  label,
+  matches: (description) => description === label,
+});
+
+const startsWith = (label: string): ChartTemplate => ({
+  label,
+  matches: (description) => description.startsWith(label),
+});
+
+/**
+ * Keeps the university's complete remuneration chart visible. A template row
+ * is retained when no matching duty exists; repeated duties expand beneath the
+ * same work-description heading.
+ */
+export function buildRemunerationChart(
+  duties: IndividualBillRow[]
+): RemunerationChartSection[] {
+  const templates: { title: string; items: ChartTemplate[] }[] = [
+    { title: "প্রশ্নপত্র প্রণয়ন", items: [exact("প্রশ্নপত্র প্রণয়ন")] },
+    {
+      title: "প্রশ্নপত্র নিয়ামক (মডারেশন)",
+      items: [exact("পরীক্ষা কমিটির সভাপতি"), exact("পরীক্ষা কমিটির সদস্য")],
+    },
+    {
+      title: "উত্তরপত্র পরীক্ষণ",
+      items: [
+        exact("সেমিস্টার ফাইনাল"),
+        exact("ক্লাস টেস্ট"),
+        exact("এসাইনমেন্ট / প্রেজেন্টেশন"),
+        exact("কোর্স ফাইল প্রস্তুতকরণ"),
+      ],
+    },
+    {
+      title: "ব্যবহারিক / সেশনাল",
+      items: [
+        exact("ইঞ্জিনিয়ারিং সার্ভে"),
+        exact("সেমিনার"),
+        exact("প্রজেক্ট ডিজাইন"),
+        exact("সেশনাল (১.০)"),
+        exact("সেশনাল (০.৭৫)"),
+        exact("ইন্ডাস্ট্রিয়াল অ্যাটাচমেন্ট"),
+        exact("ভাইভা (বোর্ড/বোর্ডে)"),
+        startsWith("ব্যবহারিক / সেশনাল"),
+        exact("মৌখিক পরীক্ষা (ফাইনাল)"),
+      ],
+    },
+    {
+      title: "থিসিস/প্রজেক্ট পরীক্ষক",
+      items: [
+        exact("থিসিস সুপারভিশন"),
+        exact("পরীক্ষক (বহিঃ)"),
+        exact("মৌখিক পরীক্ষা (গ্রুপ)"),
+        exact("মৌখিক পরীক্ষা (ফাইনাল)"),
+      ],
+    },
+    {
+      title: "টেবুলেশন",
+      items: [
+        exact("টেবুলেশন"),
+        exact("রেজাল্ট প্রস্তুতকরণ"),
+        exact("রেজাল্ট ভেরিফিকেশন"),
+      ],
+    },
+    {
+      title: "অন্যান্য",
+      items: [
+        exact("ফাইনাল গ্রাজুয়েশন রেজাল্ট ভেরিফিকেশন"),
+        exact("কোর্স এডভাইজার"),
+        exact("কোর্স কো-অর্ডিনেটর"),
+      ],
+    },
+    { title: "স্ক্রুটিনি", items: [exact("স্ক্রুটিনি")] },
+    {
+      title: "প্রশ্নপত্র প্রস্তুতকরণ",
+      items: [
+        exact("প্রশ্নপত্র টাইপ, অঙ্কন ও তুলনা, প্রশ্নপত্র ছাপানো"),
+      ],
+    },
+  ];
+
+  const used = new Set<string>();
+  const sections = templates.map((section, sectionIndex) => ({
+    serial: sectionIndex + 1,
+    title: section.title,
+    rows: section.items.flatMap((item, itemIndex) => {
+      const matching = duties.filter(
+        (duty) => !used.has(duty.id) && item.matches(duty.description)
+      );
+      matching.forEach((duty) => used.add(duty.id));
+      return matching.length
+        ? matching.map((duty) => ({
+            id: duty.id,
+            description: duty.description,
+            duty,
+          }))
+        : [{
+            id: `blank-${sectionIndex}-${itemIndex}`,
+            description: item.label,
+          }];
+    }),
+  }));
+
+  const unmatched = duties.filter((duty) => !used.has(duty.id));
+  if (unmatched.length) {
+    const other = sections[6];
+    other.rows.push(
+      ...unmatched.map((duty) => ({
+        id: duty.id,
+        description: duty.description,
+        duty,
+      }))
+    );
+  }
+  return sections;
+}
+
+export function evaluateQuantity(value: string | number | null | undefined): number {
+  const normalized = String(value ?? "").trim();
   if (!normalized) return 1;
   const parts = normalized.split("/").map(Number);
   if (parts.some((part) => !Number.isFinite(part))) return 0;

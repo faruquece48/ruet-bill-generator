@@ -8,15 +8,12 @@ import ColumnWidthEditor from "../preview/components/ColumnWidthEditor";
 import type { ColumnWidths } from "../create/components/types";
 import {
   amountInBanglaWords,
+  buildRemunerationChart,
   collectTeacherNames,
+  collectTeacherNameWarnings,
   deriveTeacherRows,
   rowAmount,
-  type IndividualBillRow,
 } from "./individualBill";
-
-const blankRow = (): IndividualBillRow => ({
-  id: crypto.randomUUID(), description: "", course: "", quantity: "", courseCount: "", classTestCount: "", rate: "",
-});
 
 const inputClass = "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500";
 
@@ -27,9 +24,10 @@ export default function IndividualTeacherBillPage() {
   const [designationBangla, setDesignationBangla] = useState("");
   const [addressBangla, setAddressBangla] = useState("বিইসিএম বিভাগ, রুয়েট।");
   const [accountNumber, setAccountNumber] = useState("");
-  const [rows, setRows] = useState<IndividualBillRow[]>([]);
-  const [metaWidths, setMetaWidths] = useState<ColumnWidths>({ qualifications: 42, examination: 42, billNumber: 16 });
-  const [tableWidths, setTableWidths] = useState<ColumnWidths>({ serial: 5, description: 27, course: 17, quantity: 12, courseCount: 10, classTestCount: 10, rate: 9, amount: 10 });
+  const [headerGap, setHeaderGap] = useState(3);
+  const [remunerationOpen, setRemunerationOpen] = useState(false);
+  const [metaWidths, setMetaWidths] = useState<ColumnWidths>({ qualifications: 37, examination: 47, billNumber: 16 });
+  const [tableWidths, setTableWidths] = useState<ColumnWidths>({ serial: 6, descriptionGroup: 12, description: 19, course: 11, quantity: 10, courseCount: 6, classTestCount: 9, rate: 11, amount: 16 });
 
   useEffect(() => {
     const saved = loadCurrentWork();
@@ -39,6 +37,9 @@ export default function IndividualTeacherBillPage() {
   }, []);
 
   const teachers = useMemo(() => collectTeacherNames(bill), [bill]);
+  const teacherNameWarnings = useMemo(() => collectTeacherNameWarnings(bill), [bill]);
+  const rows = useMemo(() => deriveTeacherRows(bill, teacher), [bill, teacher]);
+  const chartSections = useMemo(() => buildRemunerationChart(rows), [rows]);
   const total = useMemo(() => rows.reduce((sum, row) => sum + rowAmount(row), 0), [rows]);
   const bengaliYear: Record<string, string> = { "1st Year": "১ম বর্ষ", "2nd Year": "২য় বর্ষ", "3rd Year": "৩য় বর্ষ", "4th Year": "৪র্থ বর্ষ" };
   const bengaliSemester: Record<string, string> = { Odd: "বিজোড়", Even: "জোড়", "Odd Semester": "বিজোড়", "Even Semester": "জোড়" };
@@ -59,11 +60,7 @@ export default function IndividualTeacherBillPage() {
   const selectTeacher = (value: string) => {
     setTeacher(value);
     if (!nameBangla) setNameBangla(value);
-    setRows(deriveTeacherRows(bill, value));
   };
-  const updateRow = (id: string, key: keyof IndividualBillRow, value: string) =>
-    setRows((current) => current.map((row) => row.id === id ? { ...row, [key]: value } : row));
-
   return (
     <main className="individual-bill-page py-8">
       <div className="mx-auto max-w-[1700px] px-4 sm:px-6">
@@ -80,6 +77,7 @@ export default function IndividualTeacherBillPage() {
             <div className="space-y-3">
               <h2 className="font-semibold">Teacher information</h2>
               <label className="block text-sm">Teacher from master bill<select value={teacher} onChange={(event) => selectTeacher(event.target.value)} className={`${inputClass} mt-1`}><option value="">Select teacher</option>{teachers.map((name) => <option key={name}>{name}</option>)}</select></label>
+              {teacherNameWarnings.length > 0 && <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900"><p className="font-semibold">Names missing Mr./Mrs./Mst.</p><p className="mt-1 text-amber-700">Names containing Dr. are exempt. Correct these entries in the master bill:</p><ul className="mt-2 list-disc space-y-1 pl-4">{teacherNameWarnings.map((warning, index) => <li key={`${warning.location}-${index}`}><span className="font-semibold">{warning.name}</span> — {warning.location}</li>)}</ul></div>}
               <label className="block text-sm">নাম (বাংলায়)<input value={nameBangla} onChange={(event) => setNameBangla(event.target.value)} className={`${inputClass} mt-1`} /></label>
               <label className="block text-sm">পদবী (বাংলায়)<input value={designationBangla} onChange={(event) => setDesignationBangla(event.target.value)} className={`${inputClass} mt-1`} placeholder="সহকারী অধ্যাপক" /></label>
               <label className="block text-sm">ঠিকানা<input value={addressBangla} onChange={(event) => setAddressBangla(event.target.value)} className={`${inputClass} mt-1`} /></label>
@@ -87,58 +85,92 @@ export default function IndividualTeacherBillPage() {
             </div>
 
             <div className="space-y-3 border-t pt-4">
-              <div className="flex items-center justify-between"><h2 className="font-semibold">Remuneration rows</h2><button type="button" onClick={() => setRows((current) => [...current, blankRow()])} className="rounded border px-3 py-1 text-xs hover:bg-slate-50">+ Add row</button></div>
-              {rows.length === 0 && <p className="rounded bg-slate-50 p-3 text-xs text-slate-500">Select a teacher to import duties, or add a row manually.</p>}
+              <button type="button" className="flex w-full items-start justify-between text-left" onClick={() => setRemunerationOpen((open) => !open)} aria-expanded={remunerationOpen}>
+                <span><span className="block font-semibold">Automatic remuneration details</span><span className="mt-1 block text-xs text-slate-500">Work, quantity, rate, and total amount are calculated automatically from the master bill.</span></span>
+                <span className="ml-3 text-xs text-slate-500">{remunerationOpen ? "Hide" : "Show"}</span>
+              </button>
+              {remunerationOpen && <>
+              {rows.length === 0 && <p className="rounded bg-slate-50 p-3 text-xs text-slate-500">{teacher ? "No billable work was found for the selected teacher." : "Select a teacher above to generate the detailed bill."}</p>}
+              <div className="space-y-3">
               {rows.map((row, index) => (
                 <div key={row.id} className="space-y-2 rounded-lg border p-3">
-                  <div className="flex justify-between text-xs font-semibold"><span>Row {index + 1}</span><button type="button" onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))} className="text-red-600">Remove</button></div>
-                  <input aria-label="কাজের বিবরণ" value={row.description} onChange={(event) => updateRow(row.id, "description", event.target.value)} className={inputClass} placeholder="কাজের বিবরণ" />
-                  <div className="grid grid-cols-2 gap-2"><input aria-label="কোর্স" value={row.course} onChange={(event) => updateRow(row.id, "course", event.target.value)} className={inputClass} placeholder="কোর্স" /><input aria-label="খাতা বা ছাত্র সংখ্যা" value={row.quantity} onChange={(event) => updateRow(row.id, "quantity", event.target.value)} className={inputClass} placeholder="খাতা/ছাত্র" /><input aria-label="কোর্স সংখ্যা" value={row.courseCount} onChange={(event) => updateRow(row.id, "courseCount", event.target.value)} className={inputClass} placeholder="কোর্স সংখ্যা" /><input aria-label="ক্লাস টেস্ট সংখ্যা" value={row.classTestCount} onChange={(event) => updateRow(row.id, "classTestCount", event.target.value)} className={inputClass} placeholder="ক্লাস টেস্ট" /><input aria-label="হার" value={row.rate} onChange={(event) => updateRow(row.id, "rate", event.target.value)} className={inputClass} placeholder="হার" /><div className="flex items-center rounded bg-slate-50 px-3 text-sm font-semibold">৳ {rowAmount(row).toLocaleString("en-BD")}</div></div>
+                  <div className="text-xs font-semibold">বিবরণ {index + 1}</div>
+                  <input aria-label="কাজের বিবরণ" value={row.description} placeholder="কাজের বিবরণ" readOnly className={`${inputClass} bg-slate-50`} />
+                  <div className="grid grid-cols-2 gap-2"><input aria-label="কোর্স" value={row.course} placeholder="বিষয় / কোর্স" readOnly className={`${inputClass} bg-slate-50`} /><input aria-label="খাতা বা ছাত্র সংখ্যা" value={row.quantity ? toBengaliDigits(String(row.quantity)) : ""} placeholder="খাতা / ছাত্র সংখ্যা" readOnly className={`${inputClass} bg-slate-50`} /><input aria-label="কোর্স সংখ্যা" value={row.courseCount ? toBengaliDigits(String(row.courseCount)) : ""} placeholder="কোর্স সংখ্যা" readOnly className={`${inputClass} bg-slate-50`} /><input aria-label="ক্লাস টেস্ট সংখ্যা" value={row.classTestCount ? toBengaliDigits(String(row.classTestCount)) : ""} placeholder="ক্লাস টেস্ট সংখ্যা" readOnly className={`${inputClass} bg-slate-50`} /><input aria-label="হার" value={row.rate ? toBengaliDigits(String(row.rate)) : ""} placeholder="পারিশ্রমিকের হার" readOnly className={`${inputClass} bg-slate-50`} /><div className="flex items-center rounded bg-slate-50 px-3 text-sm font-semibold">৳ {rowAmount(row).toLocaleString("bn-BD")}</div></div>
                 </div>
               ))}
+              </div>
+              </>}
             </div>
             <div className="space-y-4 border-t pt-4">
+              <div className="rounded-lg border bg-slate-50 p-4"><div className="mb-2 flex items-center justify-between"><h2 className="font-semibold">Header to content gap</h2><span className="text-xs font-semibold text-slate-600">{headerGap} mm</span></div><div className="grid grid-cols-[1fr_90px] items-center gap-3"><input type="range" min="0" max="60" step="1" value={headerGap} onChange={(event) => setHeaderGap(Number(event.target.value))} aria-label="Header to content gap"/><input type="number" min="0" max="60" value={headerGap} onChange={(event) => setHeaderGap(Math.min(60, Math.max(0, Number(event.target.value) || 0)))} className={inputClass}/></div></div>
               <div><h2 className="mb-2 font-semibold">Information table widths</h2><ColumnWidthEditor widths={metaWidths} setWidths={setMetaWidths} labels={{ qualifications: "Qualifications", examination: "Examination", billNumber: "Bill number" }} /></div>
-              <div><h2 className="mb-2 font-semibold">Remuneration table widths</h2><ColumnWidthEditor widths={tableWidths} setWidths={setTableWidths} labels={{ serial: "Serial", description: "Description", course: "Course", quantity: "Scripts/students", courseCount: "Courses", classTestCount: "Class tests", rate: "Rate", amount: "Amount" }} /></div>
+              <div><h2 className="mb-2 font-semibold">Remuneration table widths</h2><ColumnWidthEditor widths={tableWidths} setWidths={setTableWidths} labels={{ serial: "Serial", descriptionGroup: "Description", description: "Individual description", course: "Course", quantity: "Scripts/students", courseCount: "Courses", classTestCount: "Class tests", rate: "Rate", amount: "Amount" }} /></div>
             </div>
           </section>
 
           <section className="preview-shell overflow-auto rounded-xl bg-slate-300 p-5">
             <article className="bill-sheet mx-auto bg-white text-black shadow-xl" lang="bn">
-              <header className="relative text-center bill-header">
+              <header className="relative text-center bill-header" style={{ marginBottom: `${headerGap}mm` }}>
                 <p className="text-[10px]">ঐশী জ্যোতিই আমাদের পথ প্রদর্শক</p>
                 <h2 className="mt-1 text-[18px] font-bold">রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</h2>
                 <h1 className="mt-2 text-[17px] font-bold">পরীক্ষা সংক্রান্ত পারিশ্রমিকের বিল ফরম</h1>
               </header>
-              <div className="teacher-info grid grid-cols-2 text-[12px]"><div><p>নামঃ <span className="font-semibold">{nameBangla || "................................"}</span></p><p>ঠিকানাঃ <span className="font-semibold">{addressBangla}</span></p></div><div className="text-right"><p>পদবীঃ <span className="font-semibold">{designationBangla || "................................"}</span></p><p>হিসাব নংঃ <span className="font-semibold">{accountNumber || "........................"}</span></p></div></div>
+              <div className="teacher-info grid grid-cols-2 text-[12px]"><div><p>নামঃ <span className="font-semibold">{nameBangla || "................................"}</span></p><p>ঠিকানাঃ <span className="font-semibold">{addressBangla}</span></p></div><div className="justify-self-end text-left"><p>পদবীঃ <span className="font-semibold">{designationBangla || "................................"}</span></p><p>হিসাব নংঃ <span className="font-semibold">{accountNumber || "........................"}</span></p></div></div>
               <table className="bill-meta w-full table-fixed border-collapse text-[10px]"><colgroup><col style={{ width: `${metaWidths.qualifications}%` }}/><col style={{ width: `${metaWidths.examination}%` }}/><col style={{ width: `${metaWidths.billNumber}%` }}/></colgroup><tbody><tr><td className="align-top">{degreeOptions.map((degree, index) => <span key={degree.key} className={selectedDegreeKey && selectedDegreeKey !== degree.key ? "line-through" : undefined}>{index > 0 ? "/" : ""}{degree.label}</span>)}<br/><span>বিভাগঃ বিইসিএম বিভাগ</span></td><td className="text-center font-bold">{examTitle}</td><td className="text-center font-bold">বিল নং- {toBengaliDigits(bill.billInfo.billNo || "০১")}</td></tr></tbody></table>
 
               <table className="bill-table w-full table-fixed border-collapse text-[10px]">
-                <colgroup><col style={{ width: `${tableWidths.serial}%` }}/><col style={{ width: `${tableWidths.description}%` }}/><col style={{ width: `${tableWidths.course}%` }}/><col style={{ width: `${tableWidths.quantity}%` }}/><col style={{ width: `${tableWidths.courseCount}%` }}/><col style={{ width: `${tableWidths.classTestCount}%` }}/><col style={{ width: `${tableWidths.rate}%` }}/><col style={{ width: `${tableWidths.amount}%` }}/></colgroup>
-                <thead><tr><th>ক্রমিক নং</th><th>কাজের বিবরণ</th><th>বিষয় / কোর্স</th><th>খাতা / ছাত্র সংখ্যা</th><th>কোর্স সংখ্যা</th><th>ক্লাস টেস্ট সংখ্যা</th><th>পারিশ্রমিকের হার</th><th>টাকার পরিমাণ</th></tr></thead>
-                <tbody>{rows.map((row, index) => <tr key={row.id}><td className="text-center">{index + 1}।</td><td>{row.description || "—"}</td><td className="text-center">{row.course || "—"}</td><td className="text-center">{row.quantity || "—"}</td><td className="text-center">{row.courseCount || "—"}</td><td className="text-center">{row.classTestCount || "—"}</td><td className="text-right">{row.rate || "—"}</td><td className="text-right">{rowAmount(row).toLocaleString("en-BD")}</td></tr>)}</tbody>
-                <tfoot><tr><td colSpan={2} className="font-semibold">কথায়ঃ {amountInBanglaWords(total)} টাকা মাত্র</td><td colSpan={5} className="text-right font-semibold">মোটঃ</td><td className="text-right font-bold">{total.toLocaleString("en-BD")}</td></tr></tfoot>
+                <colgroup><col style={{ width: `${tableWidths.serial}%` }}/><col style={{ width: `${tableWidths.descriptionGroup}%` }}/><col style={{ width: `${tableWidths.description}%` }}/><col style={{ width: `${tableWidths.course}%` }}/><col style={{ width: `${tableWidths.quantity}%` }}/><col style={{ width: `${tableWidths.courseCount}%` }}/><col style={{ width: `${tableWidths.classTestCount}%` }}/><col style={{ width: `${tableWidths.rate}%` }}/><col style={{ width: `${tableWidths.amount}%` }}/></colgroup>
+                <thead><tr><th>ক্রমিক নং</th><th colSpan={2}>কাজের বিবরণ</th><th>বিষয় / কোর্স</th><th>খাতা / ছাত্র সংখ্যা</th><th>কোর্স সংখ্যা</th><th>ক্লাস টেস্ট সংখ্যা</th><th>পারিশ্রমিকের হার</th><th>টাকার পরিমাণ</th></tr></thead>
+                <tbody>
+                  {chartSections.flatMap((section) =>
+                    section.rows.map((chartRow, rowIndex) => {
+                      const duty = chartRow.duty;
+                      return (
+                        <tr key={`${section.serial}-${chartRow.id}`}>
+                          {rowIndex === 0 && <td rowSpan={section.rows.length} className="text-center">{toBengaliDigits(String(section.serial))}।</td>}
+                          {rowIndex === 0 && <td rowSpan={section.rows.length} className="text-center">{section.title}</td>}
+                          <td>{chartRow.description}</td>
+                          <td className="text-center">{duty?.course || ""}</td>
+                          <td className="text-center">{duty?.quantity ? toBengaliDigits(String(duty.quantity)) : ""}</td>
+                          <td className="text-center">{duty?.courseCount ? toBengaliDigits(String(duty.courseCount)) : ""}</td>
+                          <td className="text-center">{duty?.classTestCount ? toBengaliDigits(String(duty.classTestCount)) : ""}</td>
+                          <td className="text-center">{duty?.rate ? toBengaliDigits(String(duty.rate)) : ""}</td>
+                          <td className="text-center">{duty ? rowAmount(duty).toLocaleString("bn-BD") : ""}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+                <tfoot><tr><td className="text-center font-semibold">কথায়ঃ</td><td colSpan={6} className="font-semibold">{amountInBanglaWords(total)} টাকা মাত্র</td><td className="text-center font-semibold">মোটঃ</td><td className="text-center font-bold">{total.toLocaleString("bn-BD")}</td></tr></tfoot>
               </table>
 
+              <div className="legacy-bottom">
               <p className="mt-5 text-[11px]">প্রতি স্বাক্ষরিত</p>
               <div className="mt-12 grid grid-cols-2 text-center text-[11px]"><div><div className="mx-auto w-56 border-t border-black pt-1">সভাপতি, পরীক্ষা কমিটি।</div></div><div><div className="mx-auto w-56 border-t border-black pt-1">পরীক্ষকের স্বাক্ষর</div><p className="mt-1">তারিখঃ</p></div></div>
               <p className="mt-6 text-center text-[11px] font-semibold underline">বিত্ত শাখা পূরণ করিবেন</p>
               <p className="mt-4 text-[11px]">{nameBangla || "................................"}-কে {amountInBanglaWords(total)} টাকা মাত্র পরিশোধ করা হইল।</p>
               <div className="mt-12 grid grid-cols-4 text-center text-[10px]"><p>হিসাব সহকারী</p><p>হিসাব রক্ষক</p><p>সহকারী কম্পট্রোলার</p><p>কম্পট্রোলার<br/>রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</p></div>
               <div className="mt-7 border-t border-black pt-2 text-[9px] leading-5"><p><strong>বিঃদ্রঃ-</strong> বিলের মোট পরিমাণ ২০০/- টাকার উপরে হইলে ১০/- টাকা মূল্যের রাজস্ব স্ট্যাম্প দিতে হইবে।</p><p>সরকারি শিক্ষক/অফিসারদের ক্ষেত্রে যথাযথ কর্তৃপক্ষের অনুমোদন প্রয়োজন। উল্লেখ্য যে, প্রত্যেক সেমিস্টার পরীক্ষার জন্য পৃথকভাবে বিল জমা দিতে হইবে।</p></div>
-            </article>
-          </section>
-        </div>
-      </div>
+              </div>
+              <p className="mt-5 text-center text-[11px]">প্রতি স্বাক্ষরিত</p>
+              <div className="mt-16 grid grid-cols-2 text-center text-[11px]"><div><p className="mb-8">সভাপতি, পরীক্ষা কমিটি।</p></div><div><div className="mx-auto w-56 border-t border-black pt-1">পরীক্ষকের স্বাক্ষর</div><p className="mt-2">তারিখঃ</p></div></div>
+              <div className="mt-6 border border-black text-center text-[11px]"><p className="border-b border-black py-1 font-semibold">হিসাব শাখা পূরণ করিবেন</p><p className="py-3">{nameBangla || "................................"} কে {amountInBanglaWords(total)} টাকা মাত্র পরিশোধ করা হইল।</p></div>
+              <div className="mt-10 grid grid-cols-4 text-center text-[10px]"><p>হিসাব সহকারী</p><p>হিসাব রক্ষক</p><p>সহকারী কম্পট্রোলার</p><p>কম্পট্রোলার<br/>রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</p></div>
+              <div className="mt-5 border-t border-black pt-2 text-center text-[9px] leading-5"><p>বিঃদ্রঃ বিলের মোট পরিমাণ ২০০/- টাকার উপরে হইলে ১০/- টাকা মূল্যের রাজস্ব স্ট্যাম্প দিতে হইবে।</p><p>সরকারি শিক্ষক/অফিসারদের ক্ষেত্রে যথাযথ কর্তৃপক্ষের অনুমোদন প্রয়োজন। উল্লেখ্য যে, প্রত্যেক সেমিস্টার পরীক্ষার জন্য পৃথকভাবে বিল জমা দিতে হইবে।</p></div>
+             </article>
+           </section>
+                 </div>
+       </div>
       <style jsx global>{`
         /* The bill strings are Unicode Bengali. SutonnyMJ uses legacy Bijoy
            encoding and renders Unicode text as scrambled glyphs, so use a
            Unicode Bengali font for the readable preview/print output. */
         .bill-sheet { width: 210mm; min-height: 297mm; padding: 12mm 13mm; font-family: "Nirmala UI", "Vrinda", "SolaimanLipi", sans-serif; }
-        .bill-header { margin-bottom: 26mm; }
         .teacher-info { margin-bottom: 3mm; }
         .bill-meta td { border: 1px solid #000; padding: 4px 5px; vertical-align: middle; }
         .bill-table { margin-top: 3mm; }
+        .legacy-bottom { display: none; }
         .bill-table th, .bill-table td { border: 1px solid #000; padding: 4px 5px; vertical-align: middle; }
         .bill-table th { text-align: center; vertical-align: top; font-weight: 600; }
         @media print {

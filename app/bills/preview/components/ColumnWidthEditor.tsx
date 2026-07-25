@@ -6,12 +6,14 @@ interface Props {
   widths: ColumnWidths;
   setWidths: (data: ColumnWidths) => void;
   labels?: Record<string, string>;
+  lockedKeys?: string[];
 }
 
 export default function ColumnWidthEditor({
   widths,
   setWidths,
   labels = {},
+  lockedKeys = [],
 }: Props) {
   const safeWidths = widths ?? ({} as ColumnWidths);
   const keys = Object.keys(safeWidths);
@@ -24,14 +26,18 @@ export default function ColumnWidthEditor({
     );
   }
 
-  const editableKeys = keys.slice(0, -1);
+  const editableKeys = keys.slice(0, -1).filter((key) => !lockedKeys.includes(key));
+  const lockedWidth = keys
+    .slice(0, -1)
+    .filter((key) => lockedKeys.includes(key))
+    .reduce((sum, key) => sum + (Number(safeWidths[key]) || 0), 0);
   const lastKey = keys[keys.length - 1];
 
   const sumEditable = editableKeys.reduce(
     (sum, k) => sum + (Number(safeWidths[k]) || 0),
     0
   );
-  const computedLast = 100 - sumEditable;
+  const computedLast = 100 - sumEditable - lockedWidth;
 
   const updateWidth = (key: string, value: string) => {
     const num = value === "" ? 0 : Number(value);
@@ -42,7 +48,7 @@ export default function ColumnWidthEditor({
     setWidths({
       ...safeWidths,
       [key]: num,
-      [lastKey]: 100 - nextSum,
+      [lastKey]: 100 - nextSum - lockedWidth,
     });
   };
 
@@ -59,7 +65,7 @@ export default function ColumnWidthEditor({
         </span>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {editableKeys.map((key) => (
+        {keys.slice(0, -1).map((key) => (
           <div key={key}>
             <label className="mb-1 block text-xs text-gray-500">
               {labels[key] || key}
@@ -69,7 +75,8 @@ export default function ColumnWidthEditor({
               min={0}
               max={100}
               value={safeWidths[key]}
-              onChange={(e) => updateWidth(key, e.target.value)}
+              onChange={lockedKeys.includes(key) ? undefined : (e) => updateWidth(key, e.target.value)}
+              disabled={lockedKeys.includes(key)}
               className="h-8"
             />
           </div>

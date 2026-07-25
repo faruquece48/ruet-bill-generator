@@ -9,7 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import type { BillInfo, Designation, ThesisTeacher } from "./types";
 
 const designationList: Designation[] = [
@@ -32,6 +33,7 @@ export default function ThesisManager({
   thesisTeachers,
   setThesisTeachers,
 }: Props) {
+  const [isMinimized, setIsMinimized] = useState(true);
   const records = thesisTeachers;
   const setRecords = (data: ThesisTeacher[]) => {
     setThesisTeachers(data);
@@ -105,15 +107,29 @@ export default function ThesisManager({
 
   return (
     <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
-      <h2 className="text-xl font-bold">
-        {sectionNumber}. List of Teachers Associated with Thesis/Project
-        Examination
-      </h2>
-      <Button type="button" onClick={addRecord}>
-        <Plus className="mr-2 h-4 w-4" />
-        Add Teacher
-      </Button>
-      <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-xl font-bold">
+          {sectionNumber}. List of Teachers Associated with Thesis/Project
+          Examination
+        </h2>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setIsMinimized((current) => !current)}
+          aria-expanded={!isMinimized}
+          aria-label={isMinimized ? "Expand thesis teacher list" : "Minimize thesis teacher list"}
+        >
+          {isMinimized ? <ChevronDown className="mr-2 h-4 w-4" /> : <ChevronUp className="mr-2 h-4 w-4" />}
+          {isMinimized ? "Expand" : "Minimize"}
+        </Button>
+      </div>
+      {!isMinimized && <>
+        <Button type="button" onClick={addRecord}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Teacher
+        </Button>
+        <div className="space-y-4">
         {records.map((teacher, index) => (
           <div key={index} className="rounded-lg border bg-slate-50 p-4">
             <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_1fr_1fr] gap-4 items-end">
@@ -195,7 +211,8 @@ export default function ThesisManager({
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      </>}
     </div>
   );
 }
