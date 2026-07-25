@@ -191,6 +191,41 @@ export default function SessionalDutyManager({
     setCourses(updated);
   };
 
+  const addIndustrialAttachmentTeacher = (courseIndex: number) => {
+    const updated = [...courses];
+    updated[courseIndex].additionalTeachers.push({
+      name: "",
+      designation: "Assistant Professor",
+      department: "Dept. of BECM, RUET",
+      duties: { courseFile: false, sessional: true, boardViva: false },
+      students: { ...defaultStudent },
+    });
+    setCourses(updated);
+  };
+
+  const updateIndustrialAttachmentTeacher = (
+    courseIndex: number,
+    teacherIndex: number,
+    field: "name" | "designation" | "department",
+    value: string
+  ) => {
+    const updated = [...courses];
+    const teacher = updated[courseIndex].additionalTeachers[teacherIndex];
+    if (!teacher) return;
+    if (field === "designation") teacher.designation = value as Designation;
+    else teacher[field] = value;
+    setCourses(updated);
+  };
+
+  const removeIndustrialAttachmentTeacher = (
+    courseIndex: number,
+    teacherIndex: number
+  ) => {
+    const updated = [...courses];
+    updated[courseIndex].additionalTeachers.splice(teacherIndex, 1);
+    setCourses(updated);
+  };
+
   return (
     <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
       <h2 className="text-xl font-bold">
@@ -198,6 +233,8 @@ export default function SessionalDutyManager({
       </h2>
       {courses.map((course, cIndex) => {
         const minimized = minimizedCourses.has(cIndex);
+        const isIndustrialAttachment =
+          course.courseCode.replace(/\s+/g, "").toUpperCase() === "BECM4100";
         return (
         <div
           key={cIndex}
@@ -275,6 +312,7 @@ export default function SessionalDutyManager({
             </label>
           </div>
           {/* Teacher Information */}
+          {!isIndustrialAttachment && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
               placeholder="Teacher Name"
@@ -308,6 +346,7 @@ export default function SessionalDutyManager({
               }
             />
           </div>
+          )}
           {/* Duty Selection with inline student count */}
           <div>
             <h4 className="text-sm font-medium mb-2">Duty Selection</h4>
@@ -341,8 +380,56 @@ export default function SessionalDutyManager({
               )}
             </div>
           </div>
+          {isIndustrialAttachment && (
+            <div className="rounded-lg border bg-white p-5 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h4 className="font-bold text-lg">BECM 4100 Engaged Teachers</h4>
+                  <p className="text-xs text-slate-500">The sessional student total is divided equally among all named teachers.</p>
+                </div>
+                <Button type="button" variant="outline" onClick={() => addIndustrialAttachmentTeacher(cIndex)}>
+                  Add Teacher
+                </Button>
+              </div>
+              {course.additionalTeachers.map((teacher, teacherIndex) => (
+                <div key={teacherIndex} className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+                  <Input
+                    placeholder="Teacher Name"
+                    value={teacher.name}
+                    onChange={(event) => updateIndustrialAttachmentTeacher(cIndex, teacherIndex, "name", event.target.value)}
+                  />
+                  <Select
+                    value={teacher.designation}
+                    onValueChange={(value) => value !== null && updateIndustrialAttachmentTeacher(cIndex, teacherIndex, "designation", value)}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {designationList.map((designation) => (
+                        <SelectItem key={designation} value={designation}>{designation}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    placeholder="Department"
+                    value={teacher.department}
+                    onChange={(event) => updateIndustrialAttachmentTeacher(cIndex, teacherIndex, "department", event.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeIndustrialAttachmentTeacher(cIndex, teacherIndex)}
+                    aria-label={`Remove engaged teacher ${teacherIndex + 2}`}
+                    className="text-red-600"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
           {/* Additional Teacher */}
-          {course.additionalTeachers.length > 0 && (
+          {!isIndustrialAttachment && course.additionalTeachers.length > 0 && (
             <div className="rounded-lg border bg-white p-5 space-y-5">
               <h4 className="font-bold text-lg">Additional Teacher Required</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

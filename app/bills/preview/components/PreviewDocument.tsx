@@ -40,12 +40,6 @@ const scrutinyCols: PreviewColumn[] = [
   { key: "teacherLine", label: "Name of The Teachers & Designation" },
   { key: "scriptCount", label: "No. of Script", align: "center" },
 ];
-const sessionalCols: PreviewColumn[] = [
-  { key: "courseLine", label: "Course No. & Title" },
-  { key: "credit", label: "Credit", align: "center" },
-  { key: "teacherLine", label: "Name of Teachers & Designation" },
-  { key: "students", label: "No. of Students", align: "center" },
-];
 const listCols: PreviewColumn[] = [
   { key: "sl", label: "Sl. No." },
   { key: "teacherLine", label: "Name of Teachers & Designation" },
@@ -281,16 +275,20 @@ export default function PreviewDocument({ bill }: Props) {
       hasData: sessionalRows.length > 0,
       includeInBacklog: false,
       content: (
-        <PreviewTable
-          columns={sessionalCols}
-          rows={sessionalRows.map((r) => ({
-            courseLine: r.courseLine,
-            credit: r.credit,
-            courseCode: `${r.courseCode} — ${r.courseTitle}`,
-            teacherLine: r.teacherLine,
-            students: r.students,
-          }))}
-          widths={bill.layoutSettings.sessionalDuty}
+        <GroupedCourseTable
+          entryColumns={[
+            { key: "credit", label: "Credit", align: "center" },
+            { key: "teacherLine", label: "Name of Teachers & Designation" },
+          ]}
+          groups={groupByCourse(sessionalRows)}
+          widths={{
+            course: bill.layoutSettings.sessionalDuty.courseLine ?? 30,
+            credit: bill.layoutSettings.sessionalDuty.credit ?? 8,
+            teacherLine: bill.layoutSettings.sessionalDuty.teacherLine ?? 52,
+            students: bill.layoutSettings.sessionalDuty.students ?? 10,
+          }}
+          groupedEntryKeys={["credit"]}
+          groupMergeColumn={{ key: "students", label: "No. of Students", align: "center", value: (group) => group.entries[0]?.students }}
         />
       ),
     },

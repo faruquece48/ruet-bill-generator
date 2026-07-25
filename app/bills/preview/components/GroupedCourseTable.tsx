@@ -22,6 +22,7 @@ interface Props<T> {
   groups: CourseGroup<T>[];
   widths: ColumnWidths; // keys: "course" + entryColumns[].key + groupMergeColumn?.key
   groupMergeColumn?: GroupMergeColumn<T>;
+  groupedEntryKeys?: string[];
 }
 
 export default function GroupedCourseTable<T extends Record<string, any>>({
@@ -29,6 +30,7 @@ export default function GroupedCourseTable<T extends Record<string, any>>({
   groups,
   widths,
   groupMergeColumn,
+  groupedEntryKeys = [],
 }: Props<T>) {
   const alignClass = (a?: string) =>
     a === "center" ? "text-center" : a === "right" ? "text-right" : "text-left";
@@ -83,16 +85,19 @@ export default function GroupedCourseTable<T extends Record<string, any>>({
                       <div>{formatCell(group.courseTitle)}</div>
                     </td>
                   )}
-                  {entryColumns.map((c) => (
-                    <td
-                      key={c.key}
-                      className={`border border-gray-400 px-2 py-1 align-top ${alignClass(
-                        c.align
-                      )}`}
-                    >
-                      {formatCell((entry as any)[c.key])}
-                    </td>
-                  ))}
+                  {entryColumns.map((c) =>
+                    groupedEntryKeys.includes(c.key) ? (
+                      ei === 0 && (
+                        <td key={c.key} rowSpan={group.entries.length} className={`border border-gray-400 px-2 py-1 align-middle ${alignClass(c.align)}`}>
+                          {formatCell((entry as any)[c.key])}
+                        </td>
+                      )
+                    ) : (
+                      <td key={c.key} className={`border border-gray-400 px-2 py-1 align-top ${alignClass(c.align)}`}>
+                        {formatCell((entry as any)[c.key])}
+                      </td>
+                    )
+                  )}
                   {ei === 0 && groupMergeColumn && (
                     <td
                       rowSpan={group.entries.length}

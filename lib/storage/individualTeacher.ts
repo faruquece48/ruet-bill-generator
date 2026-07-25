@@ -1,0 +1,41 @@
+const STORAGE_KEY = "individualTeacherInformation";
+
+export interface SavedIndividualTeacherInformation {
+  nameBangla: string;
+  designationBangla: string;
+  addressBangla: string;
+  accountNumber: string;
+}
+
+type TeacherInformationIndex = Record<string, SavedIndividualTeacherInformation>;
+
+const teacherKey = (teacherName: string) => teacherName.trim().toLocaleLowerCase();
+
+function loadIndex(): TeacherInformationIndex {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function loadIndividualTeacherInformation(
+  teacherName: string
+): SavedIndividualTeacherInformation | null {
+  return loadIndex()[teacherKey(teacherName)] ?? null;
+}
+
+export function saveIndividualTeacherInformation(
+  teacherName: string,
+  information: SavedIndividualTeacherInformation
+): boolean {
+  try {
+    const index = loadIndex();
+    index[teacherKey(teacherName)] = information;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(index));
+    return true;
+  } catch {
+    return false;
+  }
+}

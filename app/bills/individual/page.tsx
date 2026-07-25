@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { emptyBill } from "../create/components/emptyBill";
 import type { ExaminationBillData } from "../create/components/types";
 import { loadCurrentWork } from "@/lib/storage/draft";
+import {
+  loadIndividualTeacherInformation,
+  saveIndividualTeacherInformation,
+} from "@/lib/storage/individualTeacher";
 import ColumnWidthEditor from "../preview/components/ColumnWidthEditor";
 import type { ColumnWidths } from "../create/components/types";
 import {
@@ -11,23 +15,27 @@ import {
   buildRemunerationChart,
   collectTeacherNames,
   collectTeacherNameWarnings,
+  descriptionRowSpan,
   deriveTeacherRows,
+  isMinimumAmountApplied,
   rowAmount,
 } from "./individualBill";
 
 const inputClass = "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500";
+const defaultAddressBangla = "বিইসিএম বিভাগ, রুয়েট।";
 
 export default function IndividualTeacherBillPage() {
   const [bill, setBill] = useState<ExaminationBillData>(emptyBill);
   const [teacher, setTeacher] = useState("");
   const [nameBangla, setNameBangla] = useState("");
   const [designationBangla, setDesignationBangla] = useState("");
-  const [addressBangla, setAddressBangla] = useState("বিইসিএম বিভাগ, রুয়েট।");
+  const [addressBangla, setAddressBangla] = useState(defaultAddressBangla);
   const [accountNumber, setAccountNumber] = useState("");
+  const [teacherSaveStatus, setTeacherSaveStatus] = useState("");
   const [headerGap, setHeaderGap] = useState(3);
   const [remunerationOpen, setRemunerationOpen] = useState(false);
   const [metaWidths, setMetaWidths] = useState<ColumnWidths>({ qualifications: 37, examination: 47, billNumber: 16 });
-  const [tableWidths, setTableWidths] = useState<ColumnWidths>({ serial: 6, descriptionGroup: 12, description: 19, course: 11, quantity: 10, courseCount: 6, classTestCount: 9, rate: 11, amount: 16 });
+  const [tableWidths, setTableWidths] = useState<ColumnWidths>({ serial: 6, descriptionGroup: 11, description: 18, course: 13, quantity: 10, courseCount: 6, classTestCount: 9, rate: 12, amount: 15 });
 
   useEffect(() => {
     const saved = loadCurrentWork();
@@ -59,7 +67,25 @@ export default function IndividualTeacherBillPage() {
 
   const selectTeacher = (value: string) => {
     setTeacher(value);
-    if (!nameBangla) setNameBangla(value);
+    setTeacherSaveStatus("");
+    const savedInformation = value
+      ? loadIndividualTeacherInformation(value)
+      : null;
+    setNameBangla(savedInformation?.nameBangla ?? value);
+    setDesignationBangla(savedInformation?.designationBangla ?? "");
+    setAddressBangla(savedInformation?.addressBangla ?? defaultAddressBangla);
+    setAccountNumber(savedInformation?.accountNumber ?? "");
+  };
+
+  const saveTeacherInformation = () => {
+    if (!teacher) return;
+    const saved = saveIndividualTeacherInformation(teacher, {
+      nameBangla,
+      designationBangla,
+      addressBangla,
+      accountNumber,
+    });
+    setTeacherSaveStatus(saved ? "Teacher information saved." : "Unable to save teacher information.");
   };
   return (
     <main className="individual-bill-page py-8">
@@ -82,6 +108,10 @@ export default function IndividualTeacherBillPage() {
               <label className="block text-sm">পদবী (বাংলায়)<input value={designationBangla} onChange={(event) => setDesignationBangla(event.target.value)} className={`${inputClass} mt-1`} placeholder="সহকারী অধ্যাপক" /></label>
               <label className="block text-sm">ঠিকানা<input value={addressBangla} onChange={(event) => setAddressBangla(event.target.value)} className={`${inputClass} mt-1`} /></label>
               <label className="block text-sm">হিসাব নং<input value={accountNumber} onChange={(event) => setAccountNumber(event.target.value)} className={`${inputClass} mt-1`} /></label>
+              <div className="flex items-center gap-3">
+                <button type="button" disabled={!teacher} onClick={saveTeacherInformation} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300">Save teacher information</button>
+                {teacherSaveStatus && <span role="status" className={`text-xs ${teacherSaveStatus.startsWith("Unable") ? "text-red-600" : "text-emerald-700"}`}>{teacherSaveStatus}</span>}
+              </div>
             </div>
 
             <div className="space-y-3 border-t pt-4">
@@ -126,16 +156,25 @@ export default function IndividualTeacherBillPage() {
                   {chartSections.flatMap((section) =>
                     section.rows.map((chartRow, rowIndex) => {
                       const duty = chartRow.duty;
+                      const workDescriptionRowSpan = descriptionRowSpan(section.rows, rowIndex);
                       return (
                         <tr key={`${section.serial}-${chartRow.id}`}>
                           {rowIndex === 0 && <td rowSpan={section.rows.length} className="text-center">{toBengaliDigits(String(section.serial))}।</td>}
                           {rowIndex === 0 && <td rowSpan={section.rows.length} className="text-center">{section.title}</td>}
-                          <td>{chartRow.description}</td>
+                          {workDescriptionRowSpan > 0 && (
+                            <td rowSpan={workDescriptionRowSpan}>{chartRow.description}</td>
+                          )}
                           <td className="text-center">{duty?.course || ""}</td>
                           <td className="text-center">{duty?.quantity ? toBengaliDigits(String(duty.quantity)) : ""}</td>
                           <td className="text-center">{duty?.courseCount ? toBengaliDigits(String(duty.courseCount)) : ""}</td>
                           <td className="text-center">{duty?.classTestCount ? toBengaliDigits(String(duty.classTestCount)) : ""}</td>
-                          <td className="text-center">{duty?.rate ? toBengaliDigits(String(duty.rate)) : ""}</td>
+                          <td className="text-center">
+                            {duty && isMinimumAmountApplied(duty)
+                              ? `${toBengaliDigits(String(duty.minimumAmount))} (নূন্যতম)`
+                              : duty?.rate
+                                ? toBengaliDigits(String(duty.rate))
+                                : ""}
+                          </td>
                           <td className="text-center">{duty ? rowAmount(duty).toLocaleString("bn-BD") : ""}</td>
                         </tr>
                       );

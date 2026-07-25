@@ -173,11 +173,13 @@ function GroupedTable({
   entryColumns,
   groups,
   groupMergeColumn,
+  groupedEntryKeys,
 }: {
   courseWidth: number;
   entryColumns: Col[];
   groups: { courseCode: string; courseTitle: string; entries: Record<string, any>[] }[];
-  groupMergeColumn?: { key: string; label: string; width: number; align?: "left" | "center" | "right"; value: () => React.ReactNode };
+  groupMergeColumn?: { key: string; label: string; width: number; align?: "left" | "center" | "right"; value: (group: { courseCode: string; courseTitle: string; entries: Record<string, any>[] }) => React.ReactNode };
+  groupedEntryKeys?: string[];
 }) {
   const normalized = normalizeColumns([
     { key: "course", label: "Course No. & Title", width: courseWidth },
@@ -186,8 +188,10 @@ function GroupedTable({
   ]);
   const normalizedCourseWidth = normalized[0].width;
   const normalizedEntryColumns = normalized.slice(1, 1 + entryColumns.length);
+  const mergedEntryColumns = normalizedEntryColumns.filter((c) => groupedEntryKeys?.includes(c.key));
+  const repeatingEntryColumns = normalizedEntryColumns.filter((c) => !groupedEntryKeys?.includes(c.key));
   const normalizedMergeColumn = groupMergeColumn ? normalized[normalized.length - 1] : undefined;
-  const entryTotal = normalizedEntryColumns.reduce((sum, column) => sum + column.width, 0) || 1;
+  const entryTotal = repeatingEntryColumns.reduce((sum, column) => sum + column.width, 0) || 1;
 
   return (
     <View style={styles.table}>
@@ -221,6 +225,11 @@ function GroupedTable({
             <Text>{formatCell(group.courseCode)}</Text>
             <Text>{formatCell(group.courseTitle)}</Text>
           </View>
+          {mergedEntryColumns.map((c) => (
+            <View key={c.key} style={[styles.cell, { width: `${c.width}%`, justifyContent: "center" }]}>
+              <Text style={c.align === "center" ? styles.center : undefined}>{formatCell(group.entries[0]?.[c.key])}</Text>
+            </View>
+          ))}
           <View style={{ width: `${entryTotal}%` }}>
             {group.entries.map((entry, ei) => (
               <View
@@ -230,26 +239,17 @@ function GroupedTable({
                   ei > 0 ? styles.innerRowDivider : {},
                 ]}
               >
-                {normalizedEntryColumns.map((c, columnIndex) => (
-                  <View
-                    key={c.key}
-                    style={[
-                      styles.cell,
-                      { width: `${(c.width / entryTotal) * 100}%` },
-                      !normalizedMergeColumn && columnIndex === normalizedEntryColumns.length - 1
-                        ? styles.cellNoRightEdge
-                        : {},
-                    ]}
-                  >
-                    <Text style={c.align === "center" ? styles.center : undefined}>{formatCell(entry[c.key])}</Text>
-                  </View>
+                {repeatingEntryColumns.map((c, columnIndex) => (
+                    <View key={c.key} style={[styles.cell, { width: `${(c.width / entryTotal) * 100}%` }, !normalizedMergeColumn && columnIndex === repeatingEntryColumns.length - 1 ? styles.cellNoRightEdge : {}]}>
+                      <Text style={c.align === "center" ? styles.center : undefined}>{formatCell(entry[c.key])}</Text>
+                    </View>
                 ))}
               </View>
             ))}
           </View>
           {normalizedMergeColumn && groupMergeColumn && (
             <View style={[styles.cell, styles.cellNoRightEdge, { width: `${normalizedMergeColumn.width}%`, justifyContent: "center" }]}>
-              <Text style={styles.center}>{formatCell(groupMergeColumn.value())}</Text>
+              <Text style={styles.center}>{formatCell(groupMergeColumn.value(group))}</Text>
             </View>
           )}
         </View>
@@ -357,6 +357,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
   const assignmentRows = flattenAssignment(bill.courseDuties.obe);
   const courseFileRows = flattenCourseFile(bill.courseDuties.obe, bill.sessionalDuties);
   const sessionalRows = flattenSessional(bill.sessionalDuties);
+  const sessionalGroups = groupByCourse(sessionalRows);
   const boardVivaRows = flattenBoardViva(bill.sessionalDuties);
   const tabulationRows = flattenTabulation(bill.studentDuties);
   const gradeSheetRows = deriveGradeSheetRows(
@@ -563,14 +564,15 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       hasData: sessionalRows.length > 0,
       includeInBacklog: false,
       content: (
-        <SimpleTable
-          columns={[
-            { key: "courseLine", label: "Course No. & Title", width: lw.sessionalDuty.courseLine ?? 30 },
+        <GroupedTable
+          courseWidth={lw.sessionalDuty.courseLine ?? 30}
+          entryColumns={[
             { key: "credit", label: "Credit", width: lw.sessionalDuty.credit ?? 8, align: "center" },
             { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.sessionalDuty.teacherLine ?? 52 },
-            { key: "students", label: "No. of Students", width: lw.sessionalDuty.students ?? 10, align: "center" },
           ]}
-          rows={sessionalRows}
+          groups={sessionalGroups}
+          groupedEntryKeys={["credit"]}
+          groupMergeColumn={{ key: "students", label: "No. of Students", width: lw.sessionalDuty.students ?? 10, align: "center", value: (group) => group.entries[0]?.students }}
         />
       ),
     },

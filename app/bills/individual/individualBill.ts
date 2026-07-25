@@ -8,6 +8,7 @@ export interface IndividualBillRow {
   courseCount: string;
   classTestCount: string;
   rate: string;
+  minimumAmount?: number;
 }
 
 const withoutCourtesyTitle = (value: string) =>
@@ -99,7 +100,22 @@ export function deriveTeacherRows(
   const add = (row: Omit<IndividualBillRow, "id">) =>
     rows.push({ ...row, id: `duty-${sequence++}` });
 
-  [...bill.courseDuties.obe, ...bill.courseDuties.nonObe].forEach((course) => {
+  bill.committees.forEach((member, index) => {
+    if (!sameTeacher(member.name, teacherName)) return;
+    add({
+      description: index === 0 ? "পরীক্ষা কমিটির সভাপতি" : "পরীক্ষা কমিটির সদস্য",
+      course: "",
+      quantity: "",
+      courseCount: "",
+      classTestCount: "",
+      rate: "5000",
+    });
+  });
+
+  [
+    ...bill.courseDuties.obe.map((course) => ({ course, isNonObe: false })),
+    ...bill.courseDuties.nonObe.map((course) => ({ course, isNonObe: true })),
+  ].forEach(({ course, isNonObe }) => {
     course.parts.forEach((part) => {
       const entries = [
         { name: part.teacher, duties: part.duties, students: part.students },
@@ -120,8 +136,8 @@ export function deriveTeacherRows(
           const students = entry.students.classTestStudents;
           add({ description: "এসাইনমেন্ট / প্রেজেন্টেশন", course: course.courseCode, quantity: students ? `${students}/2` : entry.students.assignment, courseCount: "1", classTestCount: "2", rate: "50" });
         }
-        if (entry.duties.courseFile)
-          add({ description: "কোর্স ফাইল প্রস্তুতকরণ", course: course.courseCode, quantity: "", courseCount: "1", classTestCount: "", rate: "3000" });
+        if (entry.duties.courseFile && !isNonObe)
+          add({ description: "কোর্স ফাইল প্রস্তুতকরণ", course: course.courseCode, quantity: "", courseCount: "1/2", classTestCount: "", rate: "6000" });
       });
     });
   });
@@ -131,25 +147,158 @@ export function deriveTeacherRows(
       { name: course.teacher, duties: course.duties, students: course.students },
       ...course.additionalTeachers.map((teacher) => ({ name: teacher.name, duties: teacher.duties, students: teacher.students })),
     ];
+    if (course.courseCode.replace(/\s+/g, "").toUpperCase() === "BECM4100") {
+      const engagedEntries = entries.slice(1).filter((entry) => entry.name.trim());
+      const engagedTeacherCount = engagedEntries.length;
+      engagedEntries.filter((entry) => sameTeacher(entry.name, teacherName)).forEach(() => {
+        const totalStudents = Number(course.students.sessional) || 0;
+        add({
+          description: "ইন্ডাস্ট্রিয়াল অ্যাটাচমেন্ট",
+          course: course.courseCode,
+          quantity: totalStudents && engagedTeacherCount
+            ? `${totalStudents}/${engagedTeacherCount}`
+            : "",
+          courseCount: "1",
+          classTestCount: "",
+          rate: "400",
+        });
+        add({
+          description: "কোর্স ফাইল প্রস্তুতকরণ",
+          course: course.courseCode,
+          quantity: "",
+          courseCount: `1/${engagedTeacherCount}`,
+          classTestCount: "",
+          rate: "6000",
+        });
+      });
+      return;
+    }
     entries.filter((entry) => sameTeacher(entry.name, teacherName)).forEach((entry) => {
       if (entry.duties.sessional)
-        add({ description: `ব্যবহারিক / সেশনাল (${course.credit || "-"})`, course: course.courseCode, quantity: String(entry.students.sessional || ""), courseCount: "1", classTestCount: "", rate: "" });
+        add({ description: Number(course.credit) === 1.5 ? "সেশনাল (১.৫)" : "সেশনাল (০.৭৫)", course: course.courseCode, quantity: String(entry.students.sessional || ""), courseCount: "1", classTestCount: "", rate: "400" });
       if (entry.duties.boardViva)
-        add({ description: "মৌখিক পরীক্ষা (ফাইনাল)", course: course.courseCode, quantity: String(entry.students.boardViva || ""), courseCount: "1", classTestCount: "", rate: "" });
+        add({ description: "ভাইভা (সেন্ট্রাল/বোর্ড)", course: course.courseCode, quantity: String(entry.students.boardViva || ""), courseCount: "1", classTestCount: "", rate: "150" });
       if (entry.duties.courseFile)
-        add({ description: "কোর্স ফাইল প্রস্তুতকরণ", course: course.courseCode, quantity: "", courseCount: "1", classTestCount: "", rate: "3000" });
+        add({ description: "কোর্স ফাইল প্রস্তুতকরণ", course: course.courseCode, quantity: "", courseCount: "1", classTestCount: "", rate: "6000" });
     });
   });
 
   [...bill.scrutinies.obe, ...bill.scrutinies.nonObe]
     .filter((teacher) => sameTeacher(teacher.name, teacherName))
-    .forEach((teacher) => add({ description: "স্ক্রুটিনি", course: "", quantity: String(teacher.scriptCount || ""), courseCount: "", classTestCount: "", rate: "" }));
-  bill.studentDuties.filter((teacher) => sameTeacher(teacher.name, teacherName)).forEach((teacher) =>
-    add({ description: "টেবুলেশন", course: "", quantity: String(teacher.students || bill.tabulationStudentCount), courseCount: "", classTestCount: "", rate: "90" })
+    .forEach((teacher) => add({ description: "স্ক্রুটিনি", course: "", quantity: String(teacher.scriptCount || ""), courseCount: "", classTestCount: "", rate: "30", minimumAmount: 1200 }));
+  bill.studentDuties
+    .filter((teacher) => sameTeacher(teacher.name, teacherName))
+    .forEach(() =>
+      add({
+        description: "রেজাল্ট প্রস্তুতকরণ",
+        course: "",
+        quantity: bill.tabulationStudentCount
+          ? `${bill.tabulationStudentCount}/${bill.studentDuties.length}`
+          : "",
+        courseCount: "",
+        classTestCount: "",
+        rate: "90",
+      })
+    );
+  bill.studentDuties
+    .filter((teacher) => sameTeacher(teacher.name, teacherName))
+    .forEach(() =>
+      add({
+        description: "রেজাল্ট ভেরিফিকেশন",
+        course: "",
+        quantity: bill.tabulationStudentCount
+          ? `${bill.tabulationStudentCount}/${bill.studentDuties.length}`
+          : "",
+        courseCount: "",
+        classTestCount: "",
+        rate: "60",
+      })
+    );
+  bill.studentDuties.filter((teacher) => sameTeacher(teacher.name, teacherName)).forEach(() =>
+    add({ description: "টেবুলেশন", course: "", quantity: String(bill.tabulationStudentCount || ""), courseCount: "", classTestCount: "", rate: "90", minimumAmount: 1500 })
   );
   bill.questionWorks.filter((teacher) => sameTeacher(teacher.name, teacherName)).forEach(() =>
     add({ description: "প্রশ্নপত্র টাইপ, অঙ্কন ও তুলনা, প্রশ্নপত্র ছাপানো", course: "", quantity: `${bill.questionWorkTotal || 5}/${bill.questionWorks.filter((teacher) => teacher.name.trim()).length || 1}`, courseCount: "", classTestCount: "", rate: "2400" })
   );
+  bill.thesisTeachers
+    .filter((teacher) => sameTeacher(teacher.name, teacherName))
+    .forEach((teacher) => {
+      if (teacher.supervisorCount !== "") {
+        add({
+          description: "থিসিস সুপারভিশন",
+          course: "",
+          quantity: String(teacher.supervisorCount),
+          courseCount: "",
+          classTestCount: "",
+          rate: "6000",
+        });
+      }
+      if (teacher.examinerCount !== "") {
+        add({
+          description: "পরীক্ষক (বহিঃ)",
+          course: "",
+          quantity: String(teacher.examinerCount),
+          courseCount: "",
+          classTestCount: "",
+          rate: "4000",
+        });
+      }
+      if (teacher.attendsViva) {
+        add({
+          description: "মৌখিক পরীক্ষা (ফাইনাল)",
+          course: "",
+          quantity: "1",
+          courseCount: "",
+          classTestCount: "",
+          rate: "250",
+        });
+      }
+    });
+  bill.practicalSurveyingTeachers
+    .filter((teacher) => sameTeacher(teacher.name, teacherName))
+    .forEach(() =>
+      add({
+        description: "ইঞ্জিনিয়ারিং সার্ভে",
+        course: "CE 1226",
+        quantity: String(bill.practicalSurveyingStudentCount || ""),
+        courseCount: "1",
+        classTestCount: "",
+        rate: "600",
+      })
+    );
+  bill.verificationTeachers
+    .filter((teacher) => sameTeacher(teacher.name, teacherName))
+    .forEach(() =>
+      add({
+        description: "ফাইনাল গ্রাজুয়েশন রেজাল্ট ভেরিফিকেশন",
+        course: "",
+        quantity: bill.verificationStudentCount
+          ? `${bill.verificationStudentCount}/${bill.verificationTeachers.filter((teacher) => teacher.name.trim()).length || 1}`
+          : "",
+        courseCount: "",
+        classTestCount: "",
+        rate: "2500",
+      })
+    );
+  const namedCourseAdviserCount = bill.courseAdvisers.filter(
+    (adviser) => adviser.name.trim()
+  ).length;
+  bill.courseAdvisers
+    .filter((adviser) => sameTeacher(adviser.name, teacherName))
+    .forEach(() =>
+      add({
+        description: "কোর্স এডভাইজার",
+        course: "",
+        quantity: bill.courseAdviserStudentCount
+          ? namedCourseAdviserCount > 1
+            ? `${bill.courseAdviserStudentCount}/${namedCourseAdviserCount}`
+            : bill.courseAdviserStudentCount
+          : "",
+        courseCount: "",
+        classTestCount: "",
+        rate: "255",
+      })
+    );
   return rows;
 }
 
@@ -165,6 +314,22 @@ export interface RemunerationChartSection {
   rows: RemunerationChartRow[];
 }
 
+/**
+ * Returns the number of consecutive rows that share this description.
+ * A zero means the cell is covered by the rowSpan of an earlier row.
+ */
+export function descriptionRowSpan(
+  rows: RemunerationChartRow[],
+  rowIndex: number
+): number {
+  const description = rows[rowIndex]?.description;
+  if (rowIndex > 0 && rows[rowIndex - 1]?.description === description) return 0;
+
+  let span = 1;
+  while (rows[rowIndex + span]?.description === description) span += 1;
+  return span;
+}
+
 interface ChartTemplate {
   label: string;
   matches: (description: string) => boolean;
@@ -173,11 +338,6 @@ interface ChartTemplate {
 const exact = (label: string): ChartTemplate => ({
   label,
   matches: (description) => description === label,
-});
-
-const startsWith = (label: string): ChartTemplate => ({
-  label,
-  matches: (description) => description.startsWith(label),
 });
 
 /**
@@ -209,12 +369,10 @@ export function buildRemunerationChart(
         exact("ইঞ্জিনিয়ারিং সার্ভে"),
         exact("সেমিনার"),
         exact("প্রজেক্ট ডিজাইন"),
-        exact("সেশনাল (১.০)"),
+        exact("সেশনাল (১.৫)"),
         exact("সেশনাল (০.৭৫)"),
         exact("ইন্ডাস্ট্রিয়াল অ্যাটাচমেন্ট"),
-        exact("ভাইভা (বোর্ড/বোর্ডে)"),
-        startsWith("ব্যবহারিক / সেশনাল"),
-        exact("মৌখিক পরীক্ষা (ফাইনাল)"),
+        exact("ভাইভা (সেন্ট্রাল/বোর্ড)"),
       ],
     },
     {
@@ -222,7 +380,6 @@ export function buildRemunerationChart(
       items: [
         exact("থিসিস সুপারভিশন"),
         exact("পরীক্ষক (বহিঃ)"),
-        exact("মৌখিক পরীক্ষা (গ্রুপ)"),
         exact("মৌখিক পরীক্ষা (ফাইনাল)"),
       ],
     },
@@ -300,7 +457,19 @@ export function rowAmount(row: IndividualBillRow): number {
   const quantity = evaluateQuantity(row.quantity);
   const courses = evaluateQuantity(row.courseCount);
   const tests = evaluateQuantity(row.classTestCount);
-  return Math.round(rate * quantity * courses * tests * 100) / 100;
+  const calculatedAmount = Math.round(rate * quantity * courses * tests * 100) / 100;
+  return Math.max(row.minimumAmount ?? 0, calculatedAmount);
+}
+
+export function isMinimumAmountApplied(row: IndividualBillRow): boolean {
+  if (!row.minimumAmount) return false;
+  const rate = Number(row.rate) || 0;
+  const calculatedAmount =
+    rate *
+    evaluateQuantity(row.quantity) *
+    evaluateQuantity(row.courseCount) *
+    evaluateQuantity(row.classTestCount);
+  return calculatedAmount < row.minimumAmount;
 }
 
 const small = ["শূন্য", "এক", "দুই", "তিন", "চার", "পাঁচ", "ছয়", "সাত", "আট", "নয়", "দশ", "এগারো", "বারো", "তেরো", "চৌদ্দ", "পনেরো", "ষোলো", "সতেরো", "আঠারো", "উনিশ"];

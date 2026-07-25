@@ -319,6 +319,16 @@ export function flattenCourseFile(
         duties: at.duties,
       })),
     ];
+    if (isIndustrialAttachmentCourse(course.courseCode)) {
+      entries.slice(1).filter((entry) => entry.name.trim()).forEach((entry) => {
+        rows.push({
+          courseCode: course.courseCode,
+          courseTitle: course.courseTitle,
+          teacherLine: formatTeacher(entry.name, entry.designation, entry.department),
+        });
+      });
+      return;
+    }
     entries.forEach((entry) => {
       if (!entry.duties.courseFile) return;
       rows.push({
@@ -344,8 +354,21 @@ export interface SessionalRow {
   courseLine: string;
   credit: string;
   teacherLine: string;
-  students: number | "";
+  students: number | string;
 }
+
+const normalizedCourseCode = (courseCode: string) =>
+  courseCode.replace(/\s+/g, "").toUpperCase();
+
+export const isIndustrialAttachmentCourse = (courseCode: string) =>
+  normalizedCourseCode(courseCode) === "BECM4100";
+
+const dividedStudentCount = (total: number | "", engagedTeachers: number) => {
+  const students = Number(total) || 0;
+  if (!students || !engagedTeachers) return "";
+  const share = students / engagedTeachers;
+  return Number.isInteger(share) ? share : String(Math.round(share * 100) / 100);
+};
 
 export function flattenSessional(courses: SessionalCourse[]): SessionalRow[] {
   const rows: SessionalRow[] = [];
@@ -366,6 +389,26 @@ export function flattenSessional(courses: SessionalCourse[]): SessionalRow[] {
         students: at.students,
       })),
     ];
+    if (isIndustrialAttachmentCourse(course.courseCode)) {
+      const engagedEntries = entries.slice(1).filter((entry) => entry.name.trim());
+      const students = dividedStudentCount(
+        course.students.sessional,
+        engagedEntries.length
+      );
+      engagedEntries.forEach((entry) => {
+        rows.push({
+          courseCode: course.courseCode,
+          courseTitle: course.courseTitle,
+          courseLine: course.courseTitle ? `${course.courseCode}\n${course.courseTitle}` : course.courseCode,
+          credit: course.credit ?? "",
+          teacherLine: formatTeacher(entry.name, entry.designation, entry.department),
+          students: course.students.sessional && engagedEntries.length
+            ? `${course.students.sessional}/${engagedEntries.length}`
+            : students,
+        });
+      });
+      return;
+    }
     entries.forEach((entry) => {
       if (!entry.duties.sessional) return;
       rows.push({
