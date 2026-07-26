@@ -7,6 +7,7 @@ const tabs = [
   { href: "/bills/create", label: "Bill" },
   { href: "/bills/preview", label: "Preview" },
   { href: "/bills/individual", label: "Individual Teacher Bill" },
+  { href: "/bills/teachers", label: "Teacher Information" },
 ];
 
 function NavLink({ href, label }: { href: string; label: string }) {

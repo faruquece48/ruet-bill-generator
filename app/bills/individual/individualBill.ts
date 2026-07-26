@@ -1,4 +1,5 @@
 import type { ExaminationBillData } from "../create/components/types";
+import { computeThesisVivaFormula, flattenBoardViva } from "../create/components/pdf/pdfHelpers";
 
 export interface IndividualBillRow {
   id: string;
@@ -12,7 +13,7 @@ export interface IndividualBillRow {
 }
 
 const withoutCourtesyTitle = (value: string) =>
-  value.trim().replace(/^(mr|mrs|mst)\.?(?=\s)/i, "").trim();
+  value.trim().replace(/^(mr|mrs|ms|mst)\.?(?=\s)/i, "").trim();
 const clean = (value: string) => withoutCourtesyTitle(value).toLocaleLowerCase();
 const sameTeacher = (left: string, right: string) => clean(left) === clean(right);
 
@@ -128,11 +129,13 @@ export function deriveTeacherRows(
       entries.filter((entry) => sameTeacher(entry.name, teacherName)).forEach((entry) => {
         if (entry.duties.paperSetter)
           add({ description: "প্রশ্নপত্র প্রণয়ন", course: course.courseCode, quantity: "", courseCount: "1", classTestCount: "", rate: "5000" });
-        if (entry.duties.examiner)
-          add({ description: "সেমিস্টার ফাইনাল", course: course.courseCode, quantity: entry.students.examiner, courseCount: "1", classTestCount: "", rate: "120" });
+        // A semester-final row with zero scripts/students is not billable;
+        // do not create it, so the minimum amount cannot be applied.
+        if (entry.duties.examiner && Number(entry.students.examiner) > 0)
+          add({ description: "সেমিস্টার ফাইনাল", course: course.courseCode, quantity: entry.students.examiner, courseCount: "1", classTestCount: "", rate: "120", minimumAmount: 1000 });
         if (entry.duties.classTest)
           add({ description: "ক্লাস টেস্ট", course: course.courseCode, quantity: String(entry.students.classTestStudents || ""), courseCount: "1", classTestCount: String(entry.students.classTestCount || 2), rate: "50" });
-        if (entry.duties.assignment) {
+        if (entry.duties.assignment && !isNonObe) {
           const students = entry.students.classTestStudents;
           add({ description: "এসাইনমেন্ট / প্রেজেন্টেশন", course: course.courseCode, quantity: students ? `${students}/2` : entry.students.assignment, courseCount: "1", classTestCount: "2", rate: "50" });
         }
@@ -175,9 +178,9 @@ export function deriveTeacherRows(
     }
     entries.filter((entry) => sameTeacher(entry.name, teacherName)).forEach((entry) => {
       if (entry.duties.sessional)
-        add({ description: Number(course.credit) === 1.5 ? "সেশনাল (১.৫)" : "সেশনাল (০.৭৫)", course: course.courseCode, quantity: String(entry.students.sessional || ""), courseCount: "1", classTestCount: "", rate: "400" });
+        add({ description: Number(course.credit) === 1.5 ? "সেশনাল (১.৫)" : "সেশনাল (০.৭৫)", course: course.courseCode, quantity: String(entry.students.sessional || ""), courseCount: "1", classTestCount: "", rate: "400", minimumAmount: Number(course.credit) === 1.5 ? 1500 : undefined });
       if (entry.duties.boardViva)
-        add({ description: "ভাইভা (সেন্ট্রাল/বোর্ড)", course: course.courseCode, quantity: String(entry.students.boardViva || ""), courseCount: "1", classTestCount: "", rate: "150" });
+        add({ description: "ভাইভা (সেন্ট্রাল/বোর্ড)", course: course.courseCode, quantity: String(entry.students.boardViva || ""), courseCount: "1", classTestCount: "", rate: "150", minimumAmount: 500 });
       if (entry.duties.courseFile)
         add({ description: "কোর্স ফাইল প্রস্তুতকরণ", course: course.courseCode, quantity: "", courseCount: "1", classTestCount: "", rate: "6000" });
     });
@@ -220,6 +223,7 @@ export function deriveTeacherRows(
   bill.questionWorks.filter((teacher) => sameTeacher(teacher.name, teacherName)).forEach(() =>
     add({ description: "প্রশ্নপত্র টাইপ, অঙ্কন ও তুলনা, প্রশ্নপত্র ছাপানো", course: "", quantity: `${bill.questionWorkTotal || 5}/${bill.questionWorks.filter((teacher) => teacher.name.trim()).length || 1}`, courseCount: "", classTestCount: "", rate: "2400" })
   );
+  const thesisVivaFormula = computeThesisVivaFormula(flattenBoardViva(bill.sessionalDuties), bill.thesisTeachers);
   bill.thesisTeachers
     .filter((teacher) => sameTeacher(teacher.name, teacherName))
     .forEach((teacher) => {
@@ -247,7 +251,7 @@ export function deriveTeacherRows(
         add({
           description: "মৌখিক পরীক্ষা (ফাইনাল)",
           course: "",
-          quantity: "1",
+          quantity: thesisVivaFormula,
           courseCount: "",
           classTestCount: "",
           rate: "250",
@@ -263,7 +267,7 @@ export function deriveTeacherRows(
         quantity: String(bill.practicalSurveyingStudentCount || ""),
         courseCount: "1",
         classTestCount: "",
-        rate: "600",
+        rate: "1000",
       })
     );
   bill.verificationTeachers
@@ -299,6 +303,9 @@ export function deriveTeacherRows(
         rate: "255",
       })
     );
+  bill.courseCoordinatorTeachers
+    .filter((coordinator) => sameTeacher(coordinator.name, teacherName))
+    .forEach(() => add({ description: "কোর্স কো-অর্ডিনেটর", course: "", quantity: "", courseCount: "1", classTestCount: "", rate: "2500" }));
   return rows;
 }
 
@@ -445,11 +452,14 @@ export function buildRemunerationChart(
 }
 
 export function evaluateQuantity(value: string | number | null | undefined): number {
-  const normalized = String(value ?? "").trim();
+  const normalized = String(value ?? "").trim().replace(/[()\s]/g, "");
   if (!normalized) return 1;
-  const parts = normalized.split("/").map(Number);
-  if (parts.some((part) => !Number.isFinite(part))) return 0;
-  return parts.length === 2 && parts[1] !== 0 ? parts[0] / parts[1] : parts[0];
+  const parts = normalized.split("/");
+  if (parts.length > 2) return 0;
+  const product = (part: string) => part.split(/[x×*]/i).map(Number).reduce((result, factor) => Number.isFinite(factor) ? result * factor : 0, 1);
+  const numerator = product(parts[0]);
+  const denominator = parts[1] ? product(parts[1]) : 1;
+  return denominator ? numerator / denominator : 0;
 }
 
 export function rowAmount(row: IndividualBillRow): number {
@@ -472,28 +482,39 @@ export function isMinimumAmountApplied(row: IndividualBillRow): boolean {
   return calculatedAmount < row.minimumAmount;
 }
 
-const small = ["শূন্য", "এক", "দুই", "তিন", "চার", "পাঁচ", "ছয়", "সাত", "আট", "নয়", "দশ", "এগারো", "বারো", "তেরো", "চৌদ্দ", "পনেরো", "ষোলো", "সতেরো", "আঠারো", "উনিশ"];
-const tens = ["", "", "বিশ", "ত্রিশ", "চল্লিশ", "পঞ্চাশ", "ষাট", "সত্তর", "আশি", "নব্বই"];
+const bengaliNumbers = [
+  "শূন্য", "এক", "দুই", "তিন", "চার", "পাঁচ", "ছয়", "সাত", "আট", "নয়",
+  "দশ", "এগারো", "বারো", "তেরো", "চৌদ্দ", "পনেরো", "ষোলো", "সতেরো", "আঠারো", "উনিশ",
+  "বিশ", "একুশ", "বাইশ", "তেইশ", "চব্বিশ", "পঁচিশ", "ছাব্বিশ", "সাতাশ", "আটাশ", "ঊনত্রিশ",
+  "ত্রিশ", "একত্রিশ", "বত্রিশ", "তেত্রিশ", "চৌত্রিশ", "পঁয়ত্রিশ", "ছত্রিশ", "সাঁইত্রিশ", "আটত্রিশ", "ঊনচল্লিশ",
+  "চল্লিশ", "একচল্লিশ", "বিয়াল্লিশ", "তেতাল্লিশ", "চুয়াল্লিশ", "পঁয়তাল্লিশ", "ছেচল্লিশ", "সাতচল্লিশ", "আটচল্লিশ", "ঊনপঞ্চাশ",
+  "পঞ্চাশ", "একান্ন", "বাহান্ন", "তিপ্পান্ন", "চুয়ান্ন", "পঞ্চান্ন", "ছাপ্পান্ন", "সাতান্ন", "আটান্ন", "ঊনষাট",
+  "ষাট", "একষট্টি", "বাষট্টি", "তেষট্টি", "চৌষট্টি", "পঁয়ষট্টি", "ছেষট্টি", "সাতষট্টি", "আটষট্টি", "ঊনসত্তর",
+  "সত্তর", "একাত্তর", "বাহাত্তর", "তিয়াত্তর", "চুয়াত্তর", "পঁচাত্তর", "ছিয়াত্তর", "সাতাত্তর", "আটাত্তর", "ঊনআশি",
+  "আশি", "একাশি", "বিরাশি", "তিরাশি", "চুরাশি", "পঁচাশি", "ছিয়াশি", "সাতাশি", "আটাশি", "ঊননব্বই",
+  "নব্বই", "একানব্বই", "বিরানব্বই", "তিরানব্বই", "চুরানব্বই", "পঁচানব্বই", "ছিয়ানব্বই", "সাতানব্বই", "আটানব্বই", "নিরানব্বই",
+] as const;
 
-function underHundred(value: number): string {
-  if (value < 20) return small[value];
-  const remainder = value % 10;
-  return `${tens[Math.floor(value / 10)]}${remainder ? ` ${small[remainder]}` : ""}`;
-}
-
-export function amountInBanglaWords(input: number): string {
-  const value = Math.max(0, Math.floor(input));
-  if (value < 100) return underHundred(value);
+function integerInBanglaWords(value: number): string {
+  if (value < 100) return bengaliNumbers[value];
   const groups: [number, string][] = [[10000000, "কোটি"], [100000, "লক্ষ"], [1000, "হাজার"], [100, "শত"]];
   let remainder = value;
   const words: string[] = [];
   groups.forEach(([unit, label]) => {
     const count = Math.floor(remainder / unit);
     if (count) {
-      words.push(`${amountInBanglaWords(count)} ${label}`);
+      words.push(`${integerInBanglaWords(count)} ${label}`);
       remainder %= unit;
     }
   });
-  if (remainder) words.push(underHundred(remainder));
+  if (remainder) words.push(bengaliNumbers[remainder]);
   return words.join(" ");
+}
+
+export function amountInBanglaWords(input: number): string {
+  const totalPaisa = Math.max(0, Math.round(input * 100));
+  const taka = Math.floor(totalPaisa / 100);
+  const paisa = totalPaisa % 100;
+  const takaWords = `${integerInBanglaWords(taka)} টাকা`;
+  return paisa ? `${takaWords} ${integerInBanglaWords(paisa)} পয়সা` : takaWords;
 }

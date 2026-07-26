@@ -1,6 +1,7 @@
 const STORAGE_KEY = "individualTeacherInformation";
 
 export interface SavedIndividualTeacherInformation {
+  englishName?: string;
   nameBangla: string;
   designationBangla: string;
   addressBangla: string;
@@ -38,4 +39,16 @@ export function saveIndividualTeacherInformation(
   } catch {
     return false;
   }
+}
+
+export function loadAllIndividualTeacherInformation(): TeacherInformationIndex {
+  return loadIndex();
+}
+
+export function saveAllIndividualTeacherInformation(index: TeacherInformationIndex): boolean {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(index)); return true; } catch { return false; }
+}
+
+export function getSavedIndividualTeacherNames(): string[] {
+  return Object.keys(loadIndex());
 }
