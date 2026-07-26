@@ -264,7 +264,9 @@ export function deriveTeacherRows(
       add({
         description: "ইঞ্জিনিয়ারিং সার্ভে",
         course: "CE 1226",
-        quantity: String(bill.practicalSurveyingStudentCount || ""),
+        quantity: bill.practicalSurveyingStudentCount
+          ? `${bill.practicalSurveyingStudentCount}/${bill.practicalSurveyingTeachers.filter((teacher) => teacher.name.trim()).length || 1}`
+          : "",
         courseCount: "1",
         classTestCount: "",
         rate: "1000",
