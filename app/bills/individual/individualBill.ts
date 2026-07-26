@@ -127,7 +127,7 @@ export function deriveTeacherRows(
       ];
       entries.filter((entry) => sameTeacher(entry.name, teacherName)).forEach((entry) => {
         if (entry.duties.paperSetter)
-          add({ description: "প্রশ্নপত্র প্রণয়ন", course: course.courseCode, quantity: "", courseCount: "1", classTestCount: "", rate: "5000" });
+          add({ description: "প্রশ্নপত্র প্রণয়ন", course: course.courseCode, quantity: "", courseCount: "1", classTestCount: "", rate: "5000" });
         if (entry.duties.examiner)
           add({ description: "সেমিস্টার ফাইনাল", course: course.courseCode, quantity: entry.students.examiner, courseCount: "1", classTestCount: "", rate: "120" });
         if (entry.duties.classTest)
@@ -153,7 +153,7 @@ export function deriveTeacherRows(
       engagedEntries.filter((entry) => sameTeacher(entry.name, teacherName)).forEach(() => {
         const totalStudents = Number(course.students.sessional) || 0;
         add({
-          description: "ইন্ডাস্ট্রিয়াল অ্যাটাচমেন্ট",
+          description: "ইন্ডাস্ট্রিয়াল অ্যাটাচমেন্ট",
           course: course.courseCode,
           quantity: totalStudents && engagedTeacherCount
             ? `${totalStudents}/${engagedTeacherCount}`
@@ -258,7 +258,7 @@ export function deriveTeacherRows(
     .filter((teacher) => sameTeacher(teacher.name, teacherName))
     .forEach(() =>
       add({
-        description: "ইঞ্জিনিয়ারিং সার্ভে",
+        description: "ইঞ্জিনিয়ারিং সার্ভে",
         course: "CE 1226",
         quantity: String(bill.practicalSurveyingStudentCount || ""),
         courseCount: "1",
@@ -270,7 +270,7 @@ export function deriveTeacherRows(
     .filter((teacher) => sameTeacher(teacher.name, teacherName))
     .forEach(() =>
       add({
-        description: "ফাইনাল গ্রাজুয়েশন রেজাল্ট ভেরিফিকেশন",
+        description: "ফাইনাল গ্রাজুয়েশন রেজাল্ট ভেরিফিকেশন",
         course: "",
         quantity: bill.verificationStudentCount
           ? `${bill.verificationStudentCount}/${bill.verificationTeachers.filter((teacher) => teacher.name.trim()).length || 1}`
@@ -349,9 +349,9 @@ export function buildRemunerationChart(
   duties: IndividualBillRow[]
 ): RemunerationChartSection[] {
   const templates: { title: string; items: ChartTemplate[] }[] = [
-    { title: "প্রশ্নপত্র প্রণয়ন", items: [exact("প্রশ্নপত্র প্রণয়ন")] },
+    { title: "প্রশ্নপত্র প্রণয়ন", items: [exact("প্রশ্নপত্র প্রণয়ন")] },
     {
-      title: "প্রশ্নপত্র নিয়ামক (মডারেশন)",
+      title: "প্রশ্নপত্র নিয়ামক (মডারেশন)",
       items: [exact("পরীক্ষা কমিটির সভাপতি"), exact("পরীক্ষা কমিটির সদস্য")],
     },
     {
@@ -366,12 +366,12 @@ export function buildRemunerationChart(
     {
       title: "ব্যবহারিক / সেশনাল",
       items: [
-        exact("ইঞ্জিনিয়ারিং সার্ভে"),
+        exact("ইঞ্জিনিয়ারিং সার্ভে"),
         exact("সেমিনার"),
         exact("প্রজেক্ট ডিজাইন"),
         exact("সেশনাল (১.৫)"),
         exact("সেশনাল (০.৭৫)"),
-        exact("ইন্ডাস্ট্রিয়াল অ্যাটাচমেন্ট"),
+        exact("ইন্ডাস্ট্রিয়াল অ্যাটাচমেন্ট"),
         exact("ভাইভা (সেন্ট্রাল/বোর্ড)"),
       ],
     },
@@ -394,7 +394,7 @@ export function buildRemunerationChart(
     {
       title: "অন্যান্য",
       items: [
-        exact("ফাইনাল গ্রাজুয়েশন রেজাল্ট ভেরিফিকেশন"),
+        exact("ফাইনাল গ্রাজুয়েশন রেজাল্ট ভেরিফিকেশন"),
         exact("কোর্স এডভাইজার"),
         exact("কোর্স কো-অর্ডিনেটর"),
       ],
@@ -472,7 +472,7 @@ export function isMinimumAmountApplied(row: IndividualBillRow): boolean {
   return calculatedAmount < row.minimumAmount;
 }
 
-const small = ["শূন্য", "এক", "দুই", "তিন", "চার", "পাঁচ", "ছয়", "সাত", "আট", "নয়", "দশ", "এগারো", "বারো", "তেরো", "চৌদ্দ", "পনেরো", "ষোলো", "সতেরো", "আঠারো", "উনিশ"];
+const small = ["শূন্য", "এক", "দুই", "তিন", "চার", "পাঁচ", "ছয়", "সাত", "আট", "নয়", "দশ", "এগারো", "বারো", "তেরো", "চৌদ্দ", "পনেরো", "ষোলো", "সতেরো", "আঠারো", "উনিশ"];
 const tens = ["", "", "বিশ", "ত্রিশ", "চল্লিশ", "পঞ্চাশ", "ষাট", "সত্তর", "আশি", "নব্বই"];
 
 function underHundred(value: number): string {
