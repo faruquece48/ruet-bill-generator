@@ -146,6 +146,9 @@ export function flattenClassTest(courses: CourseDuty[]): ClassTestRow[] {
       ];
       entries.forEach((entry) => {
         if (!entry.duties.classTest) return;
+        const students = Number(entry.students.classTestStudents) || 0;
+        const classTestCount = Number(entry.students.classTestCount) || 0;
+        if (students <= 0 || classTestCount <= 0) return;
         const teacherLine = formatTeacher(
           entry.name,
           entry.designation,
@@ -153,7 +156,6 @@ export function flattenClassTest(courses: CourseDuty[]): ClassTestRow[] {
         );
         const key = `${course.courseCode}\u0000${course.courseTitle}\u0000${teacherLine}`;
         const current = rows.get(key);
-        const students = Number(entry.students.classTestStudents) || 0;
         rows.set(key, {
           courseCode: course.courseCode,
           courseTitle: course.courseTitle,

@@ -10,6 +10,7 @@ import ColumnWidthEditor from "../preview/components/ColumnWidthEditor";
 import { collectTeacherNames, collectTeacherNameWarnings, deriveTeacherRows, rowAmount } from "./individualBill";
 import IndividualBillPdfDocument from "./IndividualBillPdfDocument";
 import IndividualBillPdfPreview from "./IndividualBillPdfPreview";
+import IndividualLayoutEditor, { defaultIndividualBillLayout } from "./IndividualLayoutEditor";
 
 const inputClass = "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500";
 const defaultAddress = "বিইসিএম বিভাগ, রুয়েট।";
@@ -23,8 +24,9 @@ export default function IndividualTeacherBillPage() {
   const [accountNumber, setAccountNumber] = useState("");
   const [status, setStatus] = useState("");
   const [downloading, setDownloading] = useState(false);
-  const [metaWidths, setMetaWidths] = useState<ColumnWidths>({ qualifications: 37, examination: 47, billNumber: 16 });
+  const [metaWidths, setMetaWidths] = useState<ColumnWidths>({ qualifications: 36, examination: 38, billNumber: 26 });
   const [tableWidths, setTableWidths] = useState<ColumnWidths>({ serial: 7, descriptionGroup: 11, description: 18, course: 13, quantity: 10, courseCount: 6, classTestCount: 9, rate: 12, amount: 14 });
+  const [layoutSettings, setLayoutSettings] = useState(defaultIndividualBillLayout);
 
   useEffect(() => {
     const saved = loadCurrentWork();
@@ -32,11 +34,17 @@ export default function IndividualTeacherBillPage() {
     if (saved) setBill({ ...emptyBill, ...saved });
   }, []);
 
-  const teachers = useMemo(() => Array.from(new Set([...collectTeacherNames(bill), ...getSavedIndividualTeacherNames()])), [bill]);
+  const teachers = useMemo(() => {
+    const names = new Map<string, string>();
+    [...getSavedIndividualTeacherNames(), ...collectTeacherNames(bill)].forEach((name) => {
+      names.set(name.trim().toLocaleLowerCase(), name.trim());
+    });
+    return Array.from(names.values());
+  }, [bill]);
   const warnings = useMemo(() => collectTeacherNameWarnings(bill), [bill]);
   const rows = useMemo(() => deriveTeacherRows(bill, teacher), [bill, teacher]);
   const total = useMemo(() => rows.reduce((sum, row) => sum + rowAmount(row), 0), [rows]);
-  const document = useMemo(() => <IndividualBillPdfDocument bill={bill} teacher={teacher} nameBangla={nameBangla} designationBangla={designationBangla} addressBangla={addressBangla} accountNumber={accountNumber} metaWidths={metaWidths} tableWidths={tableWidths} />, [bill, teacher, nameBangla, designationBangla, addressBangla, accountNumber, metaWidths, tableWidths]);
+  const document = useMemo(() => <IndividualBillPdfDocument bill={bill} teacher={teacher} nameBangla={nameBangla} designationBangla={designationBangla} addressBangla={addressBangla} accountNumber={accountNumber} metaWidths={metaWidths} tableWidths={tableWidths} layoutSettings={layoutSettings} />, [bill, teacher, nameBangla, designationBangla, addressBangla, accountNumber, metaWidths, tableWidths, layoutSettings]);
 
   useEffect(() => {
     if (teacher || teachers.length === 0) return;
@@ -62,7 +70,13 @@ export default function IndividualTeacherBillPage() {
 
   const saveTeacher = () => {
     if (!teacher) return;
-    const saved = saveIndividualTeacherInformation(teacher, { nameBangla, designationBangla, addressBangla, accountNumber });
+    const saved = saveIndividualTeacherInformation(teacher, {
+      englishName: teacher,
+      nameBangla,
+      designationBangla,
+      addressBangla,
+      accountNumber,
+    });
     setStatus(saved ? "Teacher information saved." : "Unable to save teacher information.");
   };
 
@@ -101,6 +115,7 @@ export default function IndividualTeacherBillPage() {
         <div className="border-t pt-4 text-sm"><p>Billable rows: {rows.length}</p><p>Total: ৳ {total.toLocaleString("bn-BD")}</p></div>
         <div className="border-t pt-4"><h2 className="mb-2 font-semibold">Figure table widths</h2><ColumnWidthEditor widths={metaWidths} setWidths={setMetaWidths} labels={{ qualifications: "Qualifications", examination: "Examination", billNumber: "Bill number" }} /></div>
         <div className="border-t pt-4"><h2 className="mb-2 font-semibold">Remuneration table widths</h2><ColumnWidthEditor widths={tableWidths} setWidths={setTableWidths} labels={{ serial: "Serial", descriptionGroup: "Description group", description: "Description", course: "Course", quantity: "Scripts/students", courseCount: "Courses", classTestCount: "Class tests", rate: "Rate", amount: "Amount" }} /></div>
+        <div className="border-t pt-4"><h2 className="mb-2 font-semibold">Typography and section spacing</h2><IndividualLayoutEditor settings={layoutSettings} setSettings={setLayoutSettings} /></div>
       </section>
       <IndividualBillPdfPreview document={document} />
     </div>

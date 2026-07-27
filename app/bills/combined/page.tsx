@@ -1,14 +1,72 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { pdf } from "@react-pdf/renderer";
 import { emptyBill } from "../create/components/emptyBill";
 import type { ExaminationBillData } from "../create/components/types";
 import { loadCurrentWork } from "@/lib/storage/draft";
-import { collectTeacherNames, deriveTeacherRows, rowAmount } from "../individual/individualBill";
+import { loadAllIndividualTeacherInformation, type SavedIndividualTeacherInformation } from "@/lib/storage/individualTeacher";
+import { collectTeacherNames, deriveTeacherRows } from "../individual/individualBill";
+import CombinedBillPdfDocument, { type CombinedTeacherRecord } from "./CombinedBillPdfDocument";
+import CombinedBillPdfPreview from "./CombinedBillPdfPreview";
 
 export default function CombinedTeacherBillPage() {
   const [bill, setBill] = useState<ExaminationBillData>(emptyBill);
-  useEffect(() => { const timer = window.setTimeout(() => { const saved = loadCurrentWork(); if (saved) setBill({ ...emptyBill, ...saved }); }, 0); return () => window.clearTimeout(timer); }, []);
-  const teachers = useMemo(() => collectTeacherNames(bill), [bill]);
-  return <main className="mx-auto max-w-5xl p-6"><div className="no-print mb-5 flex items-center justify-between"><div><h1 className="text-2xl font-bold">Combined Teacher Bill</h1><p className="text-sm text-slate-500">Each teacher is previewed on a separate page.</p></div><button onClick={() => window.print()} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Print / Save Combined PDF</button></div><div className="space-y-6">{teachers.map((teacher, index) => { const rows = deriveTeacherRows(bill, teacher); const total = rows.reduce((sum, row) => sum + rowAmount(row), 0); return <article key={teacher} className="bill-page rounded-xl border bg-white p-8 shadow-sm"><h2 className="text-center text-xl font-bold">রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</h2><h3 className="mt-2 text-center font-semibold">পরীক্ষা সংক্রান্ত পারিশ্রমিকের বিল ফরম</h3><div className="mt-5 flex justify-between"><span>নামঃ {teacher}</span><span>পৃষ্ঠা: {index + 1}</span></div><table className="mt-4 w-full border-collapse text-sm"><thead><tr><th className="border p-2">ক্রমিক</th><th className="border p-2">কাজের বিবরণ</th><th className="border p-2">বিষয় / কোর্স</th><th className="border p-2">পরিমাণ</th><th className="border p-2">হার</th><th className="border p-2">টাকার পরিমাণ</th></tr></thead><tbody>{rows.map((row, rowIndex) => <tr key={row.id}><td className="border p-2 text-center">{rowIndex + 1}</td><td className="border p-2">{row.description}</td><td className="border p-2">{row.course}</td><td className="border p-2 text-center">{row.quantity}</td><td className="border p-2 text-center">{row.rate}</td><td className="border p-2 text-right">{rowAmount(row).toLocaleString("bn-BD")}</td></tr>)}</tbody><tfoot><tr><td colSpan={5} className="border p-2 text-right font-semibold">মোটঃ</td><td className="border p-2 text-right font-bold">{total.toLocaleString("bn-BD")}</td></tr></tfoot></table><p className="mt-8">প্রতি স্বাক্ষরিত</p><div className="mt-16 flex justify-between"><span>সভাপতি, পরীক্ষা কমিটি।</span><span>পরীক্ষকের স্বাক্ষর<br/>তারিখঃ</span></div></article>; })}</div><style jsx global>{`@media print { .no-print { display:none !important } body { background:#fff !important } .bill-page { break-after: page; min-height: 250mm; border:0 !important; box-shadow:none !important; border-radius:0 !important } .bill-page:last-child { break-after:auto } }`}</style></main>;
+  const [information, setInformation] = useState<Record<string, SavedIndividualTeacherInformation>>({});
+  const [downloading, setDownloading] = useState(false);
+  const [excludedTeachers, setExcludedTeachers] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const saved = loadCurrentWork();
+      if (saved) setBill({ ...emptyBill, ...saved });
+      setInformation(loadAllIndividualTeacherInformation());
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const teachers = useMemo<CombinedTeacherRecord[]>(() =>
+    collectTeacherNames(bill)
+      .filter((teacher) => deriveTeacherRows(bill, teacher).length > 0)
+      .map((teacher) => {
+        const key = teacher.trim().toLocaleLowerCase();
+        const saved = information[key] ?? Object.values(information).find(
+          (record) => record.englishName?.trim().toLocaleLowerCase() === key
+        );
+        return { teacher, information: saved };
+      }),
+  [bill, information]);
+  const selectedTeachers = useMemo(
+    () => teachers.filter(({ teacher }) => !excludedTeachers.has(teacher.trim().toLocaleLowerCase())),
+    [teachers, excludedTeachers]
+  );
+  const document = useMemo(() => <CombinedBillPdfDocument bill={bill} teachers={selectedTeachers} />, [bill, selectedTeachers]);
+
+  const setTeacherSelected = (teacher: string, selected: boolean) => {
+    const key = teacher.trim().toLocaleLowerCase();
+    setExcludedTeachers((current) => {
+      const next = new Set(current);
+      if (selected) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const download = async () => {
+    if (!selectedTeachers.length) return;
+    setDownloading(true);
+    try {
+      const blob = await pdf(document).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = window.document.createElement("a");
+      link.href = url;
+      link.download = "combined-teacher-bills.pdf";
+      link.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return <main className="mx-auto max-w-[1600px] p-6"><div className="mb-5 flex items-center justify-between gap-4"><div><h1 className="text-2xl font-bold">Combined Teacher Bill</h1><p className="text-sm text-slate-500">Select teachers on the left. Each selected bill uses a separate Legal page.</p></div><button onClick={download} disabled={downloading || !selectedTeachers.length} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-400">{downloading ? "Generating…" : `Download Combined PDF (${selectedTeachers.length})`}</button></div>{teachers.length ? <div className="grid items-start gap-5 lg:grid-cols-[300px_minmax(0,1fr)]"><aside className="rounded-xl border bg-white p-4 shadow-sm lg:sticky lg:top-20"><div className="mb-3 flex items-center justify-between gap-2"><div><h2 className="font-semibold">Select teacher bills</h2><p className="text-xs text-slate-500">{selectedTeachers.length} of {teachers.length} selected</p></div></div><div className="mb-3 flex gap-2"><button type="button" onClick={() => setExcludedTeachers(new Set())} className="rounded border px-2 py-1 text-xs hover:bg-slate-50">Select all</button><button type="button" onClick={() => setExcludedTeachers(new Set(teachers.map(({ teacher }) => teacher.trim().toLocaleLowerCase())))} className="rounded border px-2 py-1 text-xs hover:bg-slate-50">Clear all</button></div><div className="max-h-[calc(100vh-15rem)] space-y-1 overflow-y-auto pr-1">{teachers.map(({ teacher }, index) => { const checked = !excludedTeachers.has(teacher.trim().toLocaleLowerCase()); return <label key={teacher} className="flex cursor-pointer items-start gap-2 rounded-md px-2 py-2 text-sm hover:bg-slate-50"><input type="checkbox" checked={checked} onChange={(event) => setTeacherSelected(teacher, event.target.checked)} className="mt-0.5 h-4 w-4 accent-blue-600" /><span><span className="mr-1 text-slate-400">{index + 1}.</span>{teacher}</span></label>; })}</div></aside><section className="min-w-0 rounded-xl bg-slate-300 p-5">{selectedTeachers.length ? <CombinedBillPdfPreview document={document} /> : <div className="rounded-xl bg-white p-10 text-center text-slate-500">Select at least one teacher to preview and generate the PDF.</div>}</section></div> : <div className="rounded-xl border bg-white p-8 text-center text-slate-500">No billable teacher rows are available.</div>}</main>;
 }

@@ -336,11 +336,16 @@ function Footer({ bill }: { bill: ExaminationBillData["billInfo"] }) {
 }
 export default function BillPdfDocument({ bill }: { bill: ExaminationBillData }) {
   const isBacklog = bill.billInfo.examType === "backlog";
-  const isThesisApplicable = bill.billInfo.year === "4th Year" && bill.billInfo.semester === "Even";
+  const isThesisApplicable =
+    !isBacklog &&
+    bill.billInfo.year === "4th Year" &&
+    bill.billInfo.semester === "Even";
   const isVerificationApplicable = bill.billInfo.hasGraduatingStudents === "yes";
   const isCourseCoordinatorApplicable = isThesisApplicable;
   const isPracticalSurveyingApplicable =
-    bill.billInfo.year === "1st Year" && bill.billInfo.semester === "Even";
+    !isBacklog &&
+    bill.billInfo.year === "1st Year" &&
+    bill.billInfo.semester === "Even";
   const isMixedEvaluation = bill.billInfo.evaluationSystem === "mixed";
   const obePaperSetterRows = flattenPaperSetter(bill.courseDuties.obe);
   const nonObePaperSetterRows = flattenPaperSetter(bill.courseDuties.nonObe);

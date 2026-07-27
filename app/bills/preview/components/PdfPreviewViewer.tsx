@@ -18,8 +18,10 @@ function CanvasPage({ data, index }: { data: PageData; index: number }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const viewport = data.page.getViewport({ scale: 1.5 });
-    const context = canvas.getContext("2d");
+    // Render at high density, then fit the canvas to the page container. This
+    // keeps small text and thin table rules sharp without changing PDF layout.
+    const viewport = data.page.getViewport({ scale: 3 });
+    const context = canvas.getContext("2d", { alpha: false });
     if (!context) return;
 
     canvas.width = viewport.width;
@@ -31,9 +33,9 @@ function CanvasPage({ data, index }: { data: PageData; index: number }) {
   return (
     <div
       data-page-index={index}
-      className="relative mx-auto bg-white shadow-lg"
+      className="relative mx-auto bg-white shadow-xl ring-1 ring-slate-200"
       style={{
-        width: "min(100%, 794px)",
+        width: "min(100%, 900px)",
         aspectRatio: `${data.width} / ${data.height}`,
       }}
     >

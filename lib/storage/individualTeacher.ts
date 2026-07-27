@@ -50,5 +50,8 @@ export function saveAllIndividualTeacherInformation(index: TeacherInformationInd
 }
 
 export function getSavedIndividualTeacherNames(): string[] {
-  return Object.keys(loadIndex());
+  return Object.entries(loadIndex()).map(([key, information]) =>
+    information.englishName?.trim() ||
+    key.replace(/\b\p{L}/gu, (letter) => letter.toLocaleUpperCase())
+  );
 }

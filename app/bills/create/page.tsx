@@ -53,12 +53,14 @@ export default function Home() {
   // Section numbering
   // ------------------------
   const isThesisApplicable =
+    billData.billInfo.examType === "semester" &&
     billData.billInfo.year === "4th Year" &&
     billData.billInfo.semester === "Even";
   const isVerificationApplicable =
     billData.billInfo.hasGraduatingStudents === "yes";
   const isCourseCoordinatorApplicable = isThesisApplicable;
   const isPracticalSurveyingApplicable =
+    billData.billInfo.examType === "semester" &&
     billData.billInfo.year === "1st Year" &&
     billData.billInfo.semester === "Even";
 

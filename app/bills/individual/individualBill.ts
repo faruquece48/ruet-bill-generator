@@ -16,6 +16,16 @@ const withoutCourtesyTitle = (value: string) =>
   value.trim().replace(/^(mr|mrs|ms|mst)\.?(?=\s)/i, "").trim();
 const clean = (value: string) => withoutCourtesyTitle(value).toLocaleLowerCase();
 const sameTeacher = (left: string, right: string) => clean(left) === clean(right);
+const isVerificationApplicable = (bill: ExaminationBillData) =>
+  bill.billInfo.hasGraduatingStudents === "yes";
+const isThesisApplicable = (bill: ExaminationBillData) =>
+  bill.billInfo.examType === "semester" &&
+  bill.billInfo.year === "4th Year" &&
+  bill.billInfo.semester === "Even";
+const isPracticalSurveyingApplicable = (bill: ExaminationBillData) =>
+  bill.billInfo.examType === "semester" &&
+  bill.billInfo.year === "1st Year" &&
+  bill.billInfo.semester === "Even";
 
 export function collectTeacherNames(bill: ExaminationBillData): string[] {
   const names = new Map<string, string>();
@@ -35,17 +45,24 @@ export function collectTeacherNames(bill: ExaminationBillData): string[] {
     add(course.teacher);
     course.additionalTeachers.forEach((teacher) => add(teacher.name));
   });
-  [
+  const teacherLists = [
     ...bill.questionWorks,
     ...bill.scrutinies.obe,
     ...bill.scrutinies.nonObe,
     ...bill.studentDuties,
     ...bill.courseAdvisers,
-    ...bill.thesisTeachers,
-    ...bill.verificationTeachers,
-    ...bill.courseCoordinatorTeachers,
-    ...bill.practicalSurveyingTeachers,
-  ].forEach((teacher) => add(teacher.name));
+  ];
+  if (isVerificationApplicable(bill)) {
+    teacherLists.push(...bill.verificationTeachers);
+  }
+  if (isThesisApplicable(bill)) {
+    teacherLists.push(...bill.thesisTeachers);
+    teacherLists.push(...bill.courseCoordinatorTeachers);
+  }
+  if (isPracticalSurveyingApplicable(bill)) {
+    teacherLists.push(...bill.practicalSurveyingTeachers);
+  }
+  teacherLists.forEach((teacher) => add(teacher.name));
 
   return Array.from(names.values()).sort((a, b) => a.localeCompare(b));
 }
@@ -84,10 +101,18 @@ export function collectTeacherNameWarnings(bill: ExaminationBillData): TeacherNa
   checkList("Non-OBE scrutiny", bill.scrutinies.nonObe);
   checkList("Student duties", bill.studentDuties);
   checkList("Course advisers", bill.courseAdvisers);
-  checkList("Thesis/project examination", bill.thesisTeachers);
-  checkList("Final-result verification", bill.verificationTeachers);
-  checkList("Course coordinators", bill.courseCoordinatorTeachers);
-  checkList("Practical surveying", bill.practicalSurveyingTeachers);
+  if (isThesisApplicable(bill)) {
+    checkList("Thesis/project examination", bill.thesisTeachers);
+  }
+  if (isVerificationApplicable(bill)) {
+    checkList("Final-result verification", bill.verificationTeachers);
+  }
+  if (isThesisApplicable(bill)) {
+    checkList("Course coordinators", bill.courseCoordinatorTeachers);
+  }
+  if (isPracticalSurveyingApplicable(bill)) {
+    checkList("Practical surveying", bill.practicalSurveyingTeachers);
+  }
   return warnings;
 }
 
@@ -133,7 +158,11 @@ export function deriveTeacherRows(
         // do not create it, so the minimum amount cannot be applied.
         if (entry.duties.examiner && Number(entry.students.examiner) > 0)
           add({ description: "সেমিস্টার ফাইনাল", course: course.courseCode, quantity: entry.students.examiner, courseCount: "1", classTestCount: "", rate: "120", minimumAmount: 1000 });
-        if (entry.duties.classTest)
+        if (
+          entry.duties.classTest &&
+          Number(entry.students.classTestStudents) > 0 &&
+          Number(entry.students.classTestCount) > 0
+        )
           add({ description: "ক্লাস টেস্ট", course: course.courseCode, quantity: String(entry.students.classTestStudents || ""), courseCount: "1", classTestCount: String(entry.students.classTestCount || 2), rate: "50" });
         if (entry.duties.assignment && !isNonObe) {
           const students = entry.students.classTestStudents;
@@ -223,10 +252,14 @@ export function deriveTeacherRows(
   bill.questionWorks.filter((teacher) => sameTeacher(teacher.name, teacherName)).forEach(() =>
     add({ description: "প্রশ্নপত্র টাইপ, অঙ্কন ও তুলনা, প্রশ্নপত্র ছাপানো", course: "", quantity: `${bill.questionWorkTotal || 5}/${bill.questionWorks.filter((teacher) => teacher.name.trim()).length || 1}`, courseCount: "", classTestCount: "", rate: "2400" })
   );
-  const thesisVivaFormula = computeThesisVivaFormula(flattenBoardViva(bill.sessionalDuties), bill.thesisTeachers);
-  bill.thesisTeachers
-    .filter((teacher) => sameTeacher(teacher.name, teacherName))
-    .forEach((teacher) => {
+  if (isThesisApplicable(bill)) {
+    const thesisVivaFormula = computeThesisVivaFormula(
+      flattenBoardViva(bill.sessionalDuties),
+      bill.thesisTeachers
+    );
+    bill.thesisTeachers
+      .filter((teacher) => sameTeacher(teacher.name, teacherName))
+      .forEach((teacher) => {
       if (teacher.supervisorCount !== "") {
         add({
           description: "থিসিস সুপারভিশন",
@@ -257,35 +290,40 @@ export function deriveTeacherRows(
           rate: "250",
         });
       }
-    });
-  bill.practicalSurveyingTeachers
-    .filter((teacher) => sameTeacher(teacher.name, teacherName))
-    .forEach(() =>
-      add({
-        description: "ইঞ্জিনিয়ারিং সার্ভে",
-        course: "CE 1226",
-        quantity: bill.practicalSurveyingStudentCount
-          ? `${bill.practicalSurveyingStudentCount}/${bill.practicalSurveyingTeachers.filter((teacher) => teacher.name.trim()).length || 1}`
-          : "",
-        courseCount: "1",
-        classTestCount: "",
-        rate: "1000",
-      })
-    );
-  bill.verificationTeachers
-    .filter((teacher) => sameTeacher(teacher.name, teacherName))
-    .forEach(() =>
-      add({
-        description: "ফাইনাল গ্রাজুয়েশন রেজাল্ট ভেরিফিকেশন",
-        course: "",
-        quantity: bill.verificationStudentCount
-          ? `${bill.verificationStudentCount}/${bill.verificationTeachers.filter((teacher) => teacher.name.trim()).length || 1}`
-          : "",
-        courseCount: "",
-        classTestCount: "",
-        rate: "2500",
-      })
-    );
+      });
+  }
+  if (isPracticalSurveyingApplicable(bill)) {
+    bill.practicalSurveyingTeachers
+      .filter((teacher) => sameTeacher(teacher.name, teacherName))
+      .forEach(() =>
+        add({
+          description: "ইঞ্জিনিয়ারিং সার্ভে",
+          course: "CE 1226",
+          quantity: bill.practicalSurveyingStudentCount
+            ? `${bill.practicalSurveyingStudentCount}/${bill.practicalSurveyingTeachers.filter((teacher) => teacher.name.trim()).length || 1}`
+            : "",
+          courseCount: "1",
+          classTestCount: "",
+          rate: "1000",
+        })
+      );
+  }
+  if (isVerificationApplicable(bill)) {
+    bill.verificationTeachers
+      .filter((teacher) => sameTeacher(teacher.name, teacherName))
+      .forEach(() =>
+        add({
+          description: "ফাইনাল গ্রাজুয়েশন রেজাল্ট ভেরিফিকেশন",
+          course: "",
+          quantity: bill.verificationStudentCount
+            ? `${bill.verificationStudentCount}/${bill.verificationTeachers.filter((teacher) => teacher.name.trim()).length || 1}`
+            : "",
+          courseCount: "",
+          classTestCount: "",
+          rate: "2500",
+        })
+      );
+  }
   const namedCourseAdviserCount = bill.courseAdvisers.filter(
     (adviser) => adviser.name.trim()
   ).length;
@@ -305,9 +343,11 @@ export function deriveTeacherRows(
         rate: "255",
       })
     );
-  bill.courseCoordinatorTeachers
-    .filter((coordinator) => sameTeacher(coordinator.name, teacherName))
-    .forEach(() => add({ description: "কোর্স কো-অর্ডিনেটর", course: "", quantity: "", courseCount: "1", classTestCount: "", rate: "2500" }));
+  if (isThesisApplicable(bill)) {
+    bill.courseCoordinatorTeachers
+      .filter((coordinator) => sameTeacher(coordinator.name, teacherName))
+      .forEach(() => add({ description: "কোর্স কো-অর্ডিনেটর", course: "", quantity: "", courseCount: "1", classTestCount: "", rate: "2500" }));
+  }
   return rows;
 }
 

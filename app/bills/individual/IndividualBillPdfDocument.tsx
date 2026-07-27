@@ -3,6 +3,7 @@
 import { Document, Font, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { ExaminationBillData } from "../create/components/types";
 import type { ColumnWidths } from "../create/components/types";
+import type { IndividualBillLayoutSettings } from "./IndividualLayoutEditor";
 import {
   amountInBanglaWords,
   buildRemunerationChart,
@@ -30,6 +31,10 @@ const s = StyleSheet.create({
   info: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6, fontSize: 9 },
   infoColumn: { width: "48%" },
   infoColumnRight: { width: "48%", textAlign: "right" },
+  infoLine: { flexDirection: "row", alignItems: "center" },
+  infoLineRight: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center" },
+  fauxBold: { position: "relative" },
+  fauxBoldOverlay: { position: "absolute", top: 0, left: 0.22 },
   row: { flexDirection: "row", width: "100%" },
   fillHeight: { flexGrow: 1 },
   remunerationTableStart: { marginTop: 8.504 },
@@ -67,6 +72,15 @@ const DEGREE_OPTIONS = [
   { key: "PhD", label: "পিএইচ.ডি." },
 ] as const;
 
+function FauxBoldText({ children }: { children: string }) {
+  return (
+    <View style={s.fauxBold}>
+      <Text>{children}</Text>
+      <Text style={s.fauxBoldOverlay}>{children}</Text>
+    </View>
+  );
+}
+
 function pointWidths(weights: number[], total: number): number[] {
   const weightTotal = weights.reduce((sum, weight) => sum + Math.max(0, weight), 0) || 1;
   const widths = weights.map((weight) => Math.round((Math.max(0, weight) / weightTotal) * total * 100) / 100);
@@ -75,7 +89,7 @@ function pointWidths(weights: number[], total: number): number[] {
   return widths;
 }
 
-interface Props {
+export interface IndividualBillPdfPageProps {
   bill: ExaminationBillData;
   teacher: string;
   nameBangla: string;
@@ -84,10 +98,12 @@ interface Props {
   accountNumber: string;
   metaWidths: ColumnWidths;
   tableWidths: ColumnWidths;
+  layoutSettings: IndividualBillLayoutSettings;
 }
 
-export default function IndividualBillPdfDocument(props: Props) {
-  const { bill, teacher, nameBangla, designationBangla, addressBangla, accountNumber, metaWidths, tableWidths } = props;
+export function IndividualBillPdfPage(props: IndividualBillPdfPageProps) {
+  const { bill, teacher, nameBangla, designationBangla, addressBangla, accountNumber, metaWidths, tableWidths, layoutSettings } = props;
+  const { fontSizes, sectionGaps } = layoutSettings;
   const duties = deriveTeacherRows(bill, teacher);
   const sections = buildRemunerationChart(duties);
   const total = duties.reduce((sum, duty) => sum + rowAmount(duty), 0);
@@ -107,21 +123,26 @@ export default function IndividualBillPdfDocument(props: Props) {
   const selectedDegree = bill.billInfo.examination === "Ph.D." ? "PhD" : bill.billInfo.examination;
   const headers = ["ক্রমিক নং", "কাজের বিবরণ", "বিবরণ", "বিষয় / কোর্স", "খাতা / ছাত্র সংখ্যা", "কোর্স সংখ্যা", "ক্লাস টেস্ট সংখ্যা", "পারিশ্রমিকের হার", "টাকার পরিমাণ"];
 
-  return <Document title={`${teacher || "Individual Teacher"} Bill`}>
-    <Page size="LEGAL" style={s.page} wrap={false}>
-      <Text style={s.motto}>ঐশী জ্যোতিই আমাদের পথ প্রদর্শক</Text>
-      <Text style={s.university}>রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</Text>
-      <Text style={s.title}>পরীক্ষা সংক্রান্ত পারিশ্রমিকের বিল ফরম</Text>
-      <View style={s.info}>
-        <View style={s.infoColumn}><Text>নামঃ {nameBangla || "........................"}</Text><Text>ঠিকানাঃ {addressBangla}</Text></View>
-        <View style={s.infoColumnRight}><Text>পদবীঃ {designationBangla || "........................"}</Text><Text>হিসাব নংঃ {accountNumber || "........................"}</Text></View>
+  return <Page size="LEGAL" style={s.page} wrap={false}>
+      <Text style={[s.motto, { fontSize: fontSizes.motto }]}>ঐশী জ্যোতিই আমাদের পথ প্রদর্শক</Text>
+      <Text style={[s.university, { fontSize: fontSizes.university }]}>রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</Text>
+      <Text style={[s.title, { fontSize: fontSizes.title, marginBottom: sectionGaps.headingToTeacherInfo }]}>পরীক্ষা সংক্রান্ত পারিশ্রমিকের বিল ফরম</Text>
+      <View style={[s.info, { fontSize: fontSizes.teacherInfo, marginBottom: sectionGaps.teacherInfoToFigure }]}>
+        <View style={s.infoColumn}>
+          <View style={s.infoLine}><Text>নামঃ </Text><FauxBoldText>{nameBangla || "........................"}</FauxBoldText></View>
+          <View style={s.infoLine}><Text>ঠিকানাঃ </Text><FauxBoldText>{addressBangla}</FauxBoldText></View>
+        </View>
+        <View style={s.infoColumnRight}>
+          <View style={s.infoLineRight}><Text>পদবীঃ{"\u00A0"}</Text><FauxBoldText>{designationBangla || "........................"}</FauxBoldText></View>
+          <View style={s.infoLineRight}><Text>হিসাব নংঃ{"\u00A0"}</Text><FauxBoldText>{accountNumber || "........................"}</FauxBoldText></View>
+        </View>
       </View>
-      <View style={[s.row, s.top]}>
+      <View style={[s.row, s.top, { fontSize: fontSizes.figureTable }]}>
         <View style={[s.cell, s.left, { width: meta[0] }]}><Text>{DEGREE_OPTIONS.map((degree, index) => <Text key={degree.key} style={selectedDegree && selectedDegree !== degree.key ? s.struck : undefined}>{index > 0 ? " / " : ""}{degree.label}</Text>)}{"\n"}বিভাগঃ বিইসিএম বিভাগ</Text></View>
         <View style={[s.cell, { width: meta[1] }]}><Text style={s.center}>{exam}</Text></View>
         <View style={[s.cell, { width: meta[2] }]}><Text style={s.center}>বিল নং- {bn(bill.billInfo.billNo || "০১")}</Text></View>
       </View>
-      <View style={[s.row, s.top, s.remunerationTableStart]}>{headers.map((header, index) => <View key={header} style={[s.cell, index === 0 ? s.left : {}, { width: widths[index] }]}><Text style={s.header}>{header}</Text></View>)}</View>
+      <View style={[s.row, s.top, s.remunerationTableStart, { marginTop: sectionGaps.figureToRemuneration }]}>{headers.map((header, index) => <View key={header} style={[s.cell, index === 0 ? s.left : {}, { width: widths[index] }]}><Text style={[s.header, { fontSize: fontSizes.remunerationHeader }]}>{header}</Text></View>)}</View>
       {sections.map((section) => {
         const groups = section.rows.reduce<{ description: string; rows: typeof section.rows }[]>((result, row) => {
           const last = result[result.length - 1];
@@ -130,28 +151,33 @@ export default function IndividualBillPdfDocument(props: Props) {
           return result;
         }, []);
         return <View key={section.serial} style={s.row} wrap={false}>
-          <View style={[s.cell, s.left, { width: serialPt }]}><Text style={[s.body, s.center]}>{bn(String(section.serial))}।</Text></View>
-          <View style={[s.cell, { width: titlePt }]}><Text style={[s.body, s.center]}>{section.title}</Text></View>
+          <View style={[s.cell, s.left, { width: serialPt }]}><Text style={[s.body, s.center, { fontSize: fontSizes.remunerationBody }]}>{bn(String(section.serial))}।</Text></View>
+          <View style={[s.cell, { width: titlePt }]}><Text style={[s.body, s.center, { fontSize: fontSizes.remunerationBody }]}>{section.title}</Text></View>
           <View style={[s.fillHeight, { width: rightPt }]}>
             {groups.map((group) => <View key={group.description} style={[s.row, s.fillHeight]}>
-              <View style={[s.cell, { width: descriptionPt }]}><Text style={s.body}>{group.description}</Text></View>
+              <View style={[s.cell, { width: descriptionPt }]}><Text style={[s.body, { fontSize: fontSizes.remunerationBody }]}>{group.description}</Text></View>
               <View style={[s.fillHeight, { width: dutyPt }]}>
                 {group.rows.map((row) => {
                   const duty = row.duty;
                   const cells = [duty?.course || "", value(duty?.quantity), value(duty?.courseCount), value(duty?.classTestCount), duty ? (isMinimumAmountApplied(duty) ? `${value(duty.minimumAmount)} (ন্যূনতম)` : value(duty.rate)) : "", duty ? rowAmount(duty).toLocaleString("bn-BD") : ""];
-                  return <View key={row.id} style={[s.row, s.fillHeight]}>{cells.map((cell, index) => <View key={index} style={[s.cell, { width: dutyWidths[index] }]}><Text style={[s.body, s.center]}>{cell}</Text></View>)}</View>;
+                  return <View key={row.id} style={[s.row, s.fillHeight]}>{cells.map((cell, index) => <View key={index} style={[s.cell, { width: dutyWidths[index] }]}><Text style={[s.body, s.center, { fontSize: fontSizes.remunerationBody }]}>{cell}</Text></View>)}</View>;
                 })}
               </View>
             </View>)}
           </View>
         </View>;
       })}
-      <View style={s.row}><View style={[s.cell, s.left, { width: serialPt }]}><Text>কথায়ঃ</Text></View><View style={[s.cell, { width: wordsPt }]}><Text>{amountInBanglaWords(total)} মাত্র</Text></View><View style={[s.cell, { width: ratePt }]}><Text style={s.right}>মোটঃ</Text></View><View style={[s.cell, { width: amountPt }]}><Text style={s.center}>{total.toLocaleString("bn-BD")}</Text></View></View>
-      <Text style={s.footerLabel}>প্রতি স্বাক্ষরিত</Text>
-      <View style={s.signatures}><Text style={s.signatureLeft}>সভাপতি, পরীক্ষা কমিটি।</Text><View style={s.signatureRight}><View style={s.signatureLine} /><Text>পরীক্ষকের স্বাক্ষর</Text><Text>তারিখঃ</Text></View></View>
-      <View style={s.finance}><Text style={s.financeTitle}>হিসাব শাখা পূরণ করিবেন</Text><Text style={s.financeText}>{nameBangla || "........................"} কে {amountInBanglaWords(total)} মাত্র পরিশোধ করা হইল।</Text></View>
-      <View style={s.officers}><Text style={s.officer}>হিসাব সহকারী</Text><Text style={s.officer}>হিসাব রক্ষক</Text><Text style={s.officer}>সহকারী কম্পট্রোলার</Text><Text style={s.officer}>কম্পট্রোলার{"\n"}রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</Text></View>
-      <Text style={s.note}>বিঃদ্রঃ বিলের মোট পরিমাণ ২০০/- টাকার উপরে হইলে ১০/- টাকা মূল্যের রাজস্ব স্ট্যাম্প দিতে হইবে।{"\n"}সরকারী শিক্ষক/অফিসারদের ক্ষেত্রে যথাযথ কর্তৃপক্ষের অনুমোদন প্রয়োজন। উল্লেখ্য যে, প্রত্যেক সেমিস্টার পরীক্ষার জন্য পৃথকভাবে বিল জমা দিতে হইবে।</Text>
-    </Page>
+      <View style={[s.row, { fontSize: fontSizes.remunerationBody }]}><View style={[s.cell, s.left, { width: serialPt }]}><Text>কথায়ঃ</Text></View><View style={[s.cell, { width: wordsPt }]}><Text>{amountInBanglaWords(total)} মাত্র</Text></View><View style={[s.cell, { width: ratePt }]}><Text style={s.right}>মোটঃ</Text></View><View style={[s.cell, { width: amountPt }]}><Text style={s.center}>{total.toLocaleString("bn-BD")}</Text></View></View>
+      <Text style={[s.footerLabel, { fontSize: fontSizes.signatures, marginTop: sectionGaps.remunerationToApproval }]}>প্রতি স্বাক্ষরিত</Text>
+      <View style={[s.signatures, { fontSize: fontSizes.signatures, marginTop: sectionGaps.approvalToSignatures }]}><Text style={s.signatureLeft}>সভাপতি, পরীক্ষা কমিটি।</Text><View style={s.signatureRight}><View style={s.signatureLine} /><Text>পরীক্ষকের স্বাক্ষর</Text><Text>তারিখঃ</Text></View></View>
+      <View style={[s.finance, { fontSize: fontSizes.accounts, marginTop: sectionGaps.signaturesToAccounts }]}><Text style={s.financeTitle}>হিসাব শাখা পূরণ করিবেন</Text><Text style={s.financeText}>{nameBangla || "........................"} কে {amountInBanglaWords(total)} মাত্র পরিশোধ করা হইল।</Text></View>
+      <View style={[s.officers, { fontSize: fontSizes.accounts, marginTop: sectionGaps.accountsToOfficers }]}><Text style={s.officer}>হিসাব সহকারী</Text><Text style={s.officer}>হিসাব রক্ষক</Text><Text style={s.officer}>সহকারী কম্পট্রোলার</Text><Text style={s.officer}>কম্পট্রোলার{"\n"}রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</Text></View>
+      <Text style={[s.note, { fontSize: fontSizes.note, marginTop: sectionGaps.officersToNote }]}>বিঃদ্রঃ বিলের মোট পরিমাণ ২০০/- টাকার উপরে হইলে ১০/- টাকা মূল্যের রাজস্ব স্ট্যাম্প দিতে হইবে।{"\n"}সরকারী শিক্ষক/অফিসারদের ক্ষেত্রে যথাযথ কর্তৃপক্ষের অনুমোদন প্রয়োজন। উল্লেখ্য যে, প্রত্যেক সেমিস্টার পরীক্ষার জন্য পৃথকভাবে বিল জমা দিতে হইবে।</Text>
+    </Page>;
+}
+
+export default function IndividualBillPdfDocument(props: IndividualBillPdfPageProps) {
+  return <Document title={`${props.teacher || "Individual Teacher"} Bill`}>
+    <IndividualBillPdfPage {...props} />
   </Document>;
 }
