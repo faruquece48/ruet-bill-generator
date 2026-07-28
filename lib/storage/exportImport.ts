@@ -7,7 +7,9 @@ export function exportBillData(data: ExaminationBillData, fileName?: string) {
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = fileName || `examination-bill-${Date.now()}.json`;
+  const billNumber = data.billInfo.billNo.trim() || "Unnumbered";
+  const safeBillNumber = billNumber.replace(/[<>:"/\\|?*\u0000-\u001F]+/g, "-");
+  a.download = fileName || `Bill_No_${safeBillNumber}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
