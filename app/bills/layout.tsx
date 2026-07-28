@@ -8,6 +8,7 @@ const tabs = [
   { href: "/bills/preview", label: "Preview" },
   { href: "/bills/individual", label: "Individual Teacher Bill" },
   { href: "/bills/combined", label: "Combined Teacher Bill" },
+  { href: "/bills/summary", label: "Summary" },
   { href: "/bills/teachers", label: "Teacher Information" },
 ];
 
@@ -48,7 +49,7 @@ export default function BillsLayout({
   return (
     <div className="min-h-screen bg-slate-50">
       <nav className="sticky top-0 z-40 border-b bg-white shadow-sm">
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-2 px-4 py-3 sm:px-6 lg:px-8">
           <span className="mr-4 text-lg font-bold">
             Examination Bill Generator
           </span>
