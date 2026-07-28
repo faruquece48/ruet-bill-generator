@@ -2,6 +2,7 @@ const STORAGE_KEY = "individualTeacherInformation";
 
 export interface SavedIndividualTeacherInformation {
   englishName?: string;
+  departmentKey?: string;
   nameBangla: string;
   designationBangla: string;
   addressBangla: string;
