@@ -15,6 +15,23 @@ import IndividualLayoutEditor, { defaultIndividualBillLayout } from "./Individua
 const inputClass = "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500";
 const defaultAddress = "বিইসিএম বিভাগ, রুয়েট।";
 
+const teacherInitials = (name: string) => {
+  const ignoredTitles = new Set(["dr", "mr", "mrs", "ms", "mst"]);
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter((word) => !ignoredTitles.has(word.replace(/\./g, "").toLocaleLowerCase()))
+    .map((word) => word.match(/[\p{L}\p{N}]/u)?.[0] || "")
+    .join("")
+    .toLocaleUpperCase();
+};
+
+const formattedBillNumber = (billNumber: string) => {
+  const value = billNumber.trim();
+  if (/^\d+$/.test(value)) return value.padStart(2, "0");
+  return value.replace(/[<>:"/\\|?*\u0000-\u001F]+/g, "-") || "00";
+};
+
 export default function IndividualTeacherBillPage() {
   const [bill, setBill] = useState<ExaminationBillData>(emptyBill);
   const [teacher, setTeacher] = useState("");
@@ -88,7 +105,8 @@ export default function IndividualTeacherBillPage() {
       const url = URL.createObjectURL(blob);
       const link = window.document.createElement("a");
       link.href = url;
-      link.download = `${(teacher || "individual-teacher").replace(/[<>:"/\\|?*]+/g, "-")}-bill.pdf`;
+      const initials = teacherInitials(teacher) || "Teacher";
+      link.download = `${initials}_${formattedBillNumber(bill.billInfo.billNo)}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
       setStatus("PDF generated successfully.");
