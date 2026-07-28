@@ -105,7 +105,7 @@ export default function VerificationManager({
                 type="number"
                 min="0"
                 className="w-48"
-                placeholder="e.g. 31"
+                placeholder="e.g. 30"
                 value={studentCount}
                 onChange={(e) => setStudentCount(e.target.value)}
               />

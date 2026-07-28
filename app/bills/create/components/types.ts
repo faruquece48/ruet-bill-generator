@@ -15,6 +15,7 @@ export interface BillInfo {
   series: string;
   evaluationSystem: "obe" | "mixed";
   hasGraduatingStudents: "yes" | "no";
+  totalStudents: string;
 }
 
 export interface CommitteeMember {

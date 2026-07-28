@@ -20,6 +20,7 @@ const designationList: Designation[] = [
 
 interface Props {
   evaluationSystem: "obe" | "mixed";
+  defaultStudentCount: string;
   scrutinies: { obe: ScrutinyTeacher[]; nonObe: ScrutinyTeacher[] };
   setScrutinies: (data: {
     obe: ScrutinyTeacher[];
@@ -29,6 +30,7 @@ interface Props {
 
 export default function ScrutinyManager({
   evaluationSystem,
+  defaultStudentCount,
   scrutinies,
   setScrutinies,
 }: Props) {
@@ -49,7 +51,7 @@ export default function ScrutinyManager({
         name: "",
         designation: "Assistant Professor",
         department: "Dept. of BECM, RUET",
-        scriptCount: "",
+        scriptCount: type === "obe" ? (Number(defaultStudentCount) || 0) * 5 : "",
       },
     ]);
   };
@@ -149,7 +151,7 @@ export default function ScrutinyManager({
                 />
                 <Input
                   type="number"
-                  placeholder="No. of Scripts"
+                  placeholder={type === "obe" ? "e.g. 150" : "No. of Scripts"}
                   value={teacher.scriptCount}
                   onChange={(e) =>
                     updateScriptCount(type, index, e.target.value)

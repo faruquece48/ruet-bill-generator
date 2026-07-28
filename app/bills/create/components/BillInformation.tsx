@@ -12,6 +12,7 @@ import type { BillInfo } from "./types";
 interface Props {
   bill: BillInfo;
   setBill: React.Dispatch<React.SetStateAction<BillInfo>>;
+  onTotalStudentsChange: (value: string) => void;
 }
 
 const examinationLabels: Record<string, string> = {
@@ -47,7 +48,7 @@ const graduatingLabels: Record<string, string> = {
   no: "No",
 };
 
-export default function BillInformation({ bill, setBill }: Props) {
+export default function BillInformation({ bill, setBill, onTotalStudentsChange }: Props) {
   const updateField = (field: keyof BillInfo, value: string) => {
     setBill((previous) => ({
       ...previous,
@@ -135,6 +136,7 @@ export default function BillInformation({ bill, setBill }: Props) {
             </SelectContent>
           </Select>
         </div>
+
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -206,7 +208,7 @@ export default function BillInformation({ bill, setBill }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[1.1fr_0.7fr_1fr_1.3fr]">
         <div>
           <label className="mb-3 block text-sm font-medium">
             Examination Year
@@ -224,6 +226,19 @@ export default function BillInformation({ bill, setBill }: Props) {
             placeholder="2023"
             value={bill.series}
             onChange={(e) => updateField("series", e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="mb-3 block text-sm font-medium">
+            No. of Students
+          </label>
+          <Input
+            type="number"
+            min="0"
+            placeholder="30"
+            value={bill.totalStudents}
+            onChange={(e) => onTotalStudentsChange(e.target.value)}
           />
         </div>
 

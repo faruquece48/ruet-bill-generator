@@ -32,22 +32,18 @@ const defaultDuty: SessionalDutyOption = {
   boardViva: true,
 };
 
-const defaultStudent: StudentCount = {
-  courseFile: "",
-  sessional: "",
-  boardViva: "",
-};
-
 const label = (s: string) => s.replace(/([A-Z])/g, " $1");
 const summaryValue = (value: string) =>
   value.trim() === "" || Number(value) === 0 ? "-" : value;
 
 interface Props {
+  defaultStudentCount: string;
   sessionalDuties: SessionalCourse[];
   setSessionalDuties: (data: SessionalCourse[]) => void;
 }
 
 export default function SessionalDutyManager({
+  defaultStudentCount,
   sessionalDuties,
   setSessionalDuties,
 }: Props) {
@@ -78,6 +74,7 @@ export default function SessionalDutyManager({
 
   const addCourse = () => {
     const newIndex = courses.length;
+    const studentCount = Number(defaultStudentCount) || 0;
     setCourses([
       ...courses,
       {
@@ -88,7 +85,11 @@ export default function SessionalDutyManager({
         designation: "Assistant Professor",
         department: "Dept. of BECM, RUET",
         duties: { ...defaultDuty },
-        students: { ...defaultStudent },
+        students: {
+          courseFile: studentCount,
+          sessional: studentCount,
+          boardViva: studentCount,
+        },
         additionalTeachers: [],
       },
     ]);
@@ -193,12 +194,17 @@ export default function SessionalDutyManager({
 
   const addIndustrialAttachmentTeacher = (courseIndex: number) => {
     const updated = [...courses];
+    const studentCount = Number(defaultStudentCount) || 0;
     updated[courseIndex].additionalTeachers.push({
       name: "",
       designation: "Assistant Professor",
       department: "Dept. of BECM, RUET",
       duties: { courseFile: false, sessional: true, boardViva: false },
-      students: { ...defaultStudent },
+      students: {
+        courseFile: studentCount,
+        sessional: studentCount,
+        boardViva: studentCount,
+      },
     });
     setCourses(updated);
   };
@@ -366,7 +372,7 @@ export default function SessionalDutyManager({
                       {checked && (
                         <Input
                           type="number"
-                          placeholder="Students"
+                          placeholder="e.g. 30"
                           value={course.students[duty]}
                           onChange={(e) =>
                             updateStudent(cIndex, duty, e.target.value)
@@ -479,7 +485,7 @@ export default function SessionalDutyManager({
                       </span>
                       <Input
                         type="number"
-                        placeholder="Students"
+                        placeholder="e.g. 30"
                         value={course.additionalTeachers[0].students[duty]}
                         onChange={(e) =>
                           updateAdditionalStudent(cIndex, duty, e.target.value)

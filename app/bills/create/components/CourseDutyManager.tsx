@@ -19,7 +19,7 @@ const defaultDuty: DutyOption = {
 const defaultStudent: DutyStudentCount = {
   examiner: "",
   assignment: "",
-  classTestCount: "",
+  classTestCount: 2,
   classTestStudents: "",
 };
 
@@ -39,12 +39,14 @@ type FractionDuty = "examiner" | "assignment";
 
 interface Props {
   evaluationSystem: "obe" | "mixed";
+  defaultStudentCount: string;
   courseDuties: { obe: CourseDuty[]; nonObe: CourseDuty[] };
   setCourseDuties: (data: { obe: CourseDuty[]; nonObe: CourseDuty[] }) => void;
 }
 
 export default function CourseDutyManager({
   evaluationSystem,
+  defaultStudentCount,
   courseDuties,
   setCourseDuties,
 }: Props) {
@@ -90,6 +92,15 @@ export default function CourseDutyManager({
 
   const addCourse = (type: "obe" | "nonObe") => {
     const newIndex = getList(type).length;
+    const studentCount = Number(defaultStudentCount) || 0;
+    const initialStudents: DutyStudentCount = type === "obe"
+      ? {
+          examiner: String(studentCount),
+          assignment: String(studentCount),
+          classTestCount: 2,
+          classTestStudents: studentCount,
+        }
+      : { examiner: "", assignment: "", classTestCount: 2, classTestStudents: "" };
     setList(type, [
       ...getList(type),
       {
@@ -105,7 +116,7 @@ export default function CourseDutyManager({
             assignment: type === "nonObe" ? false : defaultDuty.assignment,
             courseFile: type === "nonObe" ? false : defaultDuty.courseFile,
           },
-          students: { ...defaultStudent },
+          students: { ...initialStudents },
           additionalTeachers: [],
         })) as CourseDuty["parts"],
       },
@@ -446,7 +457,7 @@ export default function CourseDutyManager({
                                   </label>
                                   <Input
                                     type="number"
-                                    placeholder="e.g. 40"
+                                    placeholder="e.g. 30"
                                     value={part.students.classTestStudents}
                                     onChange={(e) =>
                                       updateClassTestStudents(
@@ -481,7 +492,7 @@ export default function CourseDutyManager({
                           {checked && (
                             <Input
                               type="text"
-                              placeholder="e.g. 1/2"
+                              placeholder="e.g. 30"
                               value={part.students[fractionKey]}
                               onChange={(e) =>
                                 updateFractionStudent(
@@ -616,7 +627,7 @@ export default function CourseDutyManager({
                                     </label>
                                     <Input
                                       type="number"
-                                      placeholder="e.g. 40"
+                                      placeholder="e.g. 30"
                                       value={
                                         part.additionalTeachers[0].students
                                           .classTestStudents
@@ -645,7 +656,7 @@ export default function CourseDutyManager({
                               </span>
                               <Input
                                 type="text"
-                                placeholder="e.g. 1/2"
+                                placeholder="e.g. 30"
                                 value={
                                   part.additionalTeachers[0].students[fractionKey]
                                 }

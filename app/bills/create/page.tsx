@@ -25,6 +25,12 @@ import {
 } from "@/lib/storage/draft";
 import { exportBillData, importBillData } from "@/lib/storage/exportImport";
 
+const withDefaults = (data: Partial<ExaminationBillData>): ExaminationBillData => ({
+  ...emptyBill,
+  ...data,
+  billInfo: { ...emptyBill.billInfo, ...data.billInfo },
+});
+
 export default function Home() {
   const [billData, setBillData] = useState<ExaminationBillData>(emptyBill);
   const [saveOpen, setSaveOpen] = useState(false);
@@ -38,7 +44,7 @@ export default function Home() {
     if (saved) {
       // Hydrate once from browser storage after the client mounts.
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setBillData({ ...emptyBill, ...saved });
+      setBillData(withDefaults(saved));
     }
     hydrated.current = true;
   }, []);
@@ -86,7 +92,7 @@ export default function Home() {
 
   const confirmLoad = (name: string) => {
     const data = loadDraft(name);
-    if (data) setBillData({ ...emptyBill, ...data });
+    if (data) setBillData(withDefaults(data));
   };
 
   const handleClear = () => {
@@ -109,7 +115,7 @@ export default function Home() {
     if (!file) return;
     try {
       const data = await importBillData(file);
-      setBillData({ ...emptyBill, ...data });
+      setBillData(withDefaults(data));
       alert("Data imported successfully.");
     } catch (err) {
       alert("Failed to import: " + (err as Error).message);
@@ -156,6 +162,20 @@ export default function Home() {
         <div className="space-y-8">
           <BillInformation
             bill={billData.billInfo}
+            onTotalStudentsChange={(value) =>
+              setBillData((prev) => {
+                const previousDefault = prev.billInfo.totalStudents;
+                const resolveDefault = (current: string) =>
+                  current === "" || current === previousDefault ? value : current;
+                return {
+                  ...prev,
+                  billInfo: { ...prev.billInfo, totalStudents: value },
+                  tabulationStudentCount: resolveDefault(prev.tabulationStudentCount),
+                  courseAdviserStudentCount: resolveDefault(prev.courseAdviserStudentCount),
+                  verificationStudentCount: resolveDefault(prev.verificationStudentCount),
+                };
+              })
+            }
             setBill={(value) =>
               setBillData((prev) => ({
                 ...prev,
@@ -174,6 +194,7 @@ export default function Home() {
 
           <CourseDutyManager
             evaluationSystem={billData.billInfo.evaluationSystem}
+            defaultStudentCount={billData.billInfo.totalStudents}
             courseDuties={billData.courseDuties}
             setCourseDuties={(data) =>
               setBillData((prev) => ({ ...prev, courseDuties: data }))
@@ -181,6 +202,7 @@ export default function Home() {
           />
 
           <SessionalDutyManager
+            defaultStudentCount={billData.billInfo.totalStudents}
             sessionalDuties={billData.sessionalDuties}
             setSessionalDuties={(data) =>
               setBillData((prev) => ({ ...prev, sessionalDuties: data }))
@@ -200,6 +222,7 @@ export default function Home() {
 
           <ScrutinyManager
             evaluationSystem={billData.billInfo.evaluationSystem}
+            defaultStudentCount={billData.billInfo.totalStudents}
             scrutinies={billData.scrutinies}
             setScrutinies={(data) =>
               setBillData((prev) => ({ ...prev, scrutinies: data }))

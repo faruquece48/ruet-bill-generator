@@ -44,6 +44,7 @@ export const emptyBill: ExaminationBillData = {
     series: "",
     evaluationSystem: "obe",
     hasGraduatingStudents: "no",
+    totalStudents: "30",
   },
   committees: [
     {
@@ -67,9 +68,9 @@ export const emptyBill: ExaminationBillData = {
   tableSpacing: {},
   scrutinies: { obe: [], nonObe: [] },
   studentDuties: [],
-  tabulationStudentCount: "",
+  tabulationStudentCount: "30",
   courseAdvisers: [],
-  courseAdviserStudentCount: "",
+  courseAdviserStudentCount: "30",
   practicalSurveyingTeachers: [
     ...practicalSurveyingTeachers,
     ...becmPracticalSurveyingTeachers,
@@ -77,7 +78,7 @@ export const emptyBill: ExaminationBillData = {
   practicalSurveyingStudentCount: "27",
   thesisTeachers: [],
   verificationTeachers: [],
-  verificationStudentCount: "",
+  verificationStudentCount: "30",
   courseCoordinatorTeachers: [],
   layoutSettings: defaultLayoutSettings,
   layoutSpacing: { sectionGap: 6, footerArea: 68 },
