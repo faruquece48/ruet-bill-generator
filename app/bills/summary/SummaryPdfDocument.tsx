@@ -4,6 +4,7 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { ImportedSummaryBill, SummaryTeacher } from "./summaryData";
 import {
   aggregateTeachers,
+  examinationIndexName,
   examinationSummaryTitle,
   teachersForBill,
 } from "./summaryData";
@@ -52,14 +53,38 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: "#555",
   },
+  indexPage: {
+    paddingTop: 48,
+    paddingBottom: 28,
+    paddingHorizontal: 28,
+    fontFamily: "Times-Roman",
+    fontSize: 10,
+    color: "#000",
+  },
+  indexDepartment: {
+    textAlign: "center",
+    fontFamily: "Times-Bold",
+    fontSize: 20,
+  },
+  indexTitle: {
+    textAlign: "center",
+    fontFamily: "Times-Bold",
+    fontSize: 19,
+    marginTop: 10,
+    marginBottom: 14,
+  },
+  indexSerial: { width: "12%", textAlign: "center" },
+  indexExamination: { width: "58%", textAlign: "center" },
+  indexSeries: { width: "30%", textAlign: "center" },
+  indexTable: { alignSelf: "center" },
 });
 
-function Header({ title }: { title: string }) {
+function Header({ title, tableGap }: { title: string; tableGap: number }) {
   return <>
     <Text style={styles.motto}>“Heaven&apos;s Light is Our Guide”</Text>
     <Text style={styles.department}>Department of Building Engineering and Construction Management</Text>
     <Text style={styles.university}>Rajshahi University of Engineering and Technology</Text>
-    <Text style={styles.title}>{title}</Text>
+    <Text style={[styles.title, { marginBottom: tableGap }]}>{title}</Text>
   </>;
 }
 
@@ -93,15 +118,42 @@ function Footer() {
   />;
 }
 
-export default function SummaryPdfDocument({ bills }: { bills: ImportedSummaryBill[] }) {
+export default function SummaryPdfDocument({
+  bills,
+  tableGap = 10,
+  remunerationListYear = "2025-II",
+  indexTableWidth = 75,
+}: {
+  bills: ImportedSummaryBill[];
+  tableGap?: number;
+  remunerationListYear?: string;
+  indexTableWidth?: number;
+}) {
   return <Document title="Examination Bill Summary">
+    <Page size="A4" style={styles.indexPage}>
+      <Text style={styles.indexDepartment}>Department of BECM</Text>
+      <Text style={styles.indexTitle}>Remuneration List – {remunerationListYear}</Text>
+      <View style={[styles.indexTable, { width: `${indexTableWidth}%` }]}>
+        <View style={styles.row}>
+          <View style={[styles.cell, styles.left, styles.top, styles.indexSerial]}><Text style={styles.header}>Sl. No.</Text></View>
+          <View style={[styles.cell, styles.top, styles.indexExamination]}><Text style={styles.header}>Name of Examination</Text></View>
+          <View style={[styles.cell, styles.top, styles.indexSeries]}><Text style={styles.header}>Series</Text></View>
+        </View>
+        {bills.map(({ id, bill }, index) => <View key={id} style={styles.row} wrap={false}>
+          <View style={[styles.cell, styles.left, styles.indexSerial]}><Text>{index + 1}.</Text></View>
+          <View style={[styles.cell, styles.indexExamination]}><Text>{examinationIndexName(bill)}</Text></View>
+          <View style={[styles.cell, styles.indexSeries]}><Text>{bill.billInfo.series}</Text></View>
+        </View>)}
+      </View>
+      <Footer />
+    </Page>
     {bills.map(({ id, bill }) => <Page key={id} size="A4" style={styles.page}>
-      <Header title={examinationSummaryTitle(bill)} />
+      <Header title={examinationSummaryTitle(bill)} tableGap={tableGap} />
       <TeacherTable teachers={teachersForBill(bill)} />
       <Footer />
     </Page>)}
     <Page size="A4" style={styles.page}>
-      <Header title="Consolidated Remuneration List of Dept. of BECM for All Imported Examination Bills" />
+      <Header title="Consolidated Remuneration List of Dept. of BECM for All Imported Examination Bills" tableGap={tableGap} />
       <TeacherTable teachers={aggregateTeachers(bills)} />
       <Footer />
     </Page>

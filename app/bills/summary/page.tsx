@@ -17,8 +17,14 @@ export default function SummaryPage() {
   const [bills, setBills] = useState<ImportedSummaryBill[]>([]);
   const [message, setMessage] = useState("");
   const [downloading, setDownloading] = useState(false);
+  const [tableGap, setTableGap] = useState(10);
+  const [remunerationListYear, setRemunerationListYear] = useState("2025-II");
+  const [indexTableWidth, setIndexTableWidth] = useState(75);
   const inputRef = useRef<HTMLInputElement>(null);
-  const document = useMemo(() => <SummaryPdfDocument bills={bills} />, [bills]);
+  const document = useMemo(
+    () => <SummaryPdfDocument bills={bills} tableGap={tableGap} remunerationListYear={remunerationListYear} indexTableWidth={indexTableWidth} />,
+    [bills, tableGap, remunerationListYear, indexTableWidth]
+  );
 
   const importFiles = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -166,6 +172,44 @@ export default function SummaryPage() {
           <FilePlus2 className="h-4 w-4" />
           Add bill files
         </button>
+        <label className="mt-4 block border-t pt-4 text-sm font-medium">
+          <span>Remuneration list year</span>
+          <input
+            type="text"
+            placeholder="e.g. 2025-II"
+            value={remunerationListYear}
+            onChange={(event) => setRemunerationListYear(event.target.value)}
+            className="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+          />
+        </label>
+        <label className="mt-4 block text-sm font-medium">
+          <span>First-page table width (%)</span>
+          <input
+            type="number"
+            min="40"
+            max="100"
+            step="1"
+            value={indexTableWidth}
+            onChange={(event) =>
+              setIndexTableWidth(Math.min(100, Math.max(40, Number(event.target.value) || 40)))
+            }
+            className="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+          />
+        </label>
+        <label className="mt-4 block text-sm font-medium">
+          <span>Gap before table (pt)</span>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="1"
+            value={tableGap}
+            onChange={(event) =>
+              setTableGap(Math.min(100, Math.max(0, Number(event.target.value) || 0)))
+            }
+            className="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+          />
+        </label>
         {message && <p className="mt-2 text-xs text-slate-600">{message}</p>}
       </aside>
 

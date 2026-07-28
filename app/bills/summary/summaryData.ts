@@ -133,3 +133,10 @@ export function examinationSummaryTitle(bill: ExaminationBillData): string {
     info.examination || "B.Sc. Engineering"
   } Examination-${info.examYear || ""} (${type.trim()})`;
 }
+
+export function examinationIndexName(bill: ExaminationBillData): string {
+  const info = bill.billInfo;
+  return info.examType === "backlog"
+    ? `${info.year} Backlog Examination ${info.examYear}`.trim()
+    : `${info.year} ${info.semester} Semester Examination ${info.examYear}`.trim();
+}
