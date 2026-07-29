@@ -30,8 +30,10 @@ import {
 
 const menuItems = [
   { label: "Home", icon: Home },
-  { label: "My Bills", icon: FileText },
+  { label: "Remuneration Bill", icon: FileText },
   { label: "Exam Notices", icon: Bell },
+  { label: "General Notice", icon: Megaphone },
+  { label: "Paper Setters", icon: BookOpenText },
   { label: "Academic Calendar", icon: CalendarDays },
 ];
 
