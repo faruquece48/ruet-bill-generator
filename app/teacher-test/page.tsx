@@ -183,7 +183,7 @@ export default function TeacherTestPage() {
                   src={dashboardReference}
                   alt="RUET bill dashboard illustration"
                   fill
-                  className="object-cover object-[90%_20%] opacity-25"
+                  className="object-cover object-[90%_20%] opacity-50"
                 />
               </div>
               <div className="absolute -bottom-28 left-[45%] h-64 w-64 rounded-full border border-white/70" />
