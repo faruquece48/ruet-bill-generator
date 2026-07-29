@@ -120,22 +120,53 @@ const courseCoordinatorLabels = {
   teacherLine: "Name of Teachers & Designation",
 };
 
+// Drafts created before the preview defaults were updated still contain these
+// values in localStorage. Replace only exact legacy defaults, preserving any
+// genuinely customized column widths.
+const legacyLayoutDefaults: Partial<TableLayoutSettings> = {
+  paperSetter: { course: 30, part: 8, teacherLine: 32, paperSetCount: 15, scriptExamined: 15 },
+  paperSetterNonObe: { course: 30, part: 8, teacherLine: 32, paperSetCount: 15, scriptExamined: 15 },
+  classTest: { course: 34, teacherLine: 36, classTestCount: 15, students: 15 },
+  assignment: { course: 50, teacherLine: 35, assignmentValue: 15 },
+  courseFile: { course: 35, teacherLine: 50, count: 15 },
+  questionWork: { sl: 10, teacherLine: 65, questionNumber: 25 },
+  scrutinyObe: { sl: 10, teacherLine: 65, scriptCount: 25 },
+  scrutinyNonObe: { sl: 10, teacherLine: 65, scriptCount: 25 },
+  sessionalDuty: { courseLine: 30, credit: 8, teacherLine: 52, students: 10 },
+  boardViva: { sl: 10, teacherLine: 65, students: 25 },
+  tabulation: { sl: 10, teacherLine: 65, students: 25 },
+  gradeSheetPreparation: { sl: 10, teacherLine: 65, studentsDisplay: 25 },
+  gradeSheetVerification: { sl: 10, teacherLine: 65, studentsDisplay: 25 },
+  courseAdviser: { sl: 10, teacherLine: 65, students: 25 },
+  practicalSurveying: { sl: 8, teacherLine: 72, students: 20 },
+  thesis: { sl: 8, teacherLine: 42, supervisorCount: 12, examinerCount: 13, thesisViva: 25 },
+};
+
 function mergeLayoutSettings(
   saved?: Partial<TableLayoutSettings>
 ): TableLayoutSettings {
   return Object.fromEntries(
     Object.entries(defaultLayoutSettings).map(([key, defaults]) => {
       const savedWidths = saved?.[key as keyof TableLayoutSettings];
+      const legacyWidths = legacyLayoutDefaults[key as keyof TableLayoutSettings];
       const hasCurrentColumns =
         savedWidths &&
         Object.keys(defaults).every((column) =>
           Object.prototype.hasOwnProperty.call(savedWidths, column)
         );
+      const usesLegacyDefaults =
+        hasCurrentColumns &&
+        legacyWidths &&
+        Object.keys(legacyWidths).every(
+          (column) => savedWidths[column] === legacyWidths[column]
+        );
 
       const currentWidths = Object.fromEntries(
         Object.keys(defaults).map((column) => [
           column,
-          hasCurrentColumns ? savedWidths[column] : defaults[column],
+          hasCurrentColumns && !usesLegacyDefaults
+            ? savedWidths[column]
+            : defaults[column],
         ])
       );
 

@@ -110,10 +110,6 @@ export default function ScrutinyManager({
     const records = getList(type);
     return (
       <>
-        <Button type="button" onClick={() => addRecord(type)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Teacher
-        </Button>
         <div className="space-y-4">
           {records.map((teacher, index) => (
             <div key={index} className="rounded-lg border bg-slate-50 p-4">
@@ -169,6 +165,10 @@ export default function ScrutinyManager({
             </div>
           ))}
         </div>
+        <Button type="button" onClick={() => addRecord(type)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Teacher
+        </Button>
       </>
     );
   };

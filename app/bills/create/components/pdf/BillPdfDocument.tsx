@@ -421,12 +421,12 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
         <View>
           {isMixedEvaluation && <Text style={styles.subSectionTitle}>2.1 OBE (New Syllabus)</Text>}
           <GroupedTable
-            courseWidth={lw.paperSetter.course ?? 30}
+            courseWidth={lw.paperSetter.course ?? 18}
             entryColumns={[
-              { key: "part", label: "Part", width: lw.paperSetter.part ?? 8, align: "center" },
-              { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.paperSetter.teacherLine ?? 32 },
-              { key: "paperSetCount", label: "No. of Paper Set", width: lw.paperSetter.paperSetCount ?? 15, align: "center" },
-              { key: "scriptExamined", label: "No. of Script Examined", width: lw.paperSetter.scriptExamined ?? 15, align: "center" },
+              { key: "part", label: "Part", width: lw.paperSetter.part ?? 5, align: "center" },
+              { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.paperSetter.teacherLine ?? 55 },
+              { key: "paperSetCount", label: "No. of Paper Set", width: lw.paperSetter.paperSetCount ?? 10, align: "center" },
+              { key: "scriptExamined", label: "No. of Script Examined", width: lw.paperSetter.scriptExamined ?? 12, align: "center" },
             ]}
             groups={obePaperSetterGroups}
           />
@@ -434,12 +434,12 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
             <View break={Boolean(bill.pageBreakAfter?.paperSetterNonObe)}>
               <Text style={styles.subSectionTitle}>2.2 Non-OBE (Old Syllabus)</Text>
               <GroupedTable
-                courseWidth={lw.paperSetterNonObe.course ?? 30}
+                courseWidth={lw.paperSetterNonObe.course ?? 18}
                 entryColumns={[
-                  { key: "part", label: "Part", width: lw.paperSetterNonObe.part ?? 8, align: "center" },
-                  { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.paperSetterNonObe.teacherLine ?? 32 },
-                  { key: "paperSetCount", label: "No. of Paper Set", width: lw.paperSetterNonObe.paperSetCount ?? 15, align: "center" },
-                  { key: "scriptExamined", label: "No. of Script Examined", width: lw.paperSetterNonObe.scriptExamined ?? 15, align: "center" },
+                  { key: "part", label: "Part", width: lw.paperSetterNonObe.part ?? 5, align: "center" },
+                  { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.paperSetterNonObe.teacherLine ?? 55 },
+                  { key: "paperSetCount", label: "No. of Paper Set", width: lw.paperSetterNonObe.paperSetCount ?? 10, align: "center" },
+                  { key: "scriptExamined", label: "No. of Script Examined", width: lw.paperSetterNonObe.scriptExamined ?? 12, align: "center" },
                 ]}
                 groups={nonObePaperSetterGroups}
               />
@@ -455,11 +455,11 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       includeInBacklog: false,
       content: (
         <GroupedTable
-          courseWidth={lw.classTest.course ?? 30}
+          courseWidth={lw.classTest.course ?? 18}
           entryColumns={[
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.classTest.teacherLine ?? 40 },
-            { key: "classTestCount", label: "No. of Class Test", width: lw.classTest.classTestCount ?? 15, align: "center" },
-            { key: "students", label: "No. of Students", width: lw.classTest.students ?? 15, align: "center" },
+            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.classTest.teacherLine ?? 62 },
+            { key: "classTestCount", label: "No. of Class Test", width: lw.classTest.classTestCount ?? 10, align: "center" },
+            { key: "students", label: "No. of Students", width: lw.classTest.students ?? 10, align: "center" },
           ]}
           groups={classTestGroups}
         />
@@ -472,10 +472,10 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       includeInBacklog: false,
       content: (
         <GroupedTable
-          courseWidth={lw.assignment.course ?? 35}
+          courseWidth={lw.assignment.course ?? 18}
           entryColumns={[
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.assignment.teacherLine ?? 45 },
-            { key: "assignmentValue", label: "No. of Class Assignment", width: lw.assignment.assignmentValue ?? 20, align: "center" },
+            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.assignment.teacherLine ?? 70 },
+            { key: "assignmentValue", label: "No. of Class Assignment", width: lw.assignment.assignmentValue ?? 12, align: "center" },
           ]}
           groups={assignmentGroups}
         />
@@ -488,15 +488,15 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       includeInBacklog: false,
       content: (
         <GroupedTable
-          courseWidth={lw.courseFile.course ?? 35}
+          courseWidth={lw.courseFile.course ?? 18}
           entryColumns={[
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.courseFile.teacherLine ?? 50 },
+            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.courseFile.teacherLine ?? 70 },
           ]}
           groups={courseFileGroups}
           groupMergeColumn={{
             key: "count",
             label: "No. of Course File",
-            width: lw.courseFile.count ?? 15,
+            width: lw.courseFile.count ?? 12,
             align: "center",
             value: () => "01",
           }}
@@ -513,9 +513,9 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       content: (
         <MergedColumnTable
           columns={[
-            { key: "sl", label: "Sl. No.", width: lw.questionWork.sl ?? 10, align: "center" },
-            { key: "teacherLine", label: "Name of The Teachers & Designation", width: lw.questionWork.teacherLine ?? 65 },
-            { key: "questionNumber", label: "No. of Question", width: lw.questionWork.questionNumber ?? 25, align: "center" },
+            { key: "sl", label: "Sl. No.", width: lw.questionWork.sl ?? 7, align: "center" },
+            { key: "teacherLine", label: "Name of The Teachers & Designation", width: lw.questionWork.teacherLine ?? 78 },
+            { key: "questionNumber", label: "No. of Question", width: lw.questionWork.questionNumber ?? 15, align: "center" },
           ]}
           rows={questionTeachers.map((q) => ({
             teacherLine: formatTeacher(q.name, q.designation, q.department),
@@ -535,9 +535,9 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
           {isMixedEvaluation && <Text style={styles.subSectionTitle}>7.1 OBE (New Syllabus)</Text>}
           <SimpleTable
             columns={[
-              { key: "sl", label: "Sl. No.", width: lw.scrutinyObe.sl ?? 10, align: "center" },
-              { key: "teacherLine", label: "Name of The Teachers & Designation", width: lw.scrutinyObe.teacherLine ?? 65 },
-              { key: "scriptCount", label: "No. of Script", width: lw.scrutinyObe.scriptCount ?? 25, align: "center" },
+              { key: "sl", label: "Sl. No.", width: lw.scrutinyObe.sl ?? 7, align: "center" },
+              { key: "teacherLine", label: "Name of The Teachers & Designation", width: lw.scrutinyObe.teacherLine ?? 78 },
+              { key: "scriptCount", label: "No. of Script", width: lw.scrutinyObe.scriptCount ?? 15, align: "center" },
             ]}
             rows={bill.scrutinies.obe.map((s) => ({
               teacherLine: formatTeacher(s.name, s.designation, s.department),
@@ -549,9 +549,9 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
               <Text style={styles.subSectionTitle}>7.2 Non-OBE (Old Syllabus)</Text>
               <SimpleTable
                 columns={[
-                  { key: "sl", label: "Sl. No.", width: lw.scrutinyNonObe.sl ?? 10, align: "center" },
-                  { key: "teacherLine", label: "Name of The Teachers & Designation", width: lw.scrutinyNonObe.teacherLine ?? 65 },
-                  { key: "scriptCount", label: "No. of Script", width: lw.scrutinyNonObe.scriptCount ?? 25, align: "center" },
+                  { key: "sl", label: "Sl. No.", width: lw.scrutinyNonObe.sl ?? 7, align: "center" },
+                  { key: "teacherLine", label: "Name of The Teachers & Designation", width: lw.scrutinyNonObe.teacherLine ?? 78 },
+                  { key: "scriptCount", label: "No. of Script", width: lw.scrutinyNonObe.scriptCount ?? 15, align: "center" },
                 ]}
                 rows={bill.scrutinies.nonObe.map((s) => ({
                   teacherLine: formatTeacher(s.name, s.designation, s.department),
@@ -570,14 +570,14 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       includeInBacklog: false,
       content: (
         <GroupedTable
-          courseWidth={lw.sessionalDuty.courseLine ?? 30}
+          courseWidth={lw.sessionalDuty.courseLine ?? 25}
           entryColumns={[
-            { key: "credit", label: "Credit", width: lw.sessionalDuty.credit ?? 8, align: "center" },
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.sessionalDuty.teacherLine ?? 52 },
+            { key: "credit", label: "Credit", width: lw.sessionalDuty.credit ?? 7, align: "center" },
+            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.sessionalDuty.teacherLine ?? 54 },
           ]}
           groups={sessionalGroups}
           groupedEntryKeys={["credit"]}
-          groupMergeColumn={{ key: "students", label: "No. of Students", width: lw.sessionalDuty.students ?? 10, align: "center", value: (group) => group.entries[0]?.students }}
+          groupMergeColumn={{ key: "students", label: "No. of Students", width: lw.sessionalDuty.students ?? 14, align: "center", value: (group) => group.entries[0]?.students }}
         />
       ),
     },
@@ -589,9 +589,9 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       content: (
         <SimpleTable
           columns={[
-            { key: "sl", label: "Sl. No.", width: lw.boardViva.sl ?? 10, align: "center" },
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.boardViva.teacherLine ?? 65 },
-            { key: "students", label: "No. of Students", width: lw.boardViva.students ?? 25, align: "center" },
+            { key: "sl", label: "Sl. No.", width: lw.boardViva.sl ?? 7, align: "center" },
+            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.boardViva.teacherLine ?? 78 },
+            { key: "students", label: "No. of Students", width: lw.boardViva.students ?? 15, align: "center" },
           ]}
           rows={boardVivaRows}
         />
@@ -605,9 +605,9 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
   content: (
     <MergedColumnTable
       columns={[
-        { key: "sl", label: "Sl. No.", width: lw.tabulation.sl ?? 10 },
-        { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.tabulation.teacherLine ?? 65 },
-        { key: "students", label: "No. of Students", width: lw.tabulation.students ?? 25, align: "center" },
+        { key: "sl", label: "Sl. No.", width: lw.tabulation.sl ?? 7 },
+        { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.tabulation.teacherLine ?? 78 },
+        { key: "students", label: "No. of Students", width: lw.tabulation.students ?? 15, align: "center" },
       ]}
       rows={tabulationRows}
       mergeKey="students"
@@ -625,9 +625,9 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
   content: (
     <MergedColumnTable
       columns={[
-        { key: "sl", label: "Sl. No.", width: lw.gradeSheetPreparation.sl ?? 10 },
-        { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.gradeSheetPreparation.teacherLine ?? 65 },
-        { key: "studentsDisplay", label: "No. of Students", width: lw.gradeSheetPreparation.studentsDisplay ?? 25, align: "center" },
+        { key: "sl", label: "Sl. No.", width: lw.gradeSheetPreparation.sl ?? 7 },
+        { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.gradeSheetPreparation.teacherLine ?? 78 },
+        { key: "studentsDisplay", label: "No. of Students", width: lw.gradeSheetPreparation.studentsDisplay ?? 15, align: "center" },
       ]}
       rows={gradeSheetRows}
       mergeKey="studentsDisplay"
@@ -643,9 +643,9 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
   content: (
     <MergedColumnTable
       columns={[
-        { key: "sl", label: "Sl. No.", width: lw.gradeSheetVerification.sl ?? 10 },
-        { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.gradeSheetVerification.teacherLine ?? 65 },
-        { key: "studentsDisplay", label: "No. of Students", width: lw.gradeSheetVerification.studentsDisplay ?? 25, align: "center" },
+        { key: "sl", label: "Sl. No.", width: lw.gradeSheetVerification.sl ?? 7 },
+        { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.gradeSheetVerification.teacherLine ?? 78 },
+        { key: "studentsDisplay", label: "No. of Students", width: lw.gradeSheetVerification.studentsDisplay ?? 15, align: "center" },
       ]}
       rows={gradeSheetRows}
       mergeKey="studentsDisplay"
@@ -661,9 +661,9 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       content: (
         <MergedColumnTable
           columns={[
-            { key: "sl", label: "Sl. No.", width: lw.courseAdviser.sl ?? 10, align: "center" },
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.courseAdviser.teacherLine ?? 65 },
-            { key: "students", label: "No. of Students", width: lw.courseAdviser.students ?? 25, align: "center" },
+            { key: "sl", label: "Sl. No.", width: lw.courseAdviser.sl ?? 7, align: "center" },
+            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.courseAdviser.teacherLine ?? 78 },
+            { key: "students", label: "No. of Students", width: lw.courseAdviser.students ?? 15, align: "center" },
           ]}
           rows={bill.courseAdvisers.map((a) => ({
             teacherLine: formatTeacher(a.name, a.designation, a.department),
@@ -704,11 +704,11 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       content: (
         <MergedColumnTable
           columns={[
-            { key: "sl", label: "Sl. No.", width: lw.thesis.sl ?? 8 },
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.thesis.teacherLine ?? 42 },
-            { key: "supervisorCount", label: "Supervisor", width: lw.thesis.supervisorCount ?? 12, align: "center" },
-            { key: "examinerCount", label: "Thesis Examiner", width: lw.thesis.examinerCount ?? 13, align: "center" },
-            { key: "thesisViva", label: "Thesis Viva", width: lw.thesis.thesisViva ?? 25, align: "center" },
+            { key: "sl", label: "Sl. No.", width: lw.thesis.sl ?? 7 },
+            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.thesis.teacherLine ?? 57 },
+            { key: "supervisorCount", label: "Supervisor", width: lw.thesis.supervisorCount ?? 10, align: "center" },
+            { key: "examinerCount", label: "Thesis Examiner", width: lw.thesis.examinerCount ?? 15, align: "center" },
+            { key: "thesisViva", label: "Thesis Viva", width: lw.thesis.thesisViva ?? 11, align: "center" },
           ]}
           rows={bill.thesisTeachers.map((t) => ({
             teacherLine: formatTeacher(t.name, t.designation, t.department),
@@ -754,9 +754,9 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       content: (
         <MergedColumnTable
           columns={[
-            { key: "sl", label: "SL No.", width: lw.practicalSurveying.sl ?? 8, align: "center" },
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.practicalSurveying.teacherLine ?? 72 },
-            { key: "students", label: "No. of Students", width: lw.practicalSurveying.students ?? 20, align: "center" },
+            { key: "sl", label: "SL No.", width: lw.practicalSurveying.sl ?? 7, align: "center" },
+            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.practicalSurveying.teacherLine ?? 79 },
+            { key: "students", label: "No. of Students", width: lw.practicalSurveying.students ?? 14, align: "center" },
           ]}
           rows={bill.practicalSurveyingTeachers
             .filter((teacher) => teacher.name.trim())

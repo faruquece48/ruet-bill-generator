@@ -94,7 +94,7 @@ export default function TeacherTestPage() {
         <div className="px-6 pb-8 pt-8 text-center">
           <Image src={logoImage} alt="RUET logo" className="mx-auto h-24 w-24 rounded-full object-contain" />
           <p className="mt-5 text-2xl font-semibold tracking-wide">RUET</p>
-          <p className="mt-1 text-sm leading-6 text-blue-100">Examination Bill<br />Generator System</p>
+          <p className="mt-1 whitespace-nowrap text-sm leading-6 text-blue-100">Bill Generator System</p>
         </div>
         <nav className="space-y-2 px-5">
           {menuItems.map(({ label, icon: Icon }, index) => <button key={label} type="button" className={`flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left text-sm font-medium ${index === 0 ? "bg-indigo-600 text-white shadow-lg shadow-indigo-950/20" : "text-blue-100 hover:bg-white/10"}`}>

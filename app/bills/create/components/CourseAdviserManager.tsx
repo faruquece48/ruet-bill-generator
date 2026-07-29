@@ -84,10 +84,6 @@ export default function CourseAdviserManager({
             className="w-48"
           />
         </label>
-        <Button type="button" onClick={addAdviser}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Teacher
-        </Button>
       </div>
       <div className="space-y-4">
         {advisers.map((adviser, index) => (
@@ -137,6 +133,10 @@ export default function CourseAdviserManager({
           </div>
         ))}
       </div>
+      <Button type="button" onClick={addAdviser}>
+        <Plus className="mr-2 h-4 w-4" />
+        Add Teacher
+      </Button>
     </div>
   );
 }

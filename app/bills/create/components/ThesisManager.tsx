@@ -125,10 +125,6 @@ export default function ThesisManager({
         </Button>
       </div>
       {!isMinimized && <>
-        <Button type="button" onClick={addRecord}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Teacher
-        </Button>
         <div className="space-y-4">
         {records.map((teacher, index) => (
           <div key={index} className="rounded-lg border bg-slate-50 p-4">
@@ -212,6 +208,10 @@ export default function ThesisManager({
           </div>
         ))}
         </div>
+        <Button type="button" onClick={addRecord}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Teacher
+        </Button>
       </>}
     </div>
   );

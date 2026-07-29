@@ -83,21 +83,6 @@ export default function PracticalSurveyingManager({
                 className="w-48"
               />
             </label>
-            <Button
-              type="button"
-              onClick={() =>
-                setTeachers([
-                  ...teachers,
-                  {
-                    name: "",
-                    designation: "",
-                    department: "Dept. of BECM, RUET",
-                  },
-                ])
-              }
-            >
-              <Plus className="mr-2 h-4 w-4" /> Add Teacher
-            </Button>
           </div>
           <div className="space-y-3">
             {teachers.map((teacher, index) => (
@@ -143,6 +128,21 @@ export default function PracticalSurveyingManager({
               </div>
             ))}
           </div>
+          <Button
+            type="button"
+            onClick={() =>
+              setTeachers([
+                ...teachers,
+                {
+                  name: "",
+                  designation: "",
+                  department: "Dept. of BECM, RUET",
+                },
+              ])
+            }
+          >
+            <Plus className="mr-2 h-4 w-4" /> Add Teacher
+          </Button>
         </>
       )}
     </div>

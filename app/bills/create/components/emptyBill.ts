@@ -49,7 +49,7 @@ export const emptyBill: ExaminationBillData = {
   committees: [
     {
       name: "",
-      designation: "",
+      designation: "Assistant Professor & Head",
       department: "Dept. of BECM, RUET",
       role: "Member",
     },

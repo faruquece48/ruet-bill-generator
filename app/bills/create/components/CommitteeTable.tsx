@@ -20,6 +20,13 @@ import {
 import { Trash2, Plus } from "lucide-react";
 import type { CommitteeMember } from "./types";
 
+const committeeDesignations = [
+  "Lecturer",
+  "Assistant Professor",
+  "Associate Professor",
+  "Professor",
+] as const;
+
 interface Props {
   committees: CommitteeMember[];
   setCommittees: (data: CommitteeMember[]) => void;
@@ -81,13 +88,29 @@ export default function CommitteeTable({ committees, setCommittees }: Props) {
                 />
               </TableCell>
               <TableCell>
-                <Input
-                  placeholder="Designation"
-                  value={member.designation}
-                  onChange={(e) =>
-                    updateMember(index, "designation", e.target.value)
-                  }
-                />
+                <Select
+                  value={member.designation.replace(/ & Head$/, "")}
+                  onValueChange={(value) => {
+                    if (value !== null) {
+                      updateMember(
+                        index,
+                        "designation",
+                        index === 0 ? `${value} & Head` : value
+                      );
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Designation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {committeeDesignations.map((designation) => (
+                      <SelectItem key={designation} value={designation}>
+                        {designation}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </TableCell>
               <TableCell>
                 <Input

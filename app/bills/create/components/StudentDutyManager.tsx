@@ -86,10 +86,6 @@ export default function StudentDutyManager({
             className="w-48"
           />
         </label>
-        <Button type="button" onClick={addRecord}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Teacher
-        </Button>
       </div>
       <div className="space-y-4">
         {records.map((teacher, index) => (
@@ -137,6 +133,10 @@ export default function StudentDutyManager({
           </div>
         ))}
       </div>
+      <Button type="button" onClick={addRecord}>
+        <Plus className="mr-2 h-4 w-4" />
+        Add Teacher
+      </Button>
     </div>
   );
 }
