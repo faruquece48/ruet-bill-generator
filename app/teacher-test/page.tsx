@@ -19,6 +19,7 @@ import {
   UserRound,
 } from "lucide-react";
 import logoImage from "../images/image_03.png";
+import dashboardReference from "../images/image_04..png";
 
 const mainNavigation = [
   { label: "Dashboard", icon: Grid2X2, active: true, href: "/teacher-test" },
@@ -178,26 +179,12 @@ export default function TeacherTestPage() {
           <div className="space-y-7 p-5 sm:p-8">
             <section className="relative min-h-[205px] overflow-hidden rounded-[24px] border border-violet-200 bg-gradient-to-r from-[#eeeaff] via-[#f4f5ff] to-[#e4e9ff] px-8 py-10 shadow-sm sm:px-12">
               <div className="absolute inset-y-0 right-0 hidden w-[48%] overflow-hidden sm:block">
-                <div className="absolute -right-16 -top-32 h-80 w-80 rounded-full bg-gradient-to-br from-indigo-300/55 to-violet-400/20 blur-2xl" />
-                <div className="absolute bottom-[-110px] right-32 h-72 w-72 rounded-full border-[38px] border-white/30" />
-                <div className="absolute right-16 top-8 h-36 w-28 rotate-6 rounded-2xl border border-indigo-300/60 bg-white/45 p-5 shadow-xl shadow-indigo-200/40 backdrop-blur-sm">
-                  <div className="h-3 w-12 rounded-full bg-indigo-400/70" />
-                  <div className="mt-4 space-y-2">
-                    <div className="h-2 rounded-full bg-indigo-200" />
-                    <div className="h-2 w-4/5 rounded-full bg-indigo-200" />
-                    <div className="h-2 w-3/5 rounded-full bg-indigo-200" />
-                  </div>
-                  <div className="mt-5 grid grid-cols-2 gap-2">
-                    <div className="h-7 rounded-md bg-violet-200/80" />
-                    <div className="h-7 rounded-md bg-blue-200/80" />
-                  </div>
-                </div>
-                <div className="absolute right-44 top-14 flex h-16 w-16 -rotate-6 items-center justify-center rounded-2xl bg-white/55 text-indigo-500 shadow-lg shadow-indigo-200/40">
-                  <FileText className="h-8 w-8" />
-                </div>
-                <div className="absolute bottom-7 right-52 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-300/60">
-                  <Bell className="h-5 w-5" />
-                </div>
+                <Image
+                  src={dashboardReference}
+                  alt="RUET bill dashboard illustration"
+                  fill
+                  className="object-cover object-[90%_20%] opacity-10 mix-blend-multiply"
+                />
               </div>
               <div className="absolute -bottom-28 left-[45%] h-64 w-64 rounded-full border border-white/70" />
               <div className="relative z-10 max-w-2xl">
