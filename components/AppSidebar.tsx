@@ -87,7 +87,7 @@ function SidebarLink({ item, onNavigate }: { item: NavigationItem; onNavigate?: 
 
 export default function AppSidebar({ mobileOpen = false, onClose }: AppSidebarProps) {
   const sidebar = (
-    <aside className="flex w-[255px] shrink-0 flex-col border-r border-[#12396d] bg-[#082452] text-white">
+    <aside className="flex w-[var(--app-sidebar-width)] shrink-0 flex-col border-r border-[#12396d] bg-[#082452] text-white">
       <div className="relative flex min-h-[184px] flex-col items-center justify-center border-b border-white/10 px-7 py-5 text-center">
         {onClose && (
           <button type="button" onClick={onClose} className="absolute right-3 top-3 rounded-lg p-2 text-blue-100 hover:bg-white/10 lg:hidden" aria-label="Close navigation">

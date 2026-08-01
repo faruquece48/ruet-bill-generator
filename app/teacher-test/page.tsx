@@ -114,7 +114,7 @@ export default function TeacherTestPage() {
   return (
     <main className="min-h-screen bg-[#f7f9fd] text-[#102555]">
       <div className="mx-auto flex min-h-screen max-w-[1800px] bg-white">
-        <aside className="hidden w-[275px] shrink-0 self-start border-r border-[#12396d] bg-[#082452] text-white lg:flex lg:flex-col">
+        <aside className="hidden w-[var(--app-sidebar-width)] shrink-0 self-start border-r border-[#12396d] bg-[#082452] text-white lg:flex lg:flex-col">
           <div className="flex min-h-[190px] flex-col items-center justify-center border-b border-white/10 px-7 py-5 text-center">
             <Image src={logoImage} alt="RUET logo" className="h-24 w-24 object-contain" />
             <p className="mt-2 font-serif text-2xl font-bold tracking-wide">RUET</p>
