@@ -12,6 +12,7 @@ import ThesisManager from "./components/ThesisManager";
 import VerificationManager from "./components/VerificationManager";
 import CourseCoordinatorManager from "./components/CourseCoordinatorManager";
 import PracticalSurveyingManager from "./components/PracticalSurveyingManager";
+import VivaBoardTeacherManager from "./components/VivaBoardTeacherManager";
 import Toolbar from "./components/Toolbar";
 import DraftDialog from "./components/DraftDialog";
 import type { ExaminationBillData } from "./components/types";
@@ -29,6 +30,7 @@ const withDefaults = (data: Partial<ExaminationBillData>): ExaminationBillData =
   ...emptyBill,
   ...data,
   billInfo: { ...emptyBill.billInfo, ...data.billInfo },
+  vivaBoardTeachers: data.vivaBoardTeachers ?? [],
 });
 
 export default function Home() {
@@ -128,7 +130,7 @@ export default function Home() {
 
   return (
     <main className="py-10">
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-6xl px-4 sm:px-6 lg:px-8">
         <input
           ref={fileInputRef}
           type="file"
@@ -206,6 +208,13 @@ export default function Home() {
             sessionalDuties={billData.sessionalDuties}
             setSessionalDuties={(data) =>
               setBillData((prev) => ({ ...prev, sessionalDuties: data }))
+            }
+          />
+
+          <VivaBoardTeacherManager
+            teachers={billData.vivaBoardTeachers}
+            setTeachers={(teachers) =>
+              setBillData((prev) => ({ ...prev, vivaBoardTeachers: teachers }))
             }
           />
 

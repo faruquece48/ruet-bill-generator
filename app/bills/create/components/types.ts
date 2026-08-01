@@ -104,6 +104,13 @@ export interface SessionalCourse {
   duties: SessionalDutyOption;
   students: StudentCount;
   additionalTeachers: SessionalAdditionalTeacher[];
+  teacherCount?: 1 | 2;
+}
+
+export interface VivaBoardTeacher {
+  name: string;
+  designation: Designation;
+  department: string;
 }
 
 
@@ -185,6 +192,7 @@ export interface ExaminationBillData {
   committees: CommitteeMember[];
   courseDuties: { obe: CourseDuty[]; nonObe: CourseDuty[] };
   sessionalDuties: SessionalCourse[];
+  vivaBoardTeachers: VivaBoardTeacher[];
   questionWorks: QuestionWork[];
   questionWorkTotal: string;
   pageBreakAfter: Record<string, boolean>;

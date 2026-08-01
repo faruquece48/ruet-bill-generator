@@ -191,7 +191,11 @@ export default function PreviewPage() {
   const assignmentRows = flattenAssignment(billData.courseDuties.obe);
   const courseFileRows = flattenCourseFile(billData.courseDuties.obe, billData.sessionalDuties);
   const sessionalRows = flattenSessional(billData.sessionalDuties);
-  const boardVivaRows = flattenBoardViva(billData.sessionalDuties);
+  const boardVivaRows = flattenBoardViva(
+    billData.sessionalDuties,
+    billData.vivaBoardTeachers,
+    Number(billData.billInfo.totalStudents) || "",
+  );
   const tabulationRows = flattenTabulation(billData.studentDuties);
   const gradeSheetRows = deriveGradeSheetRows(billData.studentDuties, billData.tabulationStudentCount);
   const hasScrutiny = isMixedEvaluation
@@ -339,7 +343,7 @@ export default function PreviewPage() {
 
   return (
     <main className="py-10">
-      <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-[1600px] px-4 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold">Preview & Layout Customization</h2>
           <button

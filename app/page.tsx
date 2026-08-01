@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import TeacherDashboard from "./teacher-test/page";
 
 export default function HomePage() {
-  redirect("/bills/create");
+  return <TeacherDashboard />;
 }

@@ -90,7 +90,11 @@ export default function PreviewDocument({ bill }: Props) {
   const assignmentRows = flattenAssignment(bill.courseDuties.obe);
   const courseFileRows = flattenCourseFile(bill.courseDuties.obe, bill.sessionalDuties);
   const sessionalRows = flattenSessional(bill.sessionalDuties);
-  const boardVivaRows = flattenBoardViva(bill.sessionalDuties);
+  const boardVivaRows = flattenBoardViva(
+    bill.sessionalDuties,
+    bill.vivaBoardTeachers,
+    Number(bill.billInfo.totalStudents) || "",
+  );
   const tabulationRows = flattenTabulation(bill.studentDuties);
   const gradeSheetRows = deriveGradeSheetRows(
     bill.studentDuties,

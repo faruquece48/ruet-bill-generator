@@ -4,6 +4,7 @@ import type {
   StudentDuty,
   Designation,
   BillInfo,
+  VivaBoardTeacher,
 } from "../types";
 
 // ------------------------------
@@ -434,10 +435,15 @@ export interface BoardVivaRow {
   students: number | "";
 }
 
-export function flattenBoardViva(courses: SessionalCourse[]): BoardVivaRow[] {
+export function flattenBoardViva(
+  courses: SessionalCourse[],
+  additionalTeachers: VivaBoardTeacher[] = [],
+  defaultStudents: number | "" = "",
+): BoardVivaRow[] {
   const rows: BoardVivaRow[] = [];
   const seen = new Set<string>();
   courses.forEach((course) => {
+    if (course.courseCode.replace(/\s+/g, "").toUpperCase() === "BECM4100") return;
     const entries = [
       {
         name: course.teacher,
@@ -462,6 +468,13 @@ export function flattenBoardViva(courses: SessionalCourse[]): BoardVivaRow[] {
       seen.add(line);
       rows.push({ teacherLine: line, students: entry.students.boardViva });
     });
+  });
+  additionalTeachers.forEach((teacher) => {
+    if (!teacher.name.trim()) return;
+    const line = formatTeacher(teacher.name, teacher.designation, teacher.department);
+    if (seen.has(line)) return;
+    seen.add(line);
+    rows.push({ teacherLine: line, students: defaultStudents });
   });
   return rows;
 }

@@ -128,3 +128,9 @@
     @apply font-sans;
   }
 }
+
+/* Bill pages should begin beside the application sidebar, not recenter in the
+   remaining viewport and create a second gutter. */
+.bill-route-content > main {
+  margin-inline: 0;
+}

@@ -45,6 +45,7 @@ export function collectTeacherNames(bill: ExaminationBillData): string[] {
     add(course.teacher);
     course.additionalTeachers.forEach((teacher) => add(teacher.name));
   });
+  (bill.vivaBoardTeachers ?? []).forEach((teacher) => add(teacher.name));
   const teacherLists = [
     ...bill.questionWorks,
     ...bill.scrutinies.obe,
@@ -96,6 +97,7 @@ export function collectTeacherNameWarnings(bill: ExaminationBillData): TeacherNa
   });
   const checkList = (label: string, teachers: { name: string }[]) =>
     teachers.forEach((teacher, index) => check(teacher.name, `${label}, row ${index + 1}`));
+  checkList("Additional Board Viva teachers", bill.vivaBoardTeachers ?? []);
   checkList("Question typing/sketching/printing", bill.questionWorks);
   checkList("OBE scrutiny", bill.scrutinies.obe);
   checkList("Non-OBE scrutiny", bill.scrutinies.nonObe);
@@ -205,15 +207,30 @@ export function deriveTeacherRows(
       });
       return;
     }
+    const sharedCourseCount = course.teacherCount === 2 ? "1/2" : "1";
     entries.filter((entry) => sameTeacher(entry.name, teacherName)).forEach((entry) => {
       if (entry.duties.sessional)
-        add({ description: Number(course.credit) === 1.5 ? "সেশনাল (১.৫)" : "সেশনাল (০.৭৫)", course: course.courseCode, quantity: String(entry.students.sessional || ""), courseCount: "1", classTestCount: "", rate: "400", minimumAmount: Number(course.credit) === 1.5 ? 1500 : undefined });
+        add({ description: Number(course.credit) === 1.5 ? "সেশনাল (১.৫)" : "সেশনাল (০.৭৫)", course: course.courseCode, quantity: String(entry.students.sessional || ""), courseCount: sharedCourseCount, classTestCount: "", rate: "400", minimumAmount: Number(course.credit) === 1.5 ? 1500 : undefined });
       if (entry.duties.boardViva)
         add({ description: "ভাইভা (সেন্ট্রাল/বোর্ড)", course: course.courseCode, quantity: String(entry.students.boardViva || ""), courseCount: "1", classTestCount: "", rate: "150", minimumAmount: 500 });
       if (entry.duties.courseFile)
-        add({ description: "কোর্স ফাইল প্রস্তুতকরণ", course: course.courseCode, quantity: "", courseCount: "1", classTestCount: "", rate: "6000" });
+        add({ description: "কোর্স ফাইল প্রস্তুতকরণ", course: course.courseCode, quantity: "", courseCount: sharedCourseCount, classTestCount: "", rate: "6000" });
     });
   });
+
+  (bill.vivaBoardTeachers ?? [])
+    .filter((teacher) => sameTeacher(teacher.name, teacherName))
+    .forEach(() =>
+      add({
+        description: "ভাইভা (সেন্ট্রাল/বোর্ড)",
+        course: "",
+        quantity: String(bill.billInfo.totalStudents || ""),
+        courseCount: "1",
+        classTestCount: "",
+        rate: "150",
+        minimumAmount: 500,
+      }),
+    );
 
   [...bill.scrutinies.obe, ...bill.scrutinies.nonObe]
     .filter((teacher) => sameTeacher(teacher.name, teacherName))

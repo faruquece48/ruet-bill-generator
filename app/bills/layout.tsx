@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import AppSidebar from "@/components/AppSidebar";
 
 const tabs = [
   { href: "/bills/create", label: "Bill" },
@@ -47,18 +48,20 @@ export default function BillsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="sticky top-0 z-40 border-b bg-white shadow-sm">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-2 px-4 py-3 sm:px-6 lg:px-8">
-          <span className="mr-4 text-lg font-bold">
-            Examination Bill Generator
-          </span>
-          {tabs.map((tab) => (
-            <NavLink key={tab.href} href={tab.href} label={tab.label} />
-          ))}
-        </div>
-      </nav>
-      {children}
+    <div className="mx-auto flex min-h-screen w-full max-w-[1800px] bg-slate-50">
+      <AppSidebar />
+      <div className="min-w-0 flex-1">
+        <nav className="sticky top-0 z-40 border-b bg-white shadow-sm">
+          <div className="flex w-full flex-wrap items-center gap-2 px-4 py-3 sm:px-6 lg:px-8">
+            <div className="flex flex-wrap items-center gap-2">
+              {tabs.map((tab) => (
+                <NavLink key={tab.href} href={tab.href} label={tab.label} />
+              ))}
+            </div>
+          </div>
+        </nav>
+        <main className="bill-route-content [&>main]:!mx-0">{children}</main>
+      </div>
     </div>
   );
 }

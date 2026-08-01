@@ -176,7 +176,7 @@ export default function IndividualTeacherBillPage() {
 
   return (
     <main className="individual-bill-page py-8">
-      <div className="mx-auto max-w-[1700px] px-4 sm:px-6">
+      <div className="max-w-[1700px] px-4 sm:px-6">
         <div className="no-print mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold">Individual Teacher Bill</h1>

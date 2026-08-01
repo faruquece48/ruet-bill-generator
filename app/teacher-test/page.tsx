@@ -22,7 +22,7 @@ import logoImage from "../images/image_03.png";
 import dashboardReference from "../images/image_04..png";
 
 const mainNavigation = [
-  { label: "Dashboard", icon: Grid2X2, active: true, href: "/teacher-test" },
+  { label: "Dashboard", icon: Grid2X2, active: true, href: "/" },
   { label: "Remuneration Bill", icon: FileText, href: "/bills/create" },
   { label: "Bill Summary", icon: BookOpenText, href: "/bills/summary" },
   { label: "Notices", icon: Megaphone },
@@ -114,7 +114,7 @@ export default function TeacherTestPage() {
   return (
     <main className="min-h-screen bg-[#f7f9fd] text-[#102555]">
       <div className="mx-auto flex min-h-screen max-w-[1800px] bg-white">
-        <aside className="hidden w-[275px] shrink-0 border-r border-[#12396d] bg-[#082452] text-white lg:flex lg:flex-col">
+        <aside className="hidden w-[275px] shrink-0 self-start border-r border-[#12396d] bg-[#082452] text-white lg:flex lg:flex-col">
           <div className="flex min-h-[190px] flex-col items-center justify-center border-b border-white/10 px-7 py-5 text-center">
             <Image src={logoImage} alt="RUET logo" className="h-24 w-24 object-contain" />
             <p className="mt-2 font-serif text-2xl font-bold tracking-wide">RUET</p>
@@ -151,7 +151,7 @@ export default function TeacherTestPage() {
           <button type="button" className="mx-4 mt-5 flex items-center gap-4 rounded-xl px-5 py-3.5 text-sm font-medium text-blue-100 hover:bg-white/10">
             <LogOut className="h-5 w-5" /> Logout
           </button>
-          <p className="mt-auto whitespace-nowrap px-8 pb-7 text-xs text-blue-200">© 2026 BECM, All rights reserved.</p>
+          <p className="whitespace-nowrap px-8 pb-7 text-xs text-blue-200">© 2026 BECM, All rights reserved.</p>
         </aside>
 
         <section className="min-w-0 flex-1 bg-[#f7f9fd]">

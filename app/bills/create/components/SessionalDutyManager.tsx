@@ -91,6 +91,7 @@ export default function SessionalDutyManager({
           boardViva: studentCount,
         },
         additionalTeachers: [],
+        teacherCount: 1,
       },
     ]);
     setMinimizedCourses((current) => new Set(current).add(newIndex));
@@ -118,6 +119,10 @@ export default function SessionalDutyManager({
   ) => {
     const updated = [...courses];
     updated[courseIndex].students[duty] = value === "" ? "" : Number(value);
+    if (updated[courseIndex].teacherCount === 2 && updated[courseIndex].additionalTeachers[0]) {
+      updated[courseIndex].additionalTeachers[0].students[duty] =
+        value === "" ? "" : Number(value);
+    }
     setCourses(updated);
   };
 
@@ -127,7 +132,24 @@ export default function SessionalDutyManager({
   ) => {
     const updated = [...courses];
     const current = updated[courseIndex];
+    if (current.teacherCount === 2 && field === "boardViva" && current.additionalTeachers[0]) {
+      const boardVivaEnabled =
+        current.duties.boardViva || current.additionalTeachers[0].duties.boardViva;
+      current.duties.boardViva = !boardVivaEnabled;
+      current.additionalTeachers[0].duties.boardViva = false;
+      current.additionalTeachers[0].students.boardViva = "";
+      setCourses(updated);
+      return;
+    }
     current.duties[field] = !current.duties[field];
+    if (current.teacherCount === 2 && current.additionalTeachers[0]) {
+      current.additionalTeachers[0].duties[field] = current.duties[field];
+      current.additionalTeachers[0].students[field] = current.duties[field]
+        ? current.students[field]
+        : "";
+      setCourses(updated);
+      return;
+    }
     const remainingDuty: SessionalDutyOption = {
       courseFile: false,
       sessional: false,
@@ -189,6 +211,42 @@ export default function SessionalDutyManager({
     if (!updated[courseIndex].additionalTeachers.length) return;
     updated[courseIndex].additionalTeachers[0].students[duty] =
       value === "" ? "" : Number(value);
+    setCourses(updated);
+  };
+
+  const setTeacherCount = (courseIndex: number, count: 1 | 2) => {
+    const updated = [...courses];
+    const course = updated[courseIndex];
+    course.teacherCount = count;
+    if (count === 1) {
+      course.additionalTeachers = [];
+    } else {
+      const boardVivaEnabled =
+        course.duties.boardViva || course.additionalTeachers[0]?.duties.boardViva;
+      course.additionalTeachers = [
+        {
+          name: course.additionalTeachers[0]?.name ?? "",
+          designation: course.additionalTeachers[0]?.designation || "Assistant Professor",
+          department: course.additionalTeachers[0]?.department || "Dept. of BECM, RUET",
+          duties: { ...course.duties, boardViva: false },
+          students: { ...course.students, boardViva: "" },
+        },
+      ];
+      course.duties.boardViva = Boolean(boardVivaEnabled);
+    }
+    setCourses(updated);
+  };
+
+  const setBoardVivaTeacher = (courseIndex: number, teacherNumber: 1 | 2) => {
+    const updated = [...courses];
+    const course = updated[courseIndex];
+    const secondTeacher = course.additionalTeachers[0];
+    if (!secondTeacher) return;
+    const studentCount = course.students.boardViva || Number(defaultStudentCount) || "";
+    course.duties.boardViva = teacherNumber === 1;
+    secondTeacher.duties.boardViva = teacherNumber === 2;
+    course.students.boardViva = studentCount;
+    secondTeacher.students.boardViva = teacherNumber === 2 ? studentCount : "";
     setCourses(updated);
   };
 
@@ -319,6 +377,8 @@ export default function SessionalDutyManager({
           </div>
           {/* Teacher Information */}
           {!isIndustrialAttachment && (
+          <div className="space-y-4">
+          <h4 className="text-sm font-semibold text-slate-700">Teacher 1</h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
               placeholder="Teacher Name"
@@ -352,6 +412,20 @@ export default function SessionalDutyManager({
               }
             />
           </div>
+          <label className="block max-w-xs space-y-1 text-sm font-medium">
+            <span>Number of teachers engaged</span>
+            <Select
+              value={String(course.teacherCount ?? (course.additionalTeachers.length > 0 ? 2 : 1))}
+              onValueChange={(value) => value && setTeacherCount(cIndex, value === "2" ? 2 : 1)}
+            >
+              <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 teacher</SelectItem>
+                <SelectItem value="2">2 teachers</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+          </div>
           )}
           {/* Duty Selection with inline student count */}
           <div>
@@ -359,7 +433,11 @@ export default function SessionalDutyManager({
             <div className="grid md:grid-cols-3 gap-3">
               {(Object.keys(course.duties) as (keyof SessionalDutyOption)[]).map(
                 (duty) => {
-                  const checked = course.duties[duty];
+                  const checked =
+                    course.duties[duty] ||
+                    (duty === "boardViva" &&
+                      course.teacherCount === 2 &&
+                      Boolean(course.additionalTeachers[0]?.duties.boardViva));
                   return (
                     <div key={duty} className="flex items-center gap-2">
                       <Checkbox
@@ -386,6 +464,24 @@ export default function SessionalDutyManager({
               )}
             </div>
           </div>
+          {!isIndustrialAttachment &&
+            course.teacherCount === 2 &&
+            course.additionalTeachers[0] &&
+            (course.duties.boardViva || course.additionalTeachers[0].duties.boardViva) && (
+              <label className="block max-w-xs space-y-1 text-sm font-medium">
+                <span>Board Viva taken by</span>
+                <Select
+                  value={course.additionalTeachers[0].duties.boardViva ? "2" : "1"}
+                  onValueChange={(value) => value && setBoardVivaTeacher(cIndex, value === "2" ? 2 : 1)}
+                >
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Teacher 1</SelectItem>
+                    <SelectItem value="2">Teacher 2</SelectItem>
+                  </SelectContent>
+                </Select>
+              </label>
+            )}
           {isIndustrialAttachment && (
             <div className="rounded-lg border bg-white p-5 space-y-4">
               <div className="flex items-center justify-between gap-3">
@@ -437,7 +533,7 @@ export default function SessionalDutyManager({
           {/* Additional Teacher */}
           {!isIndustrialAttachment && course.additionalTeachers.length > 0 && (
             <div className="rounded-lg border bg-white p-5 space-y-5">
-              <h4 className="font-bold text-lg">Additional Teacher Required</h4>
+              <h4 className="font-bold text-lg">Teacher 2</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
                   placeholder="Teacher Name"
