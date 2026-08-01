@@ -41,17 +41,17 @@ const mainNavigation: NavigationItem[] = [
     activeFor: (pathname) =>
       pathname.startsWith("/bills") && !pathname.startsWith("/bills/summary"),
   },
-  { label: "Bill Summary", icon: BookOpenText, href: "/bills/summary" },
-  { label: "Notices", icon: Megaphone },
+  { label: "OBE", icon: BookOpenText },
+  { label: "File", icon: Megaphone },
   { label: "Exam Notice", icon: Bell },
   { label: "General Notice", icon: ClipboardList },
-  { label: "Paper Setters", icon: SlidersHorizontal, href: "/duties" },
+  { label: "Paper Setters", icon: SlidersHorizontal },
   { label: "Academic Calendar", icon: CalendarDays },
 ];
 
 const utilityNavigation: NavigationItem[] = [
-  { label: "Profile", icon: UserRound, href: "/teachers" },
-  { label: "Settings", icon: Settings, href: "/settings" },
+  { label: "Profile", icon: UserRound },
+  { label: "Settings", icon: Settings },
 ];
 
 function SidebarLink({ item, onNavigate }: { item: NavigationItem; onNavigate?: () => void }) {

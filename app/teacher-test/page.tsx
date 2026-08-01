@@ -24,8 +24,8 @@ import dashboardReference from "../images/image_04..png";
 const mainNavigation = [
   { label: "Dashboard", icon: Grid2X2, active: true, href: "/" },
   { label: "Remuneration Bill", icon: FileText, href: "/bills/create" },
-  { label: "Bill Summary", icon: BookOpenText, href: "/bills/summary" },
-  { label: "Notices", icon: Megaphone },
+  { label: "OBE", icon: BookOpenText },
+  { label: "File", icon: Megaphone },
   { label: "Exam Notice", icon: Bell },
   { label: "General Notice", icon: ClipboardList },
   { label: "Paper Setters", icon: SlidersHorizontal },
@@ -49,8 +49,8 @@ const quickLinks = [
     actionStyle: "border-violet-200 text-violet-600",
   },
   {
-    title: "Bill Summary",
-    text: "View examination summary and details.",
+    title: "OBE",
+    text: "Outcome Based Education.",
     action: "View",
     href: "/bills/summary",
     icon: BookOpenText,
@@ -59,8 +59,8 @@ const quickLinks = [
     actionStyle: "border-blue-200 text-blue-600",
   },
   {
-    title: "Notices",
-    text: "Read current announcements.",
+    title: "File",
+    text: "Prepare your Official file.",
     action: "Open",
     href: "#notices",
     icon: Megaphone,
@@ -122,35 +122,37 @@ export default function TeacherTestPage() {
           </div>
 
           <nav className="space-y-2 px-4 py-5">
-            {mainNavigation.map(({ label, icon: Icon, active, href }) => (
-              <Link
-                key={label}
-                href={href ?? "#"}
-                className={`flex w-full items-center gap-4 rounded-xl px-5 py-4 text-left text-sm font-medium transition ${
-                  active
-                    ? "bg-gradient-to-r from-violet-600 to-indigo-700 text-white shadow-lg shadow-indigo-200"
-                    : "text-blue-100 hover:bg-white/10"
-                }`}
-              >
-                <Icon className="h-5 w-5" />
-                <span>{label}</span>
-              </Link>
-            ))}
+            {mainNavigation.map(({ label, icon: Icon, active, href }) => {
+              const classes = `flex w-full items-center gap-4 rounded-xl px-5 py-4 text-left text-sm font-medium transition ${
+                active
+                  ? "bg-gradient-to-r from-violet-600 to-indigo-700 text-white shadow-lg shadow-indigo-200"
+                  : href
+                    ? "text-blue-100 hover:bg-white/10"
+                    : "cursor-not-allowed text-blue-200/45"
+              }`;
+              const content = <><Icon className="h-5 w-5" /><span>{label}</span></>;
+
+              return href ? (
+                <Link key={label} href={href} className={classes}>{content}</Link>
+              ) : (
+                <span key={label} className={classes} aria-disabled="true" title="This page is not available yet">{content}</span>
+              );
+            })}
           </nav>
 
           <div className="mx-6 border-t border-white/10" />
           <nav className="space-y-2 px-4 py-5">
             {utilityNavigation.map(({ label, icon: Icon }) => (
-              <button key={label} type="button" className="flex w-full items-center gap-4 rounded-xl px-5 py-3.5 text-left text-sm font-medium text-blue-100 hover:bg-white/10">
+              <span key={label} className="flex w-full cursor-not-allowed items-center gap-4 rounded-xl px-5 py-3.5 text-left text-sm font-medium text-blue-200/45" aria-disabled="true" title="This page is not available yet">
                 <Icon className="h-5 w-5" />
                 <span>{label}</span>
-              </button>
+              </span>
             ))}
           </nav>
           <div className="mx-6 border-t border-white/10" />
-          <button type="button" className="mx-4 mt-5 flex items-center gap-4 rounded-xl px-5 py-3.5 text-sm font-medium text-blue-100 hover:bg-white/10">
+          <span className="mx-4 mt-5 flex cursor-not-allowed items-center gap-4 rounded-xl px-5 py-3.5 text-sm font-medium text-blue-200/45" aria-disabled="true" title="Logout is not available yet">
             <LogOut className="h-5 w-5" /> Logout
-          </button>
+          </span>
           <p className="whitespace-nowrap px-8 pb-7 text-xs text-blue-200">© 2026 BECM, All rights reserved.</p>
         </aside>
 
