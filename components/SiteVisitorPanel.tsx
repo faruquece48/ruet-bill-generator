@@ -4,23 +4,34 @@ import { useEffect, useState } from "react";
 import { Eye, Globe2, Sun } from "lucide-react";
 
 const emptyCounts = { live: 0, today: 0, total: 0 };
+const sessionKey = "ruet-visitor-session";
+const visitKey = "ruet-visitor-visit";
+
+type VisitorWindow = Window & {
+  __ruetVisitorIds?: { sessionId: string; visitId: string };
+};
 
 export default function SiteVisitorPanel() {
   const [counts, setCounts] = useState(emptyCounts);
 
   useEffect(() => {
-    const sessionKey = "ruet-visitor-session";
-    const visitKey = "ruet-visitor-visit";
-    let sessionId = sessionStorage.getItem(sessionKey);
-    if (!sessionId) {
-      sessionId = crypto.randomUUID();
+    const visitorWindow = window as VisitorWindow;
+    let ids = visitorWindow.__ruetVisitorIds;
+    if (!ids) {
+      const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+      const isRefresh = navigation?.type === "reload";
+      const savedSessionId = sessionStorage.getItem(sessionKey);
+      const savedVisitId = sessionStorage.getItem(visitKey);
+      ids = {
+        sessionId: isRefresh && savedSessionId ? savedSessionId : crypto.randomUUID(),
+        visitId: isRefresh && savedVisitId ? savedVisitId : crypto.randomUUID(),
+      };
+      visitorWindow.__ruetVisitorIds = ids;
+      const { sessionId, visitId } = ids;
       sessionStorage.setItem(sessionKey, sessionId);
-    }
-    let visitId = sessionStorage.getItem(visitKey);
-    if (!visitId) {
-      visitId = crypto.randomUUID();
       sessionStorage.setItem(visitKey, visitId);
     }
+    const { sessionId, visitId } = ids;
     const update = async (action: "visit" | "heartbeat" = "heartbeat", visitId?: string) => {
       try {
         const response = await fetch("/api/visitors", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId, visitId, action }), cache: "no-store" });
