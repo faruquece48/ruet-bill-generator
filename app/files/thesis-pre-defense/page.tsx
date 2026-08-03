@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { ChevronDown, Download, FileText, FolderOpen, Menu } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
+import useThesisTopicsState from "@/components/useThesisTopicsState";
 import SeriesInput from "@/components/SeriesInput";
 import BengaliNoticeTextEditor, { SutonnyNoticeText, toSutonnyNumber } from "@/components/BengaliNoticeTextEditor";
 import logoImage from "@/app/images/image_03.png";
@@ -52,7 +53,7 @@ const layoutLabels: Record<LayoutSection, string> = { header: "Header", meta: "M
 
 export default function ThesisPreDefensePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [thesisOpen, setThesisOpen] = useState(true);
+  const [thesisOpen, setThesisOpen] = useThesisTopicsState();
   const [notice, setNotice] = useState(createNotice);
   const [departmentHeadName, setDepartmentHeadName] = useState<string>(defaultHead.name);
   const [layout, setLayout] = useState(defaultLayout);

@@ -4,5 +4,14 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+}
+
+model VisitorSession {
+  id          String   @id
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  lastSeenDay String
+
+  @@index([lastSeenAt])
+  @@index([lastSeenDay])
 }

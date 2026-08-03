@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Download, FileText, FolderOpen, Menu, Plus } from "lucide-react";
 import { unicodeToBijoy } from "@abdalgolabs/ansi-unicode-converter";
 import AppSidebar from "@/components/AppSidebar";
+import useThesisTopicsState from "@/components/useThesisTopicsState";
 import SeriesInput from "@/components/SeriesInput";
 import CollapsibleTeacherCard from "@/components/CollapsibleTeacherCard";
 import BengaliNoticeTextEditor, { SutonnyNoticeText, toSutonnyNumber } from "@/components/BengaliNoticeTextEditor";
@@ -66,7 +67,7 @@ export default function PreDefenseTeacherPage({ variant = "pre" }: { variant?: "
   const pageTitle = isAttendance ? "Attendance" : isExternal ? "External" : isFinalDefense ? "Thesis Final Defense Teacher" : "Pre-defense Teacher";
   const storageKey = isAttendance ? "ruet-attendance-last-generated" : isExternal ? "ruet-external-last-generated" : isFinalDefense ? "ruet-final-defense-teacher-last-generated" : "ruet-pre-defense-teacher-last-generated";
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [thesisOpen, setThesisOpen] = useState(true);
+  const [thesisOpen, setThesisOpen] = useThesisTopicsState();
   const [noticeState, setNotice] = useState(createNotice);
   const [committee, setCommittee] = useState(() => isAttendance || isExternal ? externalCommittee : isFinalDefense ? finalDefenseCommittee : defaultCommittee);
   const [departmentHeadName, setDepartmentHeadName] = useState<string>(defaultHead.name);

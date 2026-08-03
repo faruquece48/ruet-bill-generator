@@ -173,6 +173,17 @@
 }
 
 /* Keep the duplicated Official Files topic menus visually consistent. */
+main aside > div > button[aria-expanded]::after {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 500;
+  content: "Expand";
+}
+
+main aside > div > button[aria-expanded="true"]::after {
+  content: "Minimize";
+}
+
 main aside:first-of-type > .p-3 a {
   position: relative;
 }

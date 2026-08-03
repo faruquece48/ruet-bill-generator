@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Download, FileText, FolderOpen, Menu, Plus } from "lucide-react";
 import { unicodeToBijoy } from "@abdalgolabs/ansi-unicode-converter";
 import AppSidebar from "@/components/AppSidebar";
+import useThesisTopicsState from "@/components/useThesisTopicsState";
 import SeriesInput from "@/components/SeriesInput";
 import CollapsibleTeacherCard from "@/components/CollapsibleTeacherCard";
 import BengaliNoticeTextEditor, { bijoyNoticeToUnicode, SutonnyNoticeText, toSutonnyNumber } from "@/components/BengaliNoticeTextEditor";
@@ -38,7 +39,7 @@ const noticeBodyEnd = " কোর্সের থিসিস/প্রজেক
 
 export default function ThesisFinalDefensePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [thesisOpen, setThesisOpen] = useState(true);
+  const [thesisOpen, setThesisOpen] = useThesisTopicsState();
   const [notice, setNotice] = useState(createNotice);
   const [rows, setRows] = useState(defaultRows);
   const [departmentHeadName, setDepartmentHeadName] = useState<string>(defaultHead.name);

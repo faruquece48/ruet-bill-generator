@@ -15,6 +15,7 @@ import {
 import AppSidebar from "@/components/AppSidebar";
 import SeriesInput from "@/components/SeriesInput";
 import CollapsibleTeacherCard from "@/components/CollapsibleTeacherCard";
+import useThesisTopicsState from "@/components/useThesisTopicsState";
 import BengaliNoticeTextEditor, { SutonnyNoticeText, toSutonnyNumber } from "@/components/BengaliNoticeTextEditor";
 import logoImage from "@/app/images/image_03.png";
 
@@ -97,7 +98,7 @@ const defaultTableWidths = {
 
 export default function FilesPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [thesisOpen, setThesisOpen] = useState(true);
+  const [thesisOpen, setThesisOpen] = useThesisTopicsState();
   const [notice, setNotice] = useState(createDefaultNotice);
   const [rows, setRows] = useState(defaultRows);
   const [departmentHeadName, setDepartmentHeadName] = useState<string>(headSignature.name);

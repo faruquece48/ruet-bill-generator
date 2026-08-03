@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Download, FileText, FolderOpen, Menu, Plus } from "lucide-react";
 import { unicodeToBijoy } from "@abdalgolabs/ansi-unicode-converter";
 import AppSidebar from "@/components/AppSidebar";
+import useThesisTopicsState from "@/components/useThesisTopicsState";
 import SeriesInput from "@/components/SeriesInput";
 import CollapsibleTeacherCard from "@/components/CollapsibleTeacherCard";
 import BengaliNoticeTextEditor, { SutonnyNoticeText, toSutonnyNumber } from "@/components/BengaliNoticeTextEditor";
@@ -33,7 +34,7 @@ type LayoutSection = keyof typeof defaultLayout;
 const layoutLabels: Record<LayoutSection, string> = { header: "Header", meta: "Memo and date", heading: "Notice heading", body: "Notice body", table: "Committee table", signature: "Head signature" };
 
 export default function InternalExternalPage() {
-  const [mobileOpen, setMobileOpen] = useState(false); const [thesisOpen, setThesisOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false); const [thesisOpen, setThesisOpen] = useThesisTopicsState();
   const [notice, setNotice] = useState(createNotice); const [rows, setRows] = useState(defaultRows);
   const [departmentHeadName, setDepartmentHeadName] = useState<string>(defaultHead.name); const [layout, setLayout] = useState(defaultLayout); const [widths, setWidths] = useState(defaultWidths);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false); const [pdfStatus, setPdfStatus] = useState(""); const noticeRef = useRef<HTMLElement>(null);

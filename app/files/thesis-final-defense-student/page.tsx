@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { ChevronDown, Download, FileText, FolderOpen, Menu } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
+import useThesisTopicsState from "@/components/useThesisTopicsState";
 import SeriesInput from "@/components/SeriesInput";
 import BengaliNoticeTextEditor, { bijoyNoticeToUnicode, SutonnyNoticeText, toSutonnyNumber } from "@/components/BengaliNoticeTextEditor";
 import logoImage from "@/app/images/image_03.png";
@@ -19,7 +20,7 @@ const bodyEnd = " ‡Kv‡m©i P~ovšÍ wi‡cvU© Ges †cÖ‡R‡›Ukb Dc¯�
 
 export default function ThesisFinalDefenseStudentPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [thesisOpen, setThesisOpen] = useState(true);
+  const [thesisOpen, setThesisOpen] = useThesisTopicsState();
   const [memoNumber, setMemoNumber] = useState(`weBwmGg/${new Date().getFullYear()}/001`);
   const [noticeDate, setNoticeDate] = useState(computerDate);
   const [series, setSeries] = useState("2020");
