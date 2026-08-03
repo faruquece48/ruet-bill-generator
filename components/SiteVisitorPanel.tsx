@@ -9,19 +9,25 @@ export default function SiteVisitorPanel() {
   const [counts, setCounts] = useState(emptyCounts);
 
   useEffect(() => {
-    const key = "ruet-visitor-session";
-    let sessionId = sessionStorage.getItem(key);
+    const sessionKey = "ruet-visitor-session";
+    const visitKey = "ruet-visitor-visit";
+    let sessionId = sessionStorage.getItem(sessionKey);
     if (!sessionId) {
       sessionId = crypto.randomUUID();
-      sessionStorage.setItem(key, sessionId);
+      sessionStorage.setItem(sessionKey, sessionId);
     }
-    const update = async () => {
+    let visitId = sessionStorage.getItem(visitKey);
+    if (!visitId) {
+      visitId = crypto.randomUUID();
+      sessionStorage.setItem(visitKey, visitId);
+    }
+    const update = async (action: "visit" | "heartbeat" = "heartbeat", visitId?: string) => {
       try {
-        const response = await fetch("/api/visitors", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId, action: "heartbeat" }), cache: "no-store" });
+        const response = await fetch("/api/visitors", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId, visitId, action }), cache: "no-store" });
         if (response.ok) setCounts(await response.json());
       } catch { /* Keep the last successful counts while temporarily offline. */ }
     };
-    void update();
+    void update("visit", visitId);
     const leave = () => navigator.sendBeacon("/api/visitors", new Blob([JSON.stringify({ sessionId, action: "leave" })], { type: "application/json" }));
     window.addEventListener("pagehide", leave);
     const timer = window.setInterval(update, 15_000);

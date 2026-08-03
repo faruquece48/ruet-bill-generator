@@ -15,3 +15,11 @@ model VisitorSession {
   @@index([lastSeenAt])
   @@index([lastSeenDay])
 }
+
+model VisitEvent {
+  id        String   @id
+  visitedAt DateTime @default(now())
+  visitDay  String
+
+  @@index([visitDay])
+}

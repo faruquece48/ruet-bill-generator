@@ -21,6 +21,14 @@ export function ensureVisitorSchema() {
   `).then(async () => {
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "VisitorSession_lastSeenAt_idx" ON "VisitorSession"("lastSeenAt")');
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "VisitorSession_lastSeenDay_idx" ON "VisitorSession"("lastSeenDay")');
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "VisitEvent" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "visitedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "visitDay" TEXT NOT NULL
+      )
+    `);
+    await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "VisitEvent_visitDay_idx" ON "VisitEvent"("visitDay")');
   });
   return visitorSchemaReady;
 }
