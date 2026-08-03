@@ -10,15 +10,13 @@ import {
   ClipboardList,
   FileText,
   Grid2X2,
-  LogOut,
   Megaphone,
-  Settings,
   SlidersHorizontal,
-  UserRound,
   X,
   type LucideIcon,
 } from "lucide-react";
 import logoImage from "@/app/images/image_03.png";
+import SiteVisitorPanel from "@/components/SiteVisitorPanel";
 
 type AppSidebarProps = {
   mobileOpen?: boolean;
@@ -42,16 +40,11 @@ const mainNavigation: NavigationItem[] = [
       pathname.startsWith("/bills") && !pathname.startsWith("/bills/summary"),
   },
   { label: "OBE", icon: BookOpenText },
-  { label: "File", icon: Megaphone },
+  { label: "File", icon: Megaphone, href: "/files" },
   { label: "Exam Notice", icon: Bell },
   { label: "General Notice", icon: ClipboardList },
   { label: "Paper Setters", icon: SlidersHorizontal },
   { label: "Academic Calendar", icon: CalendarDays },
-];
-
-const utilityNavigation: NavigationItem[] = [
-  { label: "Profile", icon: UserRound },
-  { label: "Settings", icon: Settings },
 ];
 
 function SidebarLink({ item, onNavigate }: { item: NavigationItem; onNavigate?: () => void }) {
@@ -87,7 +80,7 @@ function SidebarLink({ item, onNavigate }: { item: NavigationItem; onNavigate?: 
 
 export default function AppSidebar({ mobileOpen = false, onClose }: AppSidebarProps) {
   const sidebar = (
-    <aside className="flex w-[var(--app-sidebar-width)] shrink-0 flex-col border-r border-[#12396d] bg-[#082452] text-white">
+    <aside className="flex h-screen w-[var(--app-sidebar-width)] shrink-0 flex-col border-r border-[#12396d] bg-[#082452] text-white">
       <div className="relative flex min-h-[184px] flex-col items-center justify-center border-b border-white/10 px-7 py-5 text-center">
         {onClose && (
           <button type="button" onClick={onClose} className="absolute right-3 top-3 rounded-lg p-2 text-blue-100 hover:bg-white/10 lg:hidden" aria-label="Close navigation">
@@ -99,19 +92,14 @@ export default function AppSidebar({ mobileOpen = false, onClose }: AppSidebarPr
         <p className="mt-1 text-sm font-medium text-blue-100">Bill Generator System</p>
       </div>
 
-      <nav className="space-y-1.5 px-4 py-5" aria-label="Main navigation">
+      <nav className="space-y-0 px-4 py-3" aria-label="Main navigation">
         {mainNavigation.map((item) => <SidebarLink key={item.label} item={item} onNavigate={onClose} />)}
       </nav>
 
-      <div className="mx-6 border-t border-white/10" />
-      <nav className="space-y-1.5 px-4 py-4" aria-label="Account navigation">
-        {utilityNavigation.map((item) => <SidebarLink key={item.label} item={item} onNavigate={onClose} />)}
-      </nav>
-      <div className="mx-6 border-t border-white/10" />
-      <span className="mx-4 mt-4 flex cursor-not-allowed items-center gap-4 rounded-xl px-5 py-3.5 text-sm font-medium text-blue-200/45" title="Logout is not available yet">
-        <LogOut className="h-5 w-5" /> Logout
-      </span>
-      <p className="whitespace-nowrap px-8 py-7 text-xs text-blue-200">© 2026 BECM, All rights reserved.</p>
+      <div className="mt-auto border-t border-white/10 px-4 py-5">
+        <SiteVisitorPanel />
+        <p className="mt-4 whitespace-nowrap border-t border-white/15 pt-4 text-center text-xs text-blue-200">© 2026 BECM, All rights reserved.</p>
+      </div>
     </aside>
   );
 

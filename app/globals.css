@@ -2,6 +2,22 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@font-face {
+  font-family: "SutonnyMJ";
+  src: url("/fonts/SutonnyMJ-Regular.ttf") format("truetype"),
+    local("SutonnyMJ");
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "SutonnyMJ";
+  src: url("/fonts/SutonnyMJ-Bold.ttf") format("truetype"),
+    local("SutonnyMJ Bold");
+  font-style: normal;
+  font-weight: 700;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -134,4 +150,69 @@
    remaining viewport and create a second gutter. */
 .bill-route-content > main {
   margin-inline: 0;
+}
+
+.file-print-document,
+.file-print-document * {
+  font-family: "SutonnyMJ", serif;
+}
+
+.file-print-document .notice-times,
+.file-print-document .notice-times * {
+  font-family: "Times New Roman", Times, serif;
+}
+
+.file-print-document .notice-header,
+.file-print-document .notice-header * {
+  font-family: "Times New Roman", Times, serif !important;
+}
+
+.file-print-document .notice-header .header-bangla,
+.file-print-document .notice-header .header-bangla * {
+  font-family: "SutonnyMJ", serif !important;
+}
+
+/* Keep the duplicated Official Files topic menus visually consistent. */
+main aside:first-of-type > .p-3 a {
+  position: relative;
+}
+
+main aside:first-of-type > .p-3 a::before {
+  position: absolute;
+  left: 2rem;
+  top: 50%;
+  width: 1px;
+  height: 1rem;
+  background: rgb(203 213 225);
+  content: "";
+  transform: translateY(-50%);
+}
+
+main aside:first-of-type > .p-3 a[aria-current="page"]::before {
+  background: rgb(199 210 254);
+}
+
+main aside:first-of-type > .p-3 a > svg:first-child {
+  margin-left: 2rem;
+}
+
+main aside:first-of-type > .p-3 a > span:first-child {
+  border-left: 0;
+}
+
+@media print {
+  body:has(.file-print-document) * {
+    visibility: hidden;
+  }
+
+  .file-print-document,
+  .file-print-document * {
+    visibility: visible;
+  }
+
+  .file-print-document {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+  }
 }

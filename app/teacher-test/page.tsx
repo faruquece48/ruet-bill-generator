@@ -11,7 +11,6 @@ import {
   ClipboardList,
   FileText,
   Grid2X2,
-  LogOut,
   Megaphone,
   Menu,
   Settings,
@@ -20,21 +19,17 @@ import {
 } from "lucide-react";
 import logoImage from "../images/image_03.png";
 import dashboardReference from "../images/image_04..png";
+import SiteVisitorPanel from "@/components/SiteVisitorPanel";
 
 const mainNavigation = [
   { label: "Dashboard", icon: Grid2X2, active: true, href: "/" },
   { label: "Remuneration Bill", icon: FileText, href: "/bills/create" },
   { label: "OBE", icon: BookOpenText },
-  { label: "File", icon: Megaphone },
+  { label: "File", icon: Megaphone, href: "/files" },
   { label: "Exam Notice", icon: Bell },
   { label: "General Notice", icon: ClipboardList },
   { label: "Paper Setters", icon: SlidersHorizontal },
   { label: "Academic Calendar", icon: CalendarDays },
-];
-
-const utilityNavigation = [
-  { label: "Profile", icon: UserRound },
-  { label: "Settings", icon: Settings },
 ];
 
 const quickLinks = [
@@ -62,7 +57,7 @@ const quickLinks = [
     title: "File",
     text: "Prepare your Official file.",
     action: "Open",
-    href: "#notices",
+    href: "/files",
     icon: Megaphone,
     card: "border-emerald-200 bg-emerald-50/60",
     iconBox: "bg-gradient-to-br from-emerald-400 to-emerald-700 shadow-emerald-200",
@@ -112,16 +107,16 @@ const quickLinks = [
 
 export default function TeacherTestPage() {
   return (
-    <main className="min-h-screen bg-[#f7f9fd] text-[#102555]">
-      <div className="mx-auto flex min-h-screen max-w-[1800px] bg-white">
-        <aside className="hidden w-[var(--app-sidebar-width)] shrink-0 self-start border-r border-[#12396d] bg-[#082452] text-white lg:flex lg:flex-col">
+    <main className="h-screen overflow-hidden bg-[#f7f9fd] text-[#102555]">
+      <div className="mx-auto flex h-screen max-w-[1800px] overflow-hidden bg-white">
+        <aside className="hidden h-screen w-[var(--app-sidebar-width)] shrink-0 self-start border-r border-[#12396d] bg-[#082452] text-white lg:flex lg:flex-col">
           <div className="flex min-h-[190px] flex-col items-center justify-center border-b border-white/10 px-7 py-5 text-center">
             <Image src={logoImage} alt="RUET logo" className="h-24 w-24 object-contain" />
             <p className="mt-2 font-serif text-2xl font-bold tracking-wide">RUET</p>
             <p className="mt-1 text-sm font-medium text-blue-100">Bill Generator System</p>
           </div>
 
-          <nav className="space-y-2 px-4 py-5">
+          <nav className="space-y-0 px-4 py-2">
             {mainNavigation.map(({ label, icon: Icon, active, href }) => {
               const classes = `flex w-full items-center gap-4 rounded-xl px-5 py-4 text-left text-sm font-medium transition ${
                 active
@@ -140,23 +135,13 @@ export default function TeacherTestPage() {
             })}
           </nav>
 
-          <div className="mx-6 border-t border-white/10" />
-          <nav className="space-y-2 px-4 py-5">
-            {utilityNavigation.map(({ label, icon: Icon }) => (
-              <span key={label} className="flex w-full cursor-not-allowed items-center gap-4 rounded-xl px-5 py-3.5 text-left text-sm font-medium text-blue-200/45" aria-disabled="true" title="This page is not available yet">
-                <Icon className="h-5 w-5" />
-                <span>{label}</span>
-              </span>
-            ))}
-          </nav>
-          <div className="mx-6 border-t border-white/10" />
-          <span className="mx-4 mt-5 flex cursor-not-allowed items-center gap-4 rounded-xl px-5 py-3.5 text-sm font-medium text-blue-200/45" aria-disabled="true" title="Logout is not available yet">
-            <LogOut className="h-5 w-5" /> Logout
-          </span>
-          <p className="whitespace-nowrap px-8 pb-7 text-xs text-blue-200">© 2026 BECM, All rights reserved.</p>
+          <div className="mt-auto border-t border-white/10 px-4 py-5">
+            <SiteVisitorPanel />
+            <p className="mt-4 whitespace-nowrap border-t border-white/15 pt-4 text-center text-xs text-blue-200">© 2026 BECM, All rights reserved.</p>
+          </div>
         </aside>
 
-        <section className="min-w-0 flex-1 bg-[#f7f9fd]">
+        <section className="h-screen min-w-0 flex-1 overflow-hidden bg-[#f7f9fd]">
           <header className="flex h-[92px] items-center justify-between border-b border-slate-200 bg-white px-6 sm:px-8">
             <button type="button" className="rounded-lg p-2 text-[#17315e] hover:bg-slate-50" aria-label="Open navigation">
               <Menu className="h-6 w-6" />
