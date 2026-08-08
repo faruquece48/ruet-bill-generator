@@ -10,6 +10,10 @@
     "start": "next start",
     "lint": "eslint"
   },
+  "engines": {
+    "node": "^20.0.0",
+    "npm": "^10.0.0"
+  },
   "dependencies": {
     "@abdalgolabs/ansi-unicode-converter": "^1.0.5",
     "@base-ui/react": "^1.6.0",
