@@ -107,9 +107,9 @@ const quickLinks = [
 
 export default function TeacherTestPage() {
   return (
-    <main className="h-screen overflow-hidden bg-[#f7f9fd] text-[#102555]">
-      <div className="mx-auto flex h-screen max-w-[1800px] overflow-hidden bg-white">
-        <aside className="hidden h-screen w-[var(--app-sidebar-width)] shrink-0 self-start border-r border-[#12396d] bg-[#082452] text-white lg:flex lg:flex-col">
+    <main className="min-h-screen bg-[#f7f9fd] text-[#102555]">
+      <div className="mx-auto flex min-h-screen max-w-[1800px] bg-white">
+        <aside className="hidden min-h-screen w-[var(--app-sidebar-width)] shrink-0 self-start border-r border-[#12396d] bg-[#082452] text-white lg:flex lg:flex-col">
           <div className="flex min-h-[190px] flex-col items-center justify-center border-b border-white/10 px-7 py-5 text-center">
             <Image src={logoImage} alt="RUET logo" className="h-24 w-24 object-contain" />
             <p className="mt-2 font-serif text-2xl font-bold tracking-wide">RUET</p>
@@ -141,7 +141,7 @@ export default function TeacherTestPage() {
           </div>
         </aside>
 
-        <section className="h-screen min-w-0 flex-1 overflow-hidden bg-[#f7f9fd]">
+        <section className="min-h-screen min-w-0 flex-1 overflow-auto bg-[#f7f9fd]">
           <header className="flex h-[92px] items-center justify-between border-b border-slate-200 bg-white px-6 sm:px-8">
             <button type="button" className="rounded-lg p-2 text-[#17315e] hover:bg-slate-50" aria-label="Open navigation">
               <Menu className="h-6 w-6" />
