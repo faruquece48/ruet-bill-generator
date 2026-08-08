@@ -44,16 +44,6 @@ const quickLinks = [
     actionStyle: "border-violet-200 text-violet-600",
   },
   {
-    title: "OBE",
-    text: "Outcome Based Education.",
-    action: "View",
-    href: "/bills/summary",
-    icon: BookOpenText,
-    card: "border-blue-200 bg-blue-50/60",
-    iconBox: "bg-gradient-to-br from-sky-400 to-blue-700 shadow-blue-200",
-    actionStyle: "border-blue-200 text-blue-600",
-  },
-  {
     title: "File",
     text: "Prepare your Official file.",
     action: "Open",
@@ -185,12 +175,12 @@ export default function TeacherTestPage() {
                 <h2 className="text-2xl font-bold text-[#102555]">Quick access</h2>
                 <span className="flex items-center gap-2 text-sm font-medium text-indigo-600"><UserRound className="h-4 w-4" /> Teacher view</span>
               </div>
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-12">
-                {quickLinks.map(({ title, text, action, href, icon: Icon, card, iconBox, actionStyle }, index) => (
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {quickLinks.map(({ title, text, action, href, icon: Icon, card, iconBox, actionStyle }) => (
                   <Link
                     key={title}
                     href={href}
-                    className={`${card} group relative min-h-[200px] overflow-hidden rounded-[20px] border p-5 transition hover:-translate-y-0.5 hover:shadow-md ${index < 4 ? "xl:col-span-3" : "xl:col-span-4"}`}
+                    className={`${card} group relative min-h-[200px] overflow-hidden rounded-[20px] border p-5 transition hover:-translate-y-0.5 hover:shadow-md xl:col-span-1`}
                   >
                     <div className="flex items-start gap-5">
                       <span className={`${iconBox} flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg`}><Icon className="h-8 w-8" /></span>
