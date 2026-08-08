@@ -219,6 +219,7 @@ export default function FilesPage() {
                 <ChevronDown className={`h-4 w-4 transition-transform ${thesisOpen ? "" : "-rotate-90"}`} />
                 <FolderOpen className="h-5 w-5" />
                 <span>Thesis</span>
+                <span className="ml-auto text-[10px] font-medium">{thesisOpen ? "Minimize" : "Expand"}</span>
               </button>
               {thesisOpen && <>
               <Link

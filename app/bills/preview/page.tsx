@@ -140,6 +140,7 @@ const legacyLayoutDefaults: Partial<TableLayoutSettings> = {
   courseAdviser: { sl: 10, teacherLine: 65, students: 25 },
   practicalSurveying: { sl: 8, teacherLine: 72, students: 20 },
   thesis: { sl: 8, teacherLine: 42, supervisorCount: 12, examinerCount: 13, thesisViva: 25 },
+  verification: { sl: 10, teacherLine: 65, students: 25 },
 };
 
 function mergeLayoutSettings(
@@ -178,6 +179,7 @@ function mergeLayoutSettings(
 export default function PreviewPage() {
   const [billData, setBillData] = useState<ExaminationBillData>(emptyBill);
   const [draggedSection, setDraggedSection] = useState<string | null>(null);
+  const [isGeneratingWord, setIsGeneratingWord] = useState(false);
   const hydrated = useRef(false);
   const isBacklog = billData.billInfo.examType === "backlog";
   const isMixedEvaluation = billData.billInfo.evaluationSystem === "mixed";
@@ -341,18 +343,46 @@ export default function PreviewPage() {
     }
   };
 
+  const handleGenerateWord = async () => {
+    setIsGeneratingWord(true);
+    try {
+      const { generateWordDocument } = await import("./generateWordDocument");
+      const wordBlob = await generateWordDocument(billData);
+      const url = URL.createObjectURL(wordBlob);
+      const link = window.document.createElement("a");
+      link.href = url;
+      link.download = `Examination-Bill-${billData.billInfo.billNo || "draft"}.docx`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Failed to generate Word file: " + (err as Error).message);
+    } finally {
+      setIsGeneratingWord(false);
+    }
+  };
+
   return (
     <main className="py-10">
       <div className="w-full max-w-[1600px] px-4 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold">Preview & Layout Customization</h2>
-          <button
-            type="button"
-            onClick={handleGeneratePdf}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Generate PDF
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleGenerateWord}
+              disabled={isGeneratingWord}
+              className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-wait disabled:bg-emerald-400"
+            >
+              {isGeneratingWord ? "Generating Word…" : "Generate Word"}
+            </button>
+            <button
+              type="button"
+              onClick={handleGeneratePdf}
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Generate PDF
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6 items-start">

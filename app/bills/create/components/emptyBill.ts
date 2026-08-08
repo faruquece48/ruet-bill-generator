@@ -66,7 +66,7 @@ export const emptyBill: ExaminationBillData = {
     "gradeSheetPreparation", "gradeSheetVerification", "courseAdviser",
     "courseCoordinator", "thesis", "verification", "practicalSurveying",
   ],
-  tableSpacing: {},
+  tableSpacing: { verification: 6 },
   scrutinies: { obe: [], nonObe: [] },
   studentDuties: [],
   tabulationStudentCount: "30",

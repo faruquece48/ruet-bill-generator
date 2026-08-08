@@ -194,8 +194,11 @@ function GroupedTable({
   const entryTotal = repeatingEntryColumns.reduce((sum, column) => sum + column.width, 0) || 1;
 
   return (
-    <View style={styles.table}>
-      <View style={[styles.row, styles.rowTopEdge]}>
+    <>
+      {/* Keep the heading outside the pageable list of course groups. If a
+          complete course does not fit, react-pdf can move that group to the
+          next page without cloning the table heading into the continuation. */}
+      <View style={[styles.table, styles.row, styles.rowTopEdge]} wrap={false}>
         <View style={[styles.headerCell, { width: `${normalizedCourseWidth}%` }, styles.cellLeftEdge]}>
           <Text>Course No. &amp; Title</Text>
         </View>
@@ -220,7 +223,7 @@ function GroupedTable({
       </View>
 
       {groups.map((group, groupIndex) => (
-        <View key={groupIndex} style={[styles.row, styles.groupedRow, { alignItems: "stretch" }]} wrap={false}>
+        <View key={groupIndex} style={[styles.table, styles.row, styles.groupedRow, { alignItems: "stretch" }]} wrap={false}>
           <View style={[styles.cell, { width: `${normalizedCourseWidth}%`, justifyContent: "center" }]}>
             <Text>{formatCell(group.courseCode)}</Text>
             <Text>{formatCell(group.courseTitle)}</Text>
@@ -234,10 +237,11 @@ function GroupedTable({
             {group.entries.map((entry, ei) => (
               <View
                 key={ei}
-                style={[
-                  { flexDirection: "row", flexGrow: 1, alignItems: "stretch" },
-                  ei > 0 ? styles.innerRowDivider : {},
-                ]}
+                  style={[
+                    { flexDirection: "row", alignItems: "stretch" },
+                    ei > 0 ? styles.innerRowDivider : {},
+                  ]}
+                  wrap={false}
               >
                 {repeatingEntryColumns.map((c, columnIndex) => (
                     <View key={c.key} style={[styles.cell, { width: `${(c.width / entryTotal) * 100}%` }, !normalizedMergeColumn && columnIndex === repeatingEntryColumns.length - 1 ? styles.cellNoRightEdge : {}]}>
@@ -254,7 +258,7 @@ function GroupedTable({
           )}
         </View>
       ))}
-    </View>
+    </>
   );
 }
 function MergedColumnTable({
@@ -475,14 +479,20 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       hasData: assignmentRows.length > 0,
       includeInBacklog: false,
       content: (
-        <GroupedTable
-          courseWidth={lw.assignment.course ?? 18}
-          entryColumns={[
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.assignment.teacherLine ?? 70 },
-            { key: "assignmentValue", label: "No. of Class Assignment", width: lw.assignment.assignmentValue ?? 12, align: "center" },
-          ]}
-          groups={assignmentGroups}
-        />
+          <GroupedTable
+            courseWidth={lw.assignment.course ?? 18}
+            entryColumns={[
+              { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.assignment.teacherLine ?? 70 },
+            ]}
+            groups={assignmentGroups}
+            groupMergeColumn={{
+              key: "assignmentValue",
+              label: "No. of Class Assignment",
+              width: lw.assignment.assignmentValue ?? 12,
+              align: "center",
+              value: (group) => group.entries[0]?.assignmentValue,
+            }}
+          />
       ),
     },
     {
@@ -733,8 +743,8 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
         <MergedColumnTable
           columns={[
             { key: "sl", label: "Sl. No.", width: lw.verification.sl ?? 10 },
-            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.verification.teacherLine ?? 65 },
-            { key: "students", label: "No. of Students", width: lw.verification.students ?? 25, align: "center" },
+            { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.verification.teacherLine ?? 76 },
+            { key: "students", label: "No. of Students", width: lw.verification.students ?? 14, align: "center" },
           ]}
           rows={bill.verificationTeachers.map((t) => ({
             teacherLine: formatTeacher(t.name, t.designation, t.department),

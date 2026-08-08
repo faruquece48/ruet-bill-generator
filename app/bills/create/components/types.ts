@@ -325,6 +325,6 @@ export const defaultLayoutSettings: TableLayoutSettings = {
     examinerCount: 15,
     thesisViva: 11,
   },
-  verification: { sl: 10, teacherLine: 65, students: 25 },
+  verification: { sl: 10, teacherLine: 76, students: 14 },
   courseCoordinator: { sl: 10, teacherLine: 90 },
 };
