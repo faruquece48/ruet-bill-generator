@@ -3,10 +3,17 @@ import { getPrisma } from "@/lib/prisma";
 
 const todayKey = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka" }).format(new Date());
 
-async function snapshot() {
+type VisitorCounts = {
+  live: number;
+  today: number;
+  total: number;
+  available: boolean;
+};
+
+async function snapshot(): Promise<VisitorCounts> {
   const prisma = getPrisma();
   if (!prisma) {
-    return { live: 0, today: 0, total: 0 };
+    return { live: 0, today: 0, total: 0, available: false };
   }
 
   const [live, today, total] = await prisma.$transaction([
@@ -14,7 +21,7 @@ async function snapshot() {
     prisma.visitEvent.count({ where: { visitDay: todayKey() } }),
     prisma.visitEvent.count(),
   ]);
-  return { live, today, total };
+  return { live, today, total, available: true };
 }
 
 export async function GET() {
