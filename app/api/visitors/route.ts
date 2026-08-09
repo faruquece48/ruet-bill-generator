@@ -5,6 +5,10 @@ const todayKey = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka"
 
 async function snapshot() {
   const prisma = getPrisma();
+  if (!prisma) {
+    return { live: 0, today: 0, total: 0 };
+  }
+
   const [live, today, total] = await prisma.$transaction([
     prisma.visitorSession.count({ where: { lastSeenAt: { gte: new Date(Date.now() - 35_000) } } }),
     prisma.visitEvent.count({ where: { visitDay: todayKey() } }),
@@ -21,24 +25,29 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as { sessionId?: string; visitId?: string; action?: "visit" | "heartbeat" | "leave" } | null;
   const sessionId = body?.sessionId?.slice(0, 100);
   if (!sessionId) return NextResponse.json({ error: "Missing session ID" }, { status: 400 });
+
+  const prisma = getPrisma();
+  if (!prisma) {
+    return NextResponse.json(await snapshot(), { headers: { "Cache-Control": "no-store" } });
+  }
+
   if (body?.action === "leave") {
-    const prisma = getPrisma();
     await prisma.visitorSession.updateMany({
       where: { id: sessionId },
       data: { lastSeenAt: new Date(0) },
     });
     return NextResponse.json(await snapshot(), { headers: { "Cache-Control": "no-store" } });
   }
+
   const now = new Date();
   const day = todayKey();
-  const prisma = getPrisma();
   await prisma.visitorSession.upsert({
     where: { id: sessionId },
     create: { id: sessionId, firstSeenAt: now, lastSeenAt: now, lastSeenDay: day },
     update: { lastSeenAt: now, lastSeenDay: day },
   });
+
   if (body?.action === "visit") {
-    const prisma = getPrisma();
     const visitId = body.visitId?.slice(0, 100);
     if (!visitId) return NextResponse.json({ error: "Missing visit ID" }, { status: 400 });
     await prisma.visitEvent.upsert({
@@ -47,5 +56,6 @@ export async function POST(request: Request) {
       update: {},
     });
   }
+
   return NextResponse.json(await snapshot(), { headers: { "Cache-Control": "no-store" } });
 }

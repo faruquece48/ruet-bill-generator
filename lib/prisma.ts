@@ -5,23 +5,20 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function getConnectionString() {
   const connectionString = process.env.DATABASE_URL;
-
-  if (!connectionString || !/^postgres(ql)?:\/\//.test(connectionString)) {
-    throw new Error("DATABASE_URL must be a Neon PostgreSQL connection string");
-  }
-
-  return connectionString;
+  return connectionString && /^postgres(ql)?:\/\//.test(connectionString) ? connectionString : null;
 }
 
-function createPrismaClient() {
-  const connectionString = getConnectionString();
+function createPrismaClient(connectionString: string) {
   const adapter = new PrismaNeon({ connectionString });
   return new PrismaClient({ adapter });
 }
 
 export function getPrisma() {
+  const connectionString = getConnectionString();
+  if (!connectionString) return null;
+
   if (!globalForPrisma.prisma) {
-    globalForPrisma.prisma = createPrismaClient();
+    globalForPrisma.prisma = createPrismaClient(connectionString);
   }
 
   return globalForPrisma.prisma;
