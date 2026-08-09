@@ -4,6 +4,7 @@ import { getPrisma } from "@/lib/prisma";
 const todayKey = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka" }).format(new Date());
 
 async function snapshot() {
+  const prisma = getPrisma();
   const [live, today, total] = await prisma.$transaction([
     prisma.visitorSession.count({ where: { lastSeenAt: { gte: new Date(Date.now() - 35_000) } } }),
     prisma.visitEvent.count({ where: { visitDay: todayKey() } }),
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
   const sessionId = body?.sessionId?.slice(0, 100);
   if (!sessionId) return NextResponse.json({ error: "Missing session ID" }, { status: 400 });
   if (body?.action === "leave") {
+    const prisma = getPrisma();
     await prisma.visitorSession.updateMany({
       where: { id: sessionId },
       data: { lastSeenAt: new Date(0) },
@@ -29,12 +31,14 @@ export async function POST(request: Request) {
   }
   const now = new Date();
   const day = todayKey();
+  const prisma = getPrisma();
   await prisma.visitorSession.upsert({
     where: { id: sessionId },
     create: { id: sessionId, firstSeenAt: now, lastSeenAt: now, lastSeenDay: day },
     update: { lastSeenAt: now, lastSeenDay: day },
   });
   if (body?.action === "visit") {
+    const prisma = getPrisma();
     const visitId = body.visitId?.slice(0, 100);
     if (!visitId) return NextResponse.json({ error: "Missing visit ID" }, { status: 400 });
     await prisma.visitEvent.upsert({
