@@ -377,7 +377,7 @@ export default function FilesPage() {
                   ))}
                 </div>
               </div>
-              <BengaliNoticeTextEditor value={customBody} onChange={setCustomBody} defaultValue={`এতদ্বারা সংশ্লিষ্ট সকলের অবগতির জন্য জানানো যাচ্ছে যে, অত্র বিভাগের ৪র্থ বর্ষ বিজোড় সেমিস্টার (${notice.series || "—"} সিরিজ) এর BECM 4100 (Undergraduate Thesis) কোর্সের থিসিস সুপারভাইজার বণ্টন নিম্নরূপ। শিক্ষার্থীদের নিজ নিজ সুপারভাইজারদের সাথে জরুরি ভিত্তিতে যোগাযোগ করে থিসিস কার্যক্রম পরিচালনার প্রয়োজনীয় পদক্ষেপ গ্রহণের নির্দেশ দেওয়া হচ্ছে।`} />
+              <BengaliNoticeTextEditor value={customBody} onChange={setCustomBody} defaultValue={`এতদ্বারা সংশ্লিষ্ট সকলের অবগতির জন্য জানানো যাচ্ছে যে, অত্র বিভাগের ৪র্থ বর্ষ বিজোড় সেমিস্টার (${notice.series || "—"} সিরিজ) এর BECM 4000 (Undergraduate Thesis) কোর্সের থিসিস সুপারভাইজার বণ্টন নিম্নরূপ। শিক্ষার্থীদের নিজ নিজ সুপারভাইজারদের সাথে জরুরি ভিত্তিতে যোগাযোগ করে থিসিস কার্যক্রম পরিচালনার প্রয়োজনীয় পদক্ষেপ গ্রহণের নির্দেশ দেওয়া হচ্ছে।`} />
               <label className="block rounded-lg border bg-slate-50 p-3 text-sm font-medium text-slate-700">
                 Department head name
                 <span className="mt-0.5 block text-xs font-normal text-slate-500">Change the name shown in the compact signature block</span>
@@ -437,7 +437,7 @@ export default function FilesPage() {
                 <p style={{ marginTop: layout.heading.gapAfter, fontSize: layout.body.fontSize }} className="text-justify leading-[1.65] [text-justify:inter-word]">
                   {customBody.trim() ? <SutonnyNoticeText text={customBody} /> : <>GZØviv mswkøó mK‡ji AeMwZi Rb¨ Rvbv‡bv hv‡”Q †h, AÎ wefv‡Mi 4_© el© we†Rvo †mwgóvi{" "}
                   ({notice.series ? toSutonnyNumber(notice.series) : "—"} wmwiR) Gi{" "}
-                  <span className="notice-times" style={{ fontFamily: '"Times New Roman", Times, serif' }}>BECM 4100 (Undergraduate Thesis)</span> †Kv‡m©i w_wmm mycvifvBRvi e›Ub wb¤œiƒc| wkÿv_©x‡`i wbR wbR mycvifvBRvi†`i mv‡_ Riæix wfwË‡Z †hvMv‡hvM K‡i w_wmm Kvh©µg cwiPvjbvi cÖ‡qvRbxq c`‡ÿc MÖn‡bi wb‡`©k †`qv n‡”Q|</>}
+                  <span className="notice-times" style={{ fontFamily: '"Times New Roman", Times, serif' }}>BECM 4000 (Undergraduate Thesis)</span> †Kv‡m©i w_wmm mycvifvBRvi e›Ub wb¤œiƒc| wkÿv_©x‡`i wbR wbR mycvifvBRvi†`i mv‡_ Riæix wfwË‡Z †hvMv‡hvM K‡i w_wmm Kvh©µg cwiPvjbvi cÖ‡qvRbxq c`‡ÿc MÖn‡bi wb‡`©k †`qv n‡”Q|</>}
                 </p>
 
                 <table style={{ marginTop: layout.body.gapAfter, fontSize: layout.table.fontSize, width: `${tableWidths.table}%`, marginInline: "auto" }} className="table-fixed border-collapse leading-[1.4]">
