@@ -204,6 +204,10 @@ export default function PreviewPage() {
     ? billData.scrutinies.obe.length + billData.scrutinies.nonObe.length > 0
     : billData.scrutinies.obe.length > 0;
   const isFourthYearEven = billData.billInfo.year === "4th Year" && billData.billInfo.semester === "Even";
+  const isCourseCoordinatorApplicable =
+    billData.billInfo.examType === "semester" &&
+    billData.billInfo.year === "4th Year" &&
+    (billData.billInfo.semester === "Odd" || billData.billInfo.semester === "Even");
   const isFirstYearEven = billData.billInfo.year === "1st Year" && billData.billInfo.semester === "Even";
   const visibleSectionKeys = [
     ["committee", billData.committees.some((member) => member.name.trim() !== "")],
@@ -219,7 +223,7 @@ export default function PreviewPage() {
     ["gradePreparation", gradeSheetRows.length > 0],
     ["gradeVerification", !isBacklog && gradeSheetRows.length > 0],
     ["courseAdviser", !isBacklog && billData.courseAdvisers.length > 0],
-    ["courseCoordinator", !isBacklog && isFourthYearEven && billData.courseCoordinatorTeachers.length > 0],
+    ["courseCoordinator", isCourseCoordinatorApplicable && billData.courseCoordinatorTeachers.length > 0],
     ["thesis", !isBacklog && isFourthYearEven && billData.thesisTeachers.length > 0],
     ["verification", billData.billInfo.hasGraduatingStudents === "yes" && billData.verificationTeachers.length > 0],
     ["practical", isFirstYearEven && !isBacklog && billData.practicalSurveyingTeachers.some((teacher) => teacher.name.trim() !== "")],
@@ -241,7 +245,7 @@ export default function PreviewPage() {
     gradeSheetPreparation: gradeSheetRows.length > 0,
     gradeSheetVerification: !isBacklog && gradeSheetRows.length > 0,
     courseAdviser: !isBacklog && billData.courseAdvisers.length > 0,
-    courseCoordinator: !isBacklog && isFourthYearEven && billData.courseCoordinatorTeachers.length > 0,
+    courseCoordinator: isCourseCoordinatorApplicable && billData.courseCoordinatorTeachers.length > 0,
     thesis: !isBacklog && isFourthYearEven && billData.thesisTeachers.length > 0,
     verification: billData.billInfo.hasGraduatingStudents === "yes" && billData.verificationTeachers.length > 0,
     practicalSurveying: isFirstYearEven && !isBacklog && billData.practicalSurveyingTeachers.some((teacher) => teacher.name.trim() !== ""),
@@ -556,7 +560,7 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel visible={!isBacklog && isFourthYearEven && billData.courseCoordinatorTeachers.length > 0} title={`${pdfNumber("courseCoordinator")}. List of Teachers Associated with Course Coordinator`} {...pageBreakControl("courseCoordinator")}>
+            <SectionPanel visible={isCourseCoordinatorApplicable && billData.courseCoordinatorTeachers.length > 0} title={`${pdfNumber("courseCoordinator")}. List of Teachers Associated with Course Coordinator`} {...pageBreakControl("courseCoordinator")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.courseCoordinator}
                 setWidths={(v) => updateLayout("courseCoordinator", v)}

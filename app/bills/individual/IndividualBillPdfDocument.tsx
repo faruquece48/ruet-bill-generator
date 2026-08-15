@@ -119,7 +119,9 @@ export function IndividualBillPdfPage(props: IndividualBillPdfPageProps) {
   const semester: Record<string, string> = { Odd: "বিজোড়", Even: "জোড়", "Odd Semester": "বিজোড়", "Even Semester": "জোড়" };
   const exam = bill.billInfo.examType === "backlog"
     ? `${year[bill.billInfo.year] || bill.billInfo.year} ব্যাকলগ পরীক্ষা ${bn(bill.billInfo.examYear || "২০২৪")}`
-    : `${year[bill.billInfo.year] || bill.billInfo.year} ${semester[bill.billInfo.semester] || bill.billInfo.semester} সেমিস্টার পরীক্ষা ${bn(bill.billInfo.examYear || "২০২৪")}`;
+    : bill.billInfo.examType === "short"
+      ? `${year[bill.billInfo.year] || bill.billInfo.year} শর্ট সেমিস্টার ${bn(bill.billInfo.examYear || "২০২৪")}`
+      : `${year[bill.billInfo.year] || bill.billInfo.year} ${semester[bill.billInfo.semester] || bill.billInfo.semester} সেমিস্টার পরীক্ষা ${bn(bill.billInfo.examYear || "২০২৪")}`;
   const selectedDegree = bill.billInfo.examination === "Ph.D." ? "PhD" : bill.billInfo.examination;
   const headers = ["ক্রমিক নং", "কাজের বিবরণ", "বিবরণ", "বিষয় / কোর্স", "খাতা / ছাত্র সংখ্যা", "কোর্স সংখ্যা", "ক্লাস টেস্ট সংখ্যা", "পারিশ্রমিকের হার", "টাকার পরিমাণ"];
 

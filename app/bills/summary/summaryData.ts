@@ -128,7 +128,9 @@ export function examinationSummaryTitle(bill: ExaminationBillData): string {
   const info = bill.billInfo;
   const type = info.examType === "backlog"
     ? `${info.year} Backlog`
-    : `${info.year} ${info.semester} Semester`;
+    : info.examType === "short"
+      ? `${info.year} Short Semester`
+      : `${info.year} ${info.semester} Semester`;
   return `Remuneration List of Dept. of BECM for ${
     info.examination || "B.Sc. Engineering"
   } Examination-${info.examYear || ""} (${type.trim()})`;
@@ -138,5 +140,7 @@ export function examinationIndexName(bill: ExaminationBillData): string {
   const info = bill.billInfo;
   return info.examType === "backlog"
     ? `${info.year} Backlog Examination ${info.examYear}`.trim()
-    : `${info.year} ${info.semester} Semester Examination ${info.examYear}`.trim();
+    : info.examType === "short"
+      ? `${info.year} Short Semester ${info.examYear}`.trim()
+      : `${info.year} ${info.semester} Semester Examination ${info.examYear}`.trim();
 }

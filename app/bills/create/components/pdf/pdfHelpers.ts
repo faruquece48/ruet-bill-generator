@@ -14,7 +14,7 @@ export function buildExamLine(bill: BillInfo): string {
   const year = bill.year || "";
   const semester = bill.examType === "semester" ? bill.semester || "" : "";
   const examYear = bill.examYear || "";
-  const typeLabel = bill.examType === "semester" ? "Semester" : "Backlog";
+  const typeLabel = bill.examType === "semester" ? "Semester" : bill.examType === "short" ? "Short Semester" : "Backlog";
   return `${year} ${semester} ${typeLabel} Examination ${examYear}`
     .replace(/\s+/g, " ")
     .trim();
@@ -28,7 +28,9 @@ export function buildFullTitle(bill: BillInfo): string {
   const typeLabel =
     bill.examType === "semester"
       ? `${bill.semester || ""} Semester Examination`
-      : "Backlog Examination";
+      : bill.examType === "short"
+        ? "Short Semester"
+        : "Backlog Examination";
   const examYear = bill.examYear || "";
   const series = bill.series || "";
   return `${exam} ${year} ${typeLabel}-${examYear} (Series ${series})`

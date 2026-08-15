@@ -159,7 +159,7 @@ export async function generateWordDocument(bill: ExaminationBillData): Promise<B
       })] })],
     }),
     ...["Heaven’s Light is Our Guide", "Department of Building Engineering & Construction Management", "Rajshahi University of Engineering & Technology"].map((text) => new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text, size: 20, font: "Times New Roman" })] })),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 280 }, children: [new TextRun({ text: `${bill.billInfo.examination || "B.Sc. Engineering"} ${bill.billInfo.year} ${backlog ? "Backlog Examination" : `${bill.billInfo.semester} Semester Examination`} ${bill.billInfo.examYear} (Series ${bill.billInfo.series})`, bold: true, size: 20, font: "Times New Roman" })] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 280 }, children: [new TextRun({ text: `${bill.billInfo.examination || "B.Sc. Engineering"} ${bill.billInfo.year} ${backlog ? "Backlog Examination" : bill.billInfo.examType === "short" ? "Short Semester" : `${bill.billInfo.semester} Semester Examination`} ${bill.billInfo.examYear} (Series ${bill.billInfo.series})`, bold: true, size: 20, font: "Times New Roman" })] }),
   ];
   const groupNumbers = new Map<string, number>();
   let nextNumber = 1;

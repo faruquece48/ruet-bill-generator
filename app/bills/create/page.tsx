@@ -66,7 +66,10 @@ export default function Home() {
     billData.billInfo.semester === "Even";
   const isVerificationApplicable =
     billData.billInfo.hasGraduatingStudents === "yes";
-  const isCourseCoordinatorApplicable = isThesisApplicable;
+  const isCourseCoordinatorApplicable =
+    billData.billInfo.examType === "semester" &&
+    billData.billInfo.year === "4th Year" &&
+    (billData.billInfo.semester === "Odd" || billData.billInfo.semester === "Even");
   const isPracticalSurveyingApplicable =
     billData.billInfo.examType === "semester" &&
     billData.billInfo.year === "1st Year" &&

@@ -345,7 +345,10 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     bill.billInfo.year === "4th Year" &&
     bill.billInfo.semester === "Even";
   const isVerificationApplicable = bill.billInfo.hasGraduatingStudents === "yes";
-  const isCourseCoordinatorApplicable = isThesisApplicable;
+  const isCourseCoordinatorApplicable =
+    bill.billInfo.examType === "semester" &&
+    bill.billInfo.year === "4th Year" &&
+    (bill.billInfo.semester === "Odd" || bill.billInfo.semester === "Even");
   const isPracticalSurveyingApplicable =
     !isBacklog &&
     bill.billInfo.year === "1st Year" &&
@@ -822,7 +825,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
           <Text style={styles.deptLine}>Rajshahi University of Engineering &amp; Technology</Text>
           <Text style={styles.titleLine}>
             {bill.billInfo.examination || "B.Sc. Engineering"} {bill.billInfo.year}{" "}
-            {bill.billInfo.examType === "semester" ? `${bill.billInfo.semester} Semester Examination` : "Backlog Examination"}{" "}
+            {bill.billInfo.examType === "semester" ? `${bill.billInfo.semester} Semester Examination` : bill.billInfo.examType === "short" ? "Short Semester" : "Backlog Examination"}{" "}
             {bill.billInfo.examYear} (Series {bill.billInfo.series})
           </Text>
         </View>

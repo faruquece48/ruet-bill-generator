@@ -24,6 +24,7 @@ const examinationLabels: Record<string, string> = {
 const examTypeLabels: Record<string, string> = {
   semester: "Semester Examination",
   backlog: "Backlog Examination",
+  short: "Short Semester",
 };
 
 const yearLabels: Record<string, string> = {
@@ -63,6 +64,8 @@ export default function BillInformation({ bill, setBill, onTotalStudentsChange }
         } Semester Examination ${bill.examYear || "2024"} (${
           bill.series || "2023"
         } Series)`
+      : bill.examType === "short"
+      ? `${bill.examination || "B.Sc. Engineering"} ${bill.year || ""} Short Semester ${bill.examYear || "2024"} (${bill.series || "2023"} Series)`
       : `${bill.examination || "B.Sc. Engineering"} ${
           bill.year || ""
         } Backlog Examination ${bill.examYear || "2024"} (${
@@ -122,7 +125,7 @@ export default function BillInformation({ bill, setBill, onTotalStudentsChange }
           <Select
             value={bill.examType}
             onValueChange={(value) =>
-              updateField("examType", value as "semester" | "backlog")
+              updateField("examType", value as BillInfo["examType"])
             }
           >
             <SelectTrigger className="w-full">
@@ -133,6 +136,7 @@ export default function BillInformation({ bill, setBill, onTotalStudentsChange }
             <SelectContent>
               <SelectItem value="semester">Semester Examination</SelectItem>
               <SelectItem value="backlog">Backlog Examination</SelectItem>
+              <SelectItem value="short">Short Semester</SelectItem>
             </SelectContent>
           </Select>
         </div>

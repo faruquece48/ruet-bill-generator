@@ -10,7 +10,7 @@ export interface BillInfo {
   billNo: string;
   examination: string;
   year: string;
-  examType: "semester" | "backlog";
+  examType: "semester" | "backlog" | "short";
   semester: string;
   examYear: string;
   series: string;

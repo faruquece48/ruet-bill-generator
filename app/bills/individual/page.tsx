@@ -56,7 +56,9 @@ export default function IndividualTeacherBillPage() {
   const toBengaliDigits = (value: string) => value.replace(/[0-9]/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
   const examTitle = bill.billInfo.examType === "backlog"
     ? `${bengaliYear[bill.billInfo.year] || bill.billInfo.year || "১ম বর্ষ"} ব্যাকলগ পরীক্ষা ${toBengaliDigits(bill.billInfo.examYear || "২০২৪")}`
-    : `${bengaliYear[bill.billInfo.year] || bill.billInfo.year || "১ম বর্ষ"} ${bengaliSemester[bill.billInfo.semester] || bill.billInfo.semester || "বিজোড়"} সেমিস্টার পরীক্ষা ${toBengaliDigits(bill.billInfo.examYear || "২০২৪")}`;
+    : bill.billInfo.examType === "short"
+      ? `${bengaliYear[bill.billInfo.year] || bill.billInfo.year || "১ম বর্ষ"} শর্ট সেমিস্টার ${toBengaliDigits(bill.billInfo.examYear || "২০২৪")}`
+      : `${bengaliYear[bill.billInfo.year] || bill.billInfo.year || "১ম বর্ষ"} ${bengaliSemester[bill.billInfo.semester] || bill.billInfo.semester || "বিজোড়"} সেমিস্টার পরীক্ষা ${toBengaliDigits(bill.billInfo.examYear || "২০২৪")}`;
 
   const degreeOptions = [
     { key: "B.Sc. Engineering", label: "বি.এস.সি. ইঞ্জিনিয়ারিং" },

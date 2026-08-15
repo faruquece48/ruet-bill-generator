@@ -22,6 +22,10 @@ const isThesisApplicable = (bill: ExaminationBillData) =>
   bill.billInfo.examType === "semester" &&
   bill.billInfo.year === "4th Year" &&
   bill.billInfo.semester === "Even";
+const isCourseCoordinatorApplicable = (bill: ExaminationBillData) =>
+  bill.billInfo.examType === "semester" &&
+  bill.billInfo.year === "4th Year" &&
+  (bill.billInfo.semester === "Odd" || bill.billInfo.semester === "Even");
 const isPracticalSurveyingApplicable = (bill: ExaminationBillData) =>
   bill.billInfo.examType === "semester" &&
   bill.billInfo.year === "1st Year" &&
@@ -58,6 +62,8 @@ export function collectTeacherNames(bill: ExaminationBillData): string[] {
   }
   if (isThesisApplicable(bill)) {
     teacherLists.push(...bill.thesisTeachers);
+  }
+  if (isCourseCoordinatorApplicable(bill)) {
     teacherLists.push(...bill.courseCoordinatorTeachers);
   }
   if (isPracticalSurveyingApplicable(bill)) {
@@ -103,7 +109,7 @@ export function collectTeacherNameWarnings(bill: ExaminationBillData): TeacherNa
   checkList("Non-OBE scrutiny", bill.scrutinies.nonObe);
   checkList("Student duties", bill.studentDuties);
   checkList("Course advisers", bill.courseAdvisers);
-  if (isThesisApplicable(bill)) {
+  if (isCourseCoordinatorApplicable(bill)) {
     checkList("Thesis/project examination", bill.thesisTeachers);
   }
   if (isVerificationApplicable(bill)) {

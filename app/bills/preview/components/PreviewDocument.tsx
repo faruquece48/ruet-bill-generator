@@ -70,9 +70,14 @@ const verificationCols: PreviewColumn[] = [
 export default function PreviewDocument({ bill }: Props) {
   const isBacklog = bill.billInfo.examType === "backlog";
   const isThesisApplicable =
-    bill.billInfo.year === "4th Year" && bill.billInfo.semester === "Even";
+    bill.billInfo.examType === "semester" &&
+    bill.billInfo.year === "4th Year" &&
+    bill.billInfo.semester === "Even";
   const isVerificationApplicable = bill.billInfo.hasGraduatingStudents === "yes";
-  const isCourseCoordinatorApplicable = isThesisApplicable;
+  const isCourseCoordinatorApplicable =
+    bill.billInfo.examType === "semester" &&
+    bill.billInfo.year === "4th Year" &&
+    (bill.billInfo.semester === "Odd" || bill.billInfo.semester === "Even");
   const isMixedEvaluation = bill.billInfo.evaluationSystem === "mixed";
 
   const obePaperSetterRows = flattenPaperSetter(bill.courseDuties.obe);
@@ -444,7 +449,7 @@ export default function PreviewDocument({ bill }: Props) {
         <p className="text-[11px]">Rajshahi University of Engineering &amp; Technology</p>
         <p className="mt-1 text-[11px] font-bold">
           {bill.billInfo.examination || "B.Sc. Engineering"} {bill.billInfo.year}{" "}
-          {bill.billInfo.examType === "semester" ? `${bill.billInfo.semester} Semester Examination` : "Backlog Examination"}{" "}
+          {bill.billInfo.examType === "semester" ? `${bill.billInfo.semester} Semester Examination` : bill.billInfo.examType === "short" ? "Short Semester" : "Backlog Examination"}{" "}
           {bill.billInfo.examYear} (Series {bill.billInfo.series})
         </p>
       </div>
