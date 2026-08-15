@@ -11,6 +11,7 @@ import {
   FolderOpen,
   Menu,
   Plus,
+  Save,
 } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
 import SeriesInput from "@/components/SeriesInput";
@@ -119,6 +120,7 @@ export default function FilesPage() {
         if (saved.departmentHeadName) setDepartmentHeadName(saved.departmentHeadName);
         if (saved.layout) setLayout(saved.layout);
         if (saved.tableWidths) setTableWidths(saved.tableWidths);
+        if (typeof saved.customBody === "string") setCustomBody(saved.customBody);
       } catch { /* Ignore invalid saved templates. */ }
     }, 0);
     return () => window.clearTimeout(restoreTimer);
@@ -154,6 +156,11 @@ export default function FilesPage() {
     setTableWidths((current) => ({ ...current, [field]: Math.max(1, Math.min(100, value || 1)) }));
   };
 
+  const saveTemplate = () => {
+    localStorage.setItem(storageKey, JSON.stringify({ notice, rows, departmentHeadName, layout, tableWidths, customBody }));
+    setPdfStatus("Template saved.");
+  };
+
   const generatePdf = async () => {
     const documentElement = noticeRef.current;
     if (!documentElement || isGeneratingPdf) return;
@@ -178,7 +185,7 @@ export default function FilesPage() {
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
       pdf.addImage(imageData, "PNG", 0, 0, 210, 297, undefined, "FAST");
       pdf.save(`Thesis-Distribution-${notice.series || "notice"}.pdf`);
-      localStorage.setItem(storageKey, JSON.stringify({ notice, rows, departmentHeadName, layout, tableWidths }));
+      localStorage.setItem(storageKey, JSON.stringify({ notice, rows, departmentHeadName, layout, tableWidths, customBody }));
       setPdfStatus("PDF generated and template saved.");
     } catch (error) {
       console.error("Unable to generate notice PDF", error);
@@ -365,6 +372,9 @@ export default function FilesPage() {
               </div>
               <div className="flex items-center gap-3">
                 {pdfStatus && <span role="status" className={`text-xs ${pdfStatus.startsWith("Unable") ? "text-red-600" : "text-emerald-700"}`}>{pdfStatus}</span>}
+                <button type="button" onClick={saveTemplate} className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50">
+                  <Save className="h-4 w-4" /> Save
+                </button>
                 <button type="button" onClick={generatePdf} disabled={isGeneratingPdf} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-wait disabled:bg-indigo-400">
                   <Download className="h-4 w-4" /> {isGeneratingPdf ? "Generating PDF…" : "Generate PDF"}
                 </button>
@@ -376,7 +386,7 @@ export default function FilesPage() {
                   <p style={{ fontSize: layout.header.fontSize * 0.8 }} className="text-center font-semibold leading-none text-[#2f78b7]">“Heaven&apos;s Light is Our Guide”</p>
                   <h2 style={{ fontSize: layout.header.fontSize * 1.7 }} className="mt-1 text-center font-bold leading-none tracking-tight text-[#145365]">Rajshahi University of Engineering &amp; Technology</h2>
                   <div className="mt-1 grid w-full grid-cols-[minmax(0,1fr)_68px_minmax(0,1fr)] items-center gap-3">
-                    <div style={{ fontSize: layout.header.fontSize }} className="header-bangla text-right leading-[1.25]">
+                    <div style={{ fontSize: layout.header.fontSize }} className="header-bangla text-left leading-[1.25]">
                       <p className="font-bold text-[#174e72]">বিভাগীয় প্রধানের কার্যালয়</p>
                       <p className="whitespace-nowrap font-bold text-[#8b2525]">বিল্ডিং ইঞ্জিনিয়ারিং এন্ড কনস্ট্রাকশন ম্যানেজমেন্ট বিভাগ</p>
                       <p className="font-semibold text-[#8b4a11]">রাজশাহী-৬২০৪, বাংলাদেশ</p>

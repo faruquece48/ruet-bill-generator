@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
-import { ChevronDown, Download, FileText, FolderOpen, Menu } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, Download, FileText, FolderOpen, Menu, Save } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
 import useThesisTopicsState from "@/components/useThesisTopicsState";
 import SeriesInput from "@/components/SeriesInput";
@@ -50,6 +50,7 @@ const defaultLayout = {
 
 type LayoutSection = keyof typeof defaultLayout;
 const layoutLabels: Record<LayoutSection, string> = { header: "Header", meta: "Memo and date", heading: "Notice heading", body: "Notice body", table: "Schedule table", signature: "Head signature" };
+const storageKey = "ruet-thesis-pre-defense-saved";
 
 export default function ThesisPreDefensePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -62,8 +63,20 @@ export default function ThesisPreDefensePage() {
   const [customBody, setCustomBody] = useState("");
   const noticeRef = useRef<HTMLElement>(null);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+      if (saved?.notice) setNotice(saved.notice);
+      if (saved?.departmentHeadName) setDepartmentHeadName(saved.departmentHeadName);
+      if (saved?.layout) setLayout(saved.layout);
+      if (typeof saved?.customBody === "string") setCustomBody(saved.customBody);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const update = (field: keyof ReturnType<typeof createNotice>, value: string) => setNotice((current) => ({ ...current, [field]: value }));
   const updateLayout = (section: LayoutSection, field: "fontSize" | "gapAfter", value: number) => setLayout((current) => ({ ...current, [section]: { ...current[section], [field]: Math.max(0, value || 0) } }));
+  const saveTemplate = () => { localStorage.setItem(storageKey, JSON.stringify({ notice, departmentHeadName, layout, customBody })); setPdfStatus("Template saved."); };
 
   const generatePdf = async () => {
     const element = noticeRef.current;
@@ -136,14 +149,14 @@ export default function ThesisPreDefensePage() {
           </section>
 
           <section className="min-w-0 rounded-xl border bg-slate-300 shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-300 bg-white px-5 py-3"><div><h2 className="font-semibold text-[#102555]">Preview</h2><p className="text-xs text-slate-500">Live A4 document preview</p></div><div className="flex items-center gap-3">{pdfStatus && <span role="status" className={`text-xs ${pdfStatus.startsWith("Unable") ? "text-red-600" : "text-emerald-700"}`}>{pdfStatus}</span>}<button type="button" onClick={generatePdf} disabled={isGeneratingPdf} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-wait disabled:bg-indigo-400"><Download className="h-4 w-4" />{isGeneratingPdf ? "Generating PDF…" : "Generate PDF"}</button></div></div>
+            <div className="flex items-center justify-between border-b border-slate-300 bg-white px-5 py-3"><div><h2 className="font-semibold text-[#102555]">Preview</h2><p className="text-xs text-slate-500">Live A4 document preview</p></div><div className="flex items-center gap-3">{pdfStatus && <span role="status" className={`text-xs ${pdfStatus.startsWith("Unable") ? "text-red-600" : "text-emerald-700"}`}>{pdfStatus}</span>}<button type="button" onClick={saveTemplate} className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"><Save className="h-4 w-4" />Save</button><button type="button" onClick={generatePdf} disabled={isGeneratingPdf} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-wait disabled:bg-indigo-400"><Download className="h-4 w-4" />{isGeneratingPdf ? "Generating PDF…" : "Generate PDF"}</button></div></div>
             <div className="overflow-auto p-4 sm:p-6">
               <article ref={noticeRef} lang="bn" className="file-print-document mx-auto min-h-[1123px] w-[794px] max-w-full bg-white px-[6%] py-12 text-[14px] leading-[1.55] text-black shadow-xl print:min-h-0 print:w-full print:max-w-none print:shadow-none">
                 <header className="notice-header w-full border-b border-black pb-1">
                   <p style={{ fontSize: layout.header.fontSize * 0.8 }} className="text-center font-semibold leading-none text-[#2f78b7]">“Heaven&apos;s Light is Our Guide”</p>
                   <h2 style={{ fontSize: layout.header.fontSize * 1.7 }} className="mt-1 text-center font-bold leading-none tracking-tight text-[#145365]">Rajshahi University of Engineering &amp; Technology</h2>
                   <div className="mt-1 grid w-full grid-cols-[minmax(0,1fr)_68px_minmax(0,1fr)] items-center gap-3">
-                    <div style={{ fontSize: layout.header.fontSize }} className="header-bangla text-right leading-[1.25]">
+                    <div style={{ fontSize: layout.header.fontSize }} className="header-bangla text-left leading-[1.25]">
                       <p className="font-bold text-[#174e72]">বিভাগীয় প্রধানের কার্যালয়</p>
                       <p className="whitespace-nowrap font-bold text-[#8b2525]">বিল্ডিং ইঞ্জিনিয়ারিং এন্ড কনস্ট্রাকশন ম্যানেজমেন্ট বিভাগ</p>
                       <p className="font-semibold text-[#8b4a11]">রাজশাহী-৬২০৪, বাংলাদেশ</p>

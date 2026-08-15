@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
-import { ChevronDown, Download, FileText, FolderOpen, Menu } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, Download, FileText, FolderOpen, Menu, Save } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
 import useThesisTopicsState from "@/components/useThesisTopicsState";
 import SeriesInput from "@/components/SeriesInput";
@@ -17,6 +17,8 @@ const defaultHead = { name: "Rbve kvqjv kviwgb", designation: "wefvMxq cÖavb", 
 const bodyStart = "GZØviv weBwmGg wefv‡Mi 4_© el© †Rvo †mwgóvi (wmwiR ";
 const bodyBeforeCourse = ") Gi wkÿv_©x‡`i AeMwZi Rb¨ Rvbv‡bv hv‡”Q †h, ";
 const bodyEnd = " ‡Kv‡m©i P~ovšÍ wi‡cvU© Ges †cÖ‡R‡›Ukb Dc¯’vcb Kivi Rb¨ wb¤œewY©Z QK Abyhvqx mgq m~Px wba©viY Kiv n‡q‡Q| mswkøó wkÿv_©x‡`i h_vmg‡q Dcw¯’Z n‡q cixÿvq AskMÖn‡Yi Rb¨ wb‡`©k †`qv hv‡”Q|";
+
+const storageKey = "ruet-thesis-final-defense-student-saved";
 
 export default function ThesisFinalDefenseStudentPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -33,6 +35,27 @@ export default function ThesisFinalDefenseStudentPage() {
   const [customBody, setCustomBody] = useState("");
   const noticeRef = useRef<HTMLElement>(null);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+      if (!saved) return;
+      if (saved.memoNumber) setMemoNumber(saved.memoNumber);
+      if (saved.noticeDate) setNoticeDate(saved.noticeDate);
+      if (saved.series) setSeries(saved.series);
+      if (saved.defenseDate) setDefenseDate(saved.defenseDate);
+      if (saved.period) setPeriod(saved.period);
+      if (saved.time) setTime(saved.time);
+      if (saved.departmentHeadName) setDepartmentHeadName(saved.departmentHeadName);
+      if (typeof saved.customBody === "string") setCustomBody(saved.customBody);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const saveTemplate = () => {
+    localStorage.setItem(storageKey, JSON.stringify({ memoNumber, noticeDate, series, defenseDate, period, time, departmentHeadName, customBody }));
+    setStatus("Template saved.");
+  };
+
   const generatePdf = async () => { const element = noticeRef.current; if (!element || isGenerating) return; setIsGenerating(true); setStatus(""); try { await document.fonts.ready; const [{ toPng }, { jsPDF }] = await Promise.all([import("html-to-image"), import("jspdf")]); const data = await toPng(element, { backgroundColor: "#fff", pixelRatio: Math.max(2, window.devicePixelRatio || 1), cacheBust: true }); const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true }); pdf.addImage(data, "PNG", 0, 0, 210, 297, undefined, "FAST"); pdf.save(`Thesis-Final-Defense-Student-${series || "notice"}.pdf`); setStatus("PDF generated."); } catch (error) { console.error(error); setStatus("Unable to generate PDF."); } finally { setIsGenerating(false); } };
   const linkClass = "mt-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-slate-700 hover:bg-indigo-50";
 
@@ -43,7 +66,7 @@ export default function ThesisFinalDefenseStudentPage() {
       <section className="rounded-xl border bg-white shadow-sm xl:sticky xl:top-[96px] xl:self-start"><div className="border-b px-5 py-4"><h2 className="font-semibold text-[#102555]">Thesis Final Defense Sudent</h2><p className="text-xs text-slate-500">Enter the final-defense schedule</p></div><div className="max-h-[calc(100vh-120px)] space-y-4 overflow-y-auto p-5">
         <label className="block text-sm font-medium">Memo number<input className={`${inputClass} font-['SutonnyMJ'] text-lg`} value={memoNumber} onChange={(event) => setMemoNumber(event.target.value)} /></label><label className="block text-sm font-medium">Notice date<input type="date" className={inputClass} value={noticeDate} onChange={(event) => setNoticeDate(event.target.value)} /></label><label className="block text-sm font-medium">Series<SeriesInput value={series} onChange={setSeries} inputClassName={inputClass} /></label><label className="block text-sm font-medium">Defense date<input type="date" className={inputClass} value={defenseDate} onChange={(event) => setDefenseDate(event.target.value)} /></label><div className="grid grid-cols-2 gap-3"><label className="text-sm font-medium">Period<select className={inputClass} value={period} onChange={(event) => setPeriod(event.target.value)}><option value="morning">Morning</option><option value="afternoon">Afternoon</option></select></label><label className="text-sm font-medium">Time<input className={inputClass} value={time} onChange={(event) => setTime(event.target.value)} /></label></div><BengaliNoticeTextEditor value={customBody} onChange={setCustomBody} defaultValue={bijoyNoticeToUnicode(`${bodyStart}${series || "—"}${bodyBeforeCourse}BECM 4000 (Undergraduate Thesis)${bodyEnd}`)} /><label className="block text-sm font-medium">Department head name<input className={`${inputClass} font-['SutonnyMJ'] text-lg`} value={departmentHeadName} onChange={(event) => setDepartmentHeadName(event.target.value)} /></label>
       </div></section>
-      <section className="min-w-0 rounded-xl border bg-slate-300 shadow-sm"><div className="flex items-center justify-between border-b bg-white px-5 py-3"><div><h2 className="font-semibold">Preview</h2><p className="text-xs text-slate-500">Live A4 document preview</p></div><div className="flex items-center gap-3">{status && <span className="text-xs text-emerald-700">{status}</span>}<button type="button" onClick={generatePdf} disabled={isGenerating} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-indigo-400"><Download className="h-4 w-4" />{isGenerating ? "Generating…" : "Generate PDF"}</button></div></div><div className="overflow-auto p-4 sm:p-6">
+      <section className="min-w-0 rounded-xl border bg-slate-300 shadow-sm"><div className="flex items-center justify-between border-b bg-white px-5 py-3"><div><h2 className="font-semibold">Preview</h2><p className="text-xs text-slate-500">Live A4 document preview</p></div><div className="flex items-center gap-3">{status && <span className="text-xs text-emerald-700">{status}</span>}<button type="button" onClick={saveTemplate} className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"><Save className="h-4 w-4" />Save</button><button type="button" onClick={generatePdf} disabled={isGenerating} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-indigo-400"><Download className="h-4 w-4" />{isGenerating ? "Generating…" : "Generate PDF"}</button></div></div><div className="overflow-auto p-4 sm:p-6">
         <article ref={noticeRef} lang="bn" className="file-print-document mx-auto min-h-[1123px] w-[794px] max-w-full bg-white px-[6%] py-12 text-black shadow-xl">
           <header className="notice-header w-full border-b border-black pb-1"><p className="text-center text-[10px] font-semibold leading-none text-[#2f78b7]">“Heaven&apos;s Light is Our Guide”</p><h2 className="mt-1 text-center text-[20px] font-bold leading-none text-[#145365]">Rajshahi University of Engineering &amp; Technology</h2><div className="mt-1 grid grid-cols-[minmax(0,1fr)_68px_minmax(0,1fr)] items-center gap-3"><div className="header-bangla text-right text-[12px] leading-[1.25]"><p className="font-bold text-[#174e72]">বিভাগীয় প্রধানের কার্যালয়</p><p className="whitespace-nowrap font-bold text-[#8b2525]">বিল্ডিং ইঞ্জিনিয়ারিং এন্ড কনস্ট্রাকশন ম্যানেজমেন্ট বিভাগ</p><p className="font-semibold text-[#8b4a11]">রাজশাহী-৬২০৪, বাংলাদেশ</p></div><Image src={logoImage} alt="RUET logo" className="mx-auto h-[62px] w-[62px] object-contain" priority /><div className="text-left text-[12px] leading-[1.15]"><p className="text-[16px] font-bold text-[#174e72]">Office of the Head</p><p className="font-bold text-[#9b2929]">Building Engineering &amp; Construction Management</p><p className="font-semibold text-[#8b4a11]">Rajshahi-6204, Bangladesh</p></div></div><p className="mt-0.5 text-center text-[11px] font-semibold leading-none">Phone &amp; Fax : +88 0258886742, &nbsp; E-Mail : <span className="text-blue-700 underline">head@becm.ruet.ac.bd</span> , &nbsp; Website : www.becm.ruet.ac.bd</p></header>
           <div className="mt-0 flex justify-between text-[18px]"><p>¯§viK bs- {memoNumber || "-"}</p><p>ZvwiLt {formatDate(noticeDate)} wLªt|</p></div><h1 className="mt-5 text-center text-[32px]">-t weÁwß t-</h1>

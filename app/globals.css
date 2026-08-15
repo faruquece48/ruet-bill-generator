@@ -170,6 +170,12 @@
 .file-print-document .notice-header .header-bangla,
 .file-print-document .notice-header .header-bangla * {
   font-family: "SutonnyMJ", serif !important;
+  direction: ltr !important;
+  text-align: left !important;
+}
+
+.file-print-document .notice-header .header-bangla {
+  justify-self: stretch;
 }
 
 /* Keep the duplicated Official Files topic menus visually consistent. */
