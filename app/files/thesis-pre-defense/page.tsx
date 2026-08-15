@@ -9,6 +9,7 @@ import useThesisTopicsState from "@/components/useThesisTopicsState";
 import SeriesInput from "@/components/SeriesInput";
 import BengaliNoticeTextEditor, { SutonnyNoticeText, toSutonnyNumber } from "@/components/BengaliNoticeTextEditor";
 import logoImage from "@/app/images/image_03.png";
+import { printNotice } from "@/lib/printNotice";
 
 const inputClass = "mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
 
@@ -76,7 +77,6 @@ export default function ThesisPreDefensePage() {
 
   const update = (field: keyof ReturnType<typeof createNotice>, value: string) => setNotice((current) => ({ ...current, [field]: value }));
   const updateLayout = (section: LayoutSection, field: "fontSize" | "gapAfter", value: number) => setLayout((current) => ({ ...current, [section]: { ...current[section], [field]: Math.max(0, value || 0) } }));
-  const saveTemplate = () => { localStorage.setItem(storageKey, JSON.stringify({ notice, departmentHeadName, layout, customBody })); setPdfStatus("Template saved."); };
 
   const generatePdf = async () => {
     const element = noticeRef.current;
@@ -149,7 +149,7 @@ export default function ThesisPreDefensePage() {
           </section>
 
           <section className="min-w-0 rounded-xl border bg-slate-300 shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-300 bg-white px-5 py-3"><div><h2 className="font-semibold text-[#102555]">Preview</h2><p className="text-xs text-slate-500">Live A4 document preview</p></div><div className="flex items-center gap-3">{pdfStatus && <span role="status" className={`text-xs ${pdfStatus.startsWith("Unable") ? "text-red-600" : "text-emerald-700"}`}>{pdfStatus}</span>}<button type="button" onClick={saveTemplate} className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"><Save className="h-4 w-4" />Save</button><button type="button" onClick={generatePdf} disabled={isGeneratingPdf} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-wait disabled:bg-indigo-400"><Download className="h-4 w-4" />{isGeneratingPdf ? "Generating PDF…" : "Generate PDF"}</button></div></div>
+            <div className="flex items-center justify-between border-b border-slate-300 bg-white px-5 py-3"><div><h2 className="font-semibold text-[#102555]">Preview</h2><p className="text-xs text-slate-500">Live A4 document preview</p></div><div className="flex items-center gap-3">{pdfStatus && <span role="status" className={`text-xs ${pdfStatus.startsWith("Unable") ? "text-red-600" : "text-emerald-700"}`}>{pdfStatus}</span>}<button type="button" onClick={printNotice} className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"><Save className="h-4 w-4" />Save as PDF</button><button type="button" onClick={generatePdf} disabled={isGeneratingPdf} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-wait disabled:bg-indigo-400"><Download className="h-4 w-4" />{isGeneratingPdf ? "Generating PDF…" : "Generate PDF"}</button></div></div>
             <div className="overflow-auto p-4 sm:p-6">
               <article ref={noticeRef} lang="bn" className="file-print-document mx-auto min-h-[1123px] w-[794px] max-w-full bg-white px-[6%] py-12 text-[14px] leading-[1.55] text-black shadow-xl print:min-h-0 print:w-full print:max-w-none print:shadow-none">
                 <header className="notice-header w-full border-b border-black pb-1">

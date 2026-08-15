@@ -19,6 +19,7 @@ import CollapsibleTeacherCard from "@/components/CollapsibleTeacherCard";
 import useThesisTopicsState from "@/components/useThesisTopicsState";
 import BengaliNoticeTextEditor, { SutonnyNoticeText, toSutonnyNumber } from "@/components/BengaliNoticeTextEditor";
 import logoImage from "@/app/images/image_03.png";
+import { printNotice } from "@/lib/printNotice";
 
 const inputClass =
   "mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
@@ -154,11 +155,6 @@ export default function FilesPage() {
 
   const updateTableWidth = (field: keyof typeof defaultTableWidths, value: number) => {
     setTableWidths((current) => ({ ...current, [field]: Math.max(1, Math.min(100, value || 1)) }));
-  };
-
-  const saveTemplate = () => {
-    localStorage.setItem(storageKey, JSON.stringify({ notice, rows, departmentHeadName, layout, tableWidths, customBody }));
-    setPdfStatus("Template saved.");
   };
 
   const generatePdf = async () => {
@@ -372,8 +368,8 @@ export default function FilesPage() {
               </div>
               <div className="flex items-center gap-3">
                 {pdfStatus && <span role="status" className={`text-xs ${pdfStatus.startsWith("Unable") ? "text-red-600" : "text-emerald-700"}`}>{pdfStatus}</span>}
-                <button type="button" onClick={saveTemplate} className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50">
-                  <Save className="h-4 w-4" /> Save
+                <button type="button" onClick={printNotice} className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50">
+                  <Save className="h-4 w-4" /> Save as PDF
                 </button>
                 <button type="button" onClick={generatePdf} disabled={isGeneratingPdf} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-wait disabled:bg-indigo-400">
                   <Download className="h-4 w-4" /> {isGeneratingPdf ? "Generating PDF…" : "Generate PDF"}
