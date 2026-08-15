@@ -157,9 +157,9 @@ export default function ThesisPreDefensePage() {
                   <h2 style={{ fontSize: layout.header.fontSize * 1.7 }} className="mt-1 text-center font-bold leading-none tracking-tight text-[#145365]">Rajshahi University of Engineering &amp; Technology</h2>
                   <div className="mt-1 grid w-full grid-cols-[minmax(0,1fr)_68px_minmax(0,1fr)] items-center gap-3">
                     <div style={{ fontSize: layout.header.fontSize }} className="header-bangla text-left leading-[1.25]">
-                      <p className="font-bold text-[#174e72]">বিভাগীয় প্রধানের কার্যালয়</p>
-                      <p className="whitespace-nowrap font-bold text-[#8b2525]">বিল্ডিং ইঞ্জিনিয়ারিং এন্ড কনস্ট্রাকশন ম্যানেজমেন্ট বিভাগ</p>
-                      <p className="font-semibold text-[#8b4a11]">রাজশাহী-৬২০৪, বাংলাদেশ</p>
+                      <p className="font-bold text-[#174e72]">wefvMxq cÖav‡bi Kvh©vjq</p>
+                      <p className="whitespace-nowrap font-bold text-[#8b2525]">wewìs BwÄwbqvwis GÛ KÝUªvKkb g¨v‡bR‡g›U wefvM</p>
+                      <p className="font-semibold text-[#8b4a11]">ivRkvnx-6204,evsjv‡`k</p>
                     </div>
                     <Image src={logoImage} alt="RUET logo" className="mx-auto h-[62px] w-[62px] object-contain" priority />
                     <div style={{ fontSize: layout.header.fontSize }} className="text-left leading-[1.15]">

@@ -83,7 +83,7 @@ const layoutSectionLabels = {
 type LayoutSection = keyof typeof layoutSectionLabels;
 
 const defaultLayout = {
-  header: { fontSize: 12, gapAfter: 0 },
+  header: { fontSize: 12, banglaFontSize: 12, englishFontSize: 12, bottomFontSize: 10.8, gapAfter: 0 },
   meta: { fontSize: 16, gapAfter: 28 },
   heading: { fontSize: 30, gapAfter: 8 },
   body: { fontSize: 15, gapAfter: 12 },
@@ -119,7 +119,11 @@ export default function FilesPage() {
         if (saved.notice) setNotice(saved.notice);
         if (Array.isArray(saved.rows)) setRows(saved.rows);
         if (saved.departmentHeadName) setDepartmentHeadName(saved.departmentHeadName);
-        if (saved.layout) setLayout(saved.layout);
+        if (saved.layout) setLayout({
+          ...defaultLayout,
+          ...saved.layout,
+          header: { ...defaultLayout.header, ...saved.layout.header },
+        });
         if (saved.tableWidths) setTableWidths(saved.tableWidths);
         if (typeof saved.customBody === "string") setCustomBody(saved.customBody);
       } catch { /* Ignore invalid saved templates. */ }
@@ -150,6 +154,13 @@ export default function FilesPage() {
     setLayout((current) => ({
       ...current,
       [section]: { ...current[section], [field]: Math.max(0, value || 0) },
+    }));
+  };
+
+  const updateHeaderFont = (field: "fontSize" | "banglaFontSize" | "englishFontSize" | "bottomFontSize", value: number) => {
+    setLayout((current) => ({
+      ...current,
+      header: { ...current.header, [field]: Math.max(6, value || 6) },
     }));
   };
 
@@ -279,7 +290,27 @@ export default function FilesPage() {
                   <p className="text-xs text-slate-500">Customize font size and gap after each section</p>
                 </div>
                 <div className="space-y-2">
-                  {(Object.keys(layoutSectionLabels) as LayoutSection[]).map((section) => (
+                  <div className="rounded-lg border bg-slate-50 p-2.5">
+                    <span className="text-xs font-semibold text-slate-700">Header</span>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {([
+                        ["fontSize", "Top heading"],
+                        ["banglaFontSize", "Left Bangla"],
+                        ["englishFontSize", "Right English"],
+                        ["bottomFontSize", "Bottom address"],
+                      ] as const).map(([field, label]) => (
+                        <label key={field} className="text-[10px] font-medium text-slate-500">
+                          {label} (px)
+                          <input type="number" min="6" max="40" step="0.5" value={layout.header[field]} onChange={(event) => updateHeaderFont(field, Number(event.target.value))} className="mt-1 w-full rounded-md border bg-white px-2 py-1.5 text-xs text-slate-800" />
+                        </label>
+                      ))}
+                    </div>
+                    <label className="mt-2 block text-[10px] font-medium text-slate-500">
+                      Combined gap after header (px)
+                      <input type="number" min="0" max="200" value={layout.header.gapAfter} onChange={(event) => updateLayout("header", "gapAfter", Number(event.target.value))} className="mt-1 w-full rounded-md border bg-white px-2 py-1.5 text-xs text-slate-800" />
+                    </label>
+                  </div>
+                  {(Object.keys(layoutSectionLabels) as LayoutSection[]).filter((section) => section !== "header").map((section) => (
                     <div key={section} className="grid grid-cols-[1fr_76px_76px] items-end gap-2 rounded-lg border bg-slate-50 p-2.5">
                       <span className="self-center text-xs font-semibold text-slate-700">{layoutSectionLabels[section]}</span>
                       <label className="text-[10px] font-medium text-slate-500">
@@ -382,19 +413,19 @@ export default function FilesPage() {
                   <p style={{ fontSize: layout.header.fontSize * 0.8 }} className="text-center font-semibold leading-none text-[#2f78b7]">“Heaven&apos;s Light is Our Guide”</p>
                   <h2 style={{ fontSize: layout.header.fontSize * 1.7 }} className="mt-1 text-center font-bold leading-none tracking-tight text-[#145365]">Rajshahi University of Engineering &amp; Technology</h2>
                   <div className="mt-1 grid w-full grid-cols-[minmax(0,1fr)_68px_minmax(0,1fr)] items-center gap-3">
-                    <div style={{ fontSize: layout.header.fontSize }} className="header-bangla text-left leading-[1.25]">
-                      <p className="font-bold text-[#174e72]">বিভাগীয় প্রধানের কার্যালয়</p>
-                      <p className="whitespace-nowrap font-bold text-[#8b2525]">বিল্ডিং ইঞ্জিনিয়ারিং এন্ড কনস্ট্রাকশন ম্যানেজমেন্ট বিভাগ</p>
-                      <p className="font-semibold text-[#8b4a11]">রাজশাহী-৬২০৪, বাংলাদেশ</p>
+                    <div style={{ fontSize: layout.header.banglaFontSize }} className="header-bangla text-left leading-[1.25]">
+                      <p className="font-bold text-[#174e72]">wefvMxq cÖav‡bi Kvh©vjq</p>
+                      <p className="whitespace-nowrap font-bold text-[#8b2525]">wewìs BwÄwbqvwis GÛ KÝUªvKkb g¨v‡bR‡g›U wefvM</p>
+                      <p className="font-semibold text-[#8b4a11]">ivRkvnx-6204,evsjv‡`k</p>
                     </div>
                     <Image src={logoImage} alt="RUET logo" className="mx-auto h-[62px] w-[62px] object-contain" priority />
-                    <div style={{ fontSize: layout.header.fontSize }} className="text-left leading-[1.15]">
-                      <p style={{ fontSize: layout.header.fontSize * 1.3 }} className="font-bold text-[#174e72]">Office of the Head</p>
+                    <div style={{ fontSize: layout.header.englishFontSize }} className="text-left leading-[1.15]">
+                      <p style={{ fontSize: layout.header.englishFontSize * 1.3 }} className="font-bold text-[#174e72]">Office of the Head</p>
                       <p className="font-bold text-[#9b2929]">Building Engineering &amp; Construction Management</p>
                       <p className="font-semibold text-[#8b4a11]">Rajshahi-6204, Bangladesh</p>
                     </div>
                   </div>
-                  <p style={{ fontSize: layout.header.fontSize * 0.9 }} className="mt-0.5 text-center font-semibold leading-none">Phone &amp; Fax : +88 0258886742, &nbsp; E-Mail : <span className="text-blue-700 underline">head@becm.ruet.ac.bd</span> , &nbsp; Website : www.becm.ruet.ac.bd</p>
+                  <p style={{ fontSize: layout.header.bottomFontSize }} className="mt-0.5 text-center font-semibold leading-none">Phone &amp; Fax : +88 0258886742, &nbsp; E-Mail : <span className="text-blue-700 underline">head@becm.ruet.ac.bd</span> , &nbsp; Website : www.becm.ruet.ac.bd</p>
                 </header>
 
                 <div style={{ marginTop: layout.header.gapAfter, fontSize: layout.meta.fontSize }} className="flex justify-between gap-4">
