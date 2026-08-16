@@ -52,6 +52,7 @@ export default function IndividualTeacherBillPage() {
   const [divisionGaps, setDivisionGaps] = useState<Record<string, number>>({ header: 0, teacher: 0, exam: 1, mainTable: 0, signature: 0, account: 0, footer: 0 });
   const [approvalSignatureGap, setApprovalSignatureGap] = useState(16);
   const [sectionFontSizes, setSectionFontSizes] = useState<Record<string, number>>({ header: 12, teacher: 12, exam: 12, mainTable: 10, signature: 13, account: 13, footer: 10 });
+  const [tableContentFontSizes, setTableContentFontSizes] = useState({ values: 12, total: 12 });
   const [remunerationOpen, setRemunerationOpen] = useState(false);
   const [metaWidths, setMetaWidths] = useState<ColumnWidths>({ qualifications: 40, examination: 42, billNumber: 18 });
   const [tableWidths, setTableWidths] = useState<ColumnWidths>({ serial: 6, descriptionGroup: 9, description: 22, course: 18, quantity: 10, courseCount: 8, classTestCount: 9, rate: 10, amount: 8 });
@@ -194,6 +195,19 @@ export default function IndividualTeacherBillPage() {
                     aria-label="Gap between countersigned text and signature lines in millimeters"
                   />
                 </label>
+                <div className="border-t pt-3">
+                  <p className="mb-3 text-xs font-semibold text-slate-500">Separate table content sizes</p>
+                  <div className="space-y-3">
+                    <label className="grid grid-cols-[1fr_72px] items-center gap-3 text-sm">
+                      <span>Course codes and digits</span>
+                      <input type="number" min="6" max="30" step="1" value={tableContentFontSizes.values} onChange={(event) => setTableContentFontSizes((current) => ({ ...current, values: Math.min(30, Math.max(6, Number(event.target.value) || 6)) }))} className={inputClass} aria-label="Font size for course codes and numeric table values in pixels" />
+                    </label>
+                    <label className="grid grid-cols-[1fr_72px] items-center gap-3 text-sm">
+                      <span>Bottom total row</span>
+                      <input type="number" min="6" max="30" step="1" value={tableContentFontSizes.total} onChange={(event) => setTableContentFontSizes((current) => ({ ...current, total: Math.min(30, Math.max(6, Number(event.target.value) || 6)) }))} className={inputClass} aria-label="Font size for the bottom total row in pixels" />
+                    </label>
+                  </div>
+                </div>
               </div>
               <div><h2 className="mb-2 font-semibold">Information table widths</h2><ColumnWidthEditor widths={metaWidths} setWidths={setMetaWidths} labels={{ qualifications: "Qualifications", examination: "Examination", billNumber: "Bill number" }} /></div>
               <div><h2 className="mb-2 font-semibold">Remuneration table widths</h2><ColumnWidthEditor widths={tableWidths} setWidths={setTableWidths} labels={{ serial: "Serial", descriptionGroup: "Description", description: "Individual description", course: "Course", quantity: "Scripts/students", courseCount: "Courses", classTestCount: "Class tests", rate: "Rate", amount: "Amount" }} /></div>
@@ -204,7 +218,7 @@ export default function IndividualTeacherBillPage() {
             <div className="legal-page-limit no-print" aria-hidden="true">
               <span>Legal page limit (14 in)</span>
             </div>
-            <article ref={billSheetRef} className="bill-sheet individual-print-document mx-auto bg-white text-black shadow-xl" lang="bn" style={{ "--teacher-gap": `${divisionGaps.teacher}mm`, "--exam-gap": `${divisionGaps.exam}mm`, "--main-table-gap": `${divisionGaps.mainTable}mm`, "--signature-gap": `${divisionGaps.signature}mm`, "--account-gap": `${divisionGaps.account}mm`, "--footer-gap": `${divisionGaps.footer}mm`, "--header-font-size": `${sectionFontSizes.header}px`, "--teacher-font-size": `${sectionFontSizes.teacher}px`, "--exam-font-size": `${sectionFontSizes.exam}px`, "--main-table-font-size": `${sectionFontSizes.mainTable}px`, "--signature-font-size": `${sectionFontSizes.signature}px`, "--account-font-size": `${sectionFontSizes.account}px`, "--footer-font-size": `${sectionFontSizes.footer}px` } as React.CSSProperties}>
+            <article ref={billSheetRef} className="bill-sheet individual-print-document mx-auto bg-white text-black shadow-xl" lang="bn" style={{ "--teacher-gap": `${divisionGaps.teacher}mm`, "--exam-gap": `${divisionGaps.exam}mm`, "--main-table-gap": `${divisionGaps.mainTable}mm`, "--signature-gap": `${divisionGaps.signature}mm`, "--account-gap": `${divisionGaps.account}mm`, "--footer-gap": `${divisionGaps.footer}mm`, "--header-font-size": `${sectionFontSizes.header}px`, "--teacher-font-size": `${sectionFontSizes.teacher}px`, "--exam-font-size": `${sectionFontSizes.exam}px`, "--main-table-font-size": `${sectionFontSizes.mainTable}px`, "--table-values-font-size": `${tableContentFontSizes.values}px`, "--table-total-font-size": `${tableContentFontSizes.total}px`, "--signature-font-size": `${sectionFontSizes.signature}px`, "--account-font-size": `${sectionFontSizes.account}px`, "--footer-font-size": `${sectionFontSizes.footer}px` } as React.CSSProperties}>
               <SutonnyBillText>
               <header className="relative text-center bill-header" style={{ marginBottom: `${divisionGaps.header}mm` }}>
                 <p className="text-[10px]">ঐশী জ্যোতিই আমাদের পথ প্রদর্শক</p>
@@ -228,24 +242,24 @@ export default function IndividualTeacherBillPage() {
                           {workDescriptionRowSpan > 0 && (
                             <td rowSpan={workDescriptionRowSpan}>{chartRow.description}</td>
                           )}
-                          <td className="individual-course-code text-center">{duty?.course || ""}</td>
-                          <td className="text-center">{duty?.quantity ? toBengaliDigits(String(duty.quantity)) : ""}</td>
-                          <td className="text-center">{duty?.courseCount ? toBengaliDigits(String(duty.courseCount)) : ""}</td>
-                          <td className="text-center">{duty?.classTestCount ? toBengaliDigits(String(duty.classTestCount)) : ""}</td>
-                          <td className="text-center">
+                          <td className="individual-course-code individual-table-value text-center">{duty?.course || ""}</td>
+                          <td className="individual-table-value text-center">{duty?.quantity ? toBengaliDigits(String(duty.quantity)) : ""}</td>
+                          <td className="individual-table-value text-center">{duty?.courseCount ? toBengaliDigits(String(duty.courseCount)) : ""}</td>
+                          <td className="individual-table-value text-center">{duty?.classTestCount ? toBengaliDigits(String(duty.classTestCount)) : ""}</td>
+                          <td className="individual-table-value text-center">
                             {duty && isMinimumAmountApplied(duty)
                               ? `${toBengaliDigits(String(duty.minimumAmount))} (নূন্যতম)`
                               : duty?.rate
                                 ? toBengaliDigits(String(duty.rate))
                                 : ""}
                           </td>
-                          <td className="text-center">{duty ? rowAmount(duty).toLocaleString("bn-BD") : ""}</td>
+                          <td className="individual-table-value text-center">{duty ? rowAmount(duty).toLocaleString("bn-BD") : ""}</td>
                         </tr>
                       );
                     })
                   )}
                 </tbody>
-                <tfoot><tr><td className="text-center font-semibold">কথায়ঃ</td><td colSpan={6} className="font-semibold">{amountInBanglaWords(total)} মাত্র |</td><td className="text-center font-semibold">মোটঃ</td><td className="text-center font-bold">{total.toLocaleString("bn-BD")}</td></tr></tfoot>
+                <tfoot className="individual-table-total"><tr><td className="text-center font-semibold">কথায়ঃ</td><td colSpan={6} className="font-semibold">{amountInBanglaWords(total)} মাত্র |</td><td className="text-center font-semibold">মোটঃ</td><td className="text-center font-bold">{total.toLocaleString("bn-BD")}</td></tr></tfoot>
               </table>
               <div className="legacy-bottom">
               <p className="mt-5 text-[11px]">প্রতি স্বাক্ষরিত</p>
@@ -313,6 +327,8 @@ export default function IndividualTeacherBillPage() {
         .teacher-info { font-size: var(--teacher-font-size); }
         .bill-meta { font-size: var(--exam-font-size); }
         .bill-table { font-size: var(--main-table-font-size); }
+        .bill-table .individual-table-value { font-size: var(--table-values-font-size); }
+        .bill-table .individual-table-total { font-size: var(--table-total-font-size); }
         .signature-section { font-size: var(--signature-font-size); }
         .account-section { font-size: var(--account-font-size); }
         .footer-section { font-size: var(--footer-font-size); }
