@@ -33,7 +33,7 @@ export default function IndividualTeacherBillPage() {
   const [teacherSaveStatus, setTeacherSaveStatus] = useState("");
   const [pdfStatus, setPdfStatus] = useState("");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [headerGap, setHeaderGap] = useState(3);
+  const [divisionGaps, setDivisionGaps] = useState<Record<string, number>>({ header: 3, teacher: 3, exam: 3, mainTable: 5, signature: 6, account: 5, footer: 0 });
   const [remunerationOpen, setRemunerationOpen] = useState(false);
   const [metaWidths, setMetaWidths] = useState<ColumnWidths>({ qualifications: 37, examination: 47, billNumber: 16 });
   const [tableWidths, setTableWidths] = useState<ColumnWidths>({ serial: 7, descriptionGroup: 11, description: 18, course: 13, quantity: 10, courseCount: 6, classTestCount: 9, rate: 12, amount: 14 });
@@ -176,6 +176,12 @@ export default function IndividualTeacherBillPage() {
     }
   };
 
+  const printOrSavePdf = async () => {
+    await document.fonts.ready;
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    window.print();
+  };
+
   return (
     <main className="individual-bill-page py-8">
       <div className="max-w-[1700px] px-4 sm:px-6">
@@ -186,6 +192,7 @@ export default function IndividualTeacherBillPage() {
           </div>
           <div className="flex items-center gap-3">
             {pdfStatus && <span role="status" className={`text-xs ${pdfStatus.startsWith("Unable") ? "text-red-600" : "text-emerald-700"}`}>{pdfStatus}</span>}
+            <button type="button" onClick={printOrSavePdf} className="rounded-md border border-blue-600 bg-white px-5 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-50">Legal Print Preview / Save as PDF</button>
             <button type="button" onClick={generatePdf} disabled={isGeneratingPdf} className="rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-wait disabled:bg-blue-400">{isGeneratingPdf ? "Generating PDF…" : "Generate PDF"}</button>
           </div>
         </div>
@@ -223,14 +230,30 @@ export default function IndividualTeacherBillPage() {
               </>}
             </div>
             <div className="space-y-4 border-t pt-4">
-              <div className="rounded-lg border bg-slate-50 p-4"><div className="mb-2 flex items-center justify-between"><h2 className="font-semibold">Header to content gap</h2><span className="text-xs font-semibold text-slate-600">{headerGap} mm</span></div><div className="grid grid-cols-[1fr_90px] items-center gap-3"><input type="range" min="0" max="60" step="1" value={headerGap} onChange={(event) => setHeaderGap(Number(event.target.value))} aria-label="Header to content gap"/><input type="number" min="0" max="60" value={headerGap} onChange={(event) => setHeaderGap(Math.min(60, Math.max(0, Number(event.target.value) || 0)))} className={inputClass}/></div></div>
+              <div className="space-y-3 rounded-lg border bg-slate-50 p-4">
+                <h2 className="font-semibold">Document division gaps</h2>
+                {([
+                  ["header", "1. Header"],
+                  ["teacher", "2. Teacher information"],
+                  ["exam", "3. Exam information"],
+                  ["mainTable", "4. Main table"],
+                  ["signature", "5. Signature division"],
+                  ["account", "6. Account section"],
+                  ["footer", "7. Footer"],
+                ] as const).map(([key, label]) => (
+                  <label key={key} className="grid grid-cols-[1fr_90px] items-center gap-3 text-sm">
+                    <span>{label}</span>
+                    <input type="number" min="0" max="30" step="1" value={divisionGaps[key] ?? 0} onChange={(event) => setDivisionGaps((current) => ({ ...current, [key]: Math.min(30, Math.max(0, Number(event.target.value) || 0)) }))} className={inputClass} aria-label={`Gap after ${label} in millimeters`} />
+                  </label>
+                ))}
+              </div>
               <div><h2 className="mb-2 font-semibold">Information table widths</h2><ColumnWidthEditor widths={metaWidths} setWidths={setMetaWidths} labels={{ qualifications: "Qualifications", examination: "Examination", billNumber: "Bill number" }} /></div>
               <div><h2 className="mb-2 font-semibold">Remuneration table widths</h2><ColumnWidthEditor widths={tableWidths} setWidths={setTableWidths} labels={{ serial: "Serial", descriptionGroup: "Description", description: "Individual description", course: "Course", quantity: "Scripts/students", courseCount: "Courses", classTestCount: "Class tests", rate: "Rate", amount: "Amount" }} /></div>
             </div>
           </section>
           <section className="preview-shell overflow-auto rounded-xl bg-slate-300 p-5">
-            <article ref={billSheetRef} className="bill-sheet mx-auto bg-white text-black shadow-xl" lang="bn">
-              <header className="relative text-center bill-header" style={{ marginBottom: `${headerGap}mm` }}>
+            <article ref={billSheetRef} className="bill-sheet individual-print-document mx-auto bg-white text-black shadow-xl" lang="bn" style={{ "--teacher-gap": `${divisionGaps.teacher}mm`, "--exam-gap": `${divisionGaps.exam}mm`, "--main-table-gap": `${divisionGaps.mainTable}mm`, "--signature-gap": `${divisionGaps.signature}mm`, "--account-gap": `${divisionGaps.account}mm`, "--footer-gap": `${divisionGaps.footer}mm` } as React.CSSProperties}>
+              <header className="relative text-center bill-header" style={{ marginBottom: `${divisionGaps.header}mm` }}>
                 <p className="text-[10px]">ঐশী জ্যোতিই আমাদের পথ প্রদর্শক</p>
                 <h2 className="mt-1 text-[18px] font-bold">রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</h2>
                 <h1 className="mt-2 text-[17px] font-bold">পরীক্ষা সংক্রান্ত পারিশ্রমিকের বিল ফরম</h1>
@@ -305,14 +328,50 @@ export default function IndividualTeacherBillPage() {
           -webkit-font-smoothing: antialiased;
         }
         .bill-sheet * { color: inherit; }
-        .teacher-info { margin-bottom: 3mm; }
+        .teacher-info { margin-bottom: var(--teacher-gap); }
         .bill-meta, .bill-table { border-collapse: collapse; border-spacing: 0; }
         .bill-meta, .bill-table { width: 100%; max-width: 100%; min-width: 0; }
+        .bill-meta { margin-bottom: var(--exam-gap); }
         .bill-meta td { border: 1px solid #000; padding: 4px 5px; vertical-align: middle; }
-        .bill-table { margin-top: 3mm; table-layout: fixed !important; }
+        .bill-table { margin-top: 0; margin-bottom: var(--main-table-gap); table-layout: fixed !important; }
         .legacy-bottom { display: none; }
+        .bill-table + .legacy-bottom + p { width: 50%; margin-top: 0; text-align: center; }
+        .bill-table + .legacy-bottom + p + div { margin-bottom: var(--signature-gap); }
+        .bill-table + .legacy-bottom + p + div + div { margin-top: 0; }
+        .bill-table + .legacy-bottom + p + div + div + div { margin-bottom: var(--account-gap); }
+        .bill-table + .legacy-bottom + p + div + div + div + div { margin-top: 0; padding-bottom: var(--footer-gap); }
         .bill-table th, .bill-table td { min-width: 0; max-width: 0; border: 1px solid #000; padding: 4px 5px; vertical-align: middle; overflow-wrap: anywhere; word-break: break-word; }
         .bill-table th { text-align: center; vertical-align: top; font-weight: 600; }
+        @media print {
+          @page { size: legal portrait; margin: 0; }
+          body:has(.individual-print-document) *:not(:has(.individual-print-document)):not(.individual-print-document):not(.individual-print-document *) {
+            display: none !important;
+          }
+          body:has(.individual-print-document) *:has(.individual-print-document) {
+            position: static !important;
+            display: block !important;
+            width: auto !important;
+            max-width: none !important;
+            height: auto !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            border: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+          }
+          .individual-print-document {
+            display: block !important;
+            width: 215.9mm !important;
+            max-width: none !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+        }
       `}</style>
     </main>
   );
