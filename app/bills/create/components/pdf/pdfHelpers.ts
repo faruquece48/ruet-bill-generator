@@ -7,6 +7,18 @@ import type {
   VivaBoardTeacher,
 } from "../types";
 
+export const formatPaddedTableValue = (value: unknown): string => {
+  const text = String(value);
+  if (/^[1-9]$/.test(text)) return text.padStart(2, "0");
+  if (/^\d+(?:\/\d+)+$/.test(text)) {
+    return text
+      .split("/")
+      .map((part) => (/^[1-9]$/.test(part) ? part.padStart(2, "0") : part))
+      .join("/");
+  }
+  return text;
+};
+
 // ------------------------------
 // Footer exam line, e.g. "4th Year Even Semester Examination-2023"
 // ------------------------------
@@ -127,9 +139,15 @@ export interface ClassTestRow {
   students: number | "";
 }
 
-export function flattenClassTest(courses: CourseDuty[]): ClassTestRow[] {
+export function flattenClassTest(
+  courses: CourseDuty[],
+  defaultStudentCount: number | "" = "",
+  oneTeacherPerCourse = false,
+  defaultClassTestCount = 2
+): ClassTestRow[] {
   const rows = new Map<string, ClassTestRow>();
   courses.forEach((course) => {
+    let courseRowAdded = false;
     course.parts.forEach((part) => {
       const entries = [
         {
@@ -139,7 +157,7 @@ export function flattenClassTest(courses: CourseDuty[]): ClassTestRow[] {
           duties: part.duties,
           students: part.students,
         },
-        ...part.additionalTeachers.map((at) => ({
+        ...(!oneTeacherPerCourse ? part.additionalTeachers : []).map((at) => ({
           name: at.name,
           designation: at.designation,
           department: at.department,
@@ -148,9 +166,17 @@ export function flattenClassTest(courses: CourseDuty[]): ClassTestRow[] {
         })),
       ];
       entries.forEach((entry) => {
+        if (oneTeacherPerCourse && courseRowAdded) return;
         if (!entry.duties.classTest) return;
-        const students = Number(entry.students.classTestStudents) || 0;
-        const classTestCount = Number(entry.students.classTestCount) || 0;
+        if (oneTeacherPerCourse && !entry.name.trim()) return;
+        const courseStudentCount = entry.students.classTestStudents;
+        const students = Number(
+          courseStudentCount === "" || courseStudentCount == null
+            ? defaultStudentCount
+            : courseStudentCount
+        ) || 0;
+        const classTestCount =
+          Number(entry.students.classTestCount) || defaultClassTestCount;
         if (students <= 0 || classTestCount <= 0) return;
         const teacherLine = formatTeacher(
           entry.name,
@@ -163,11 +189,12 @@ export function flattenClassTest(courses: CourseDuty[]): ClassTestRow[] {
           courseCode: course.courseCode,
           courseTitle: course.courseTitle,
           teacherLine,
-          classTestCount: 2,
+          classTestCount,
           // Repeated parts in the same syllabus represent the same student
           // cohort, so retain the larger total instead of duplicating it.
           students: Math.max(Number(current?.students) || 0, students) || "",
         });
+        courseRowAdded = true;
       });
     });
   });
@@ -199,7 +226,7 @@ export function combineClassTestRows(
       (nonObeStudentTotals.get(courseKey(row)) || 0);
     return {
       ...row,
-      classTestCount: 2,
+      classTestCount: row.classTestCount,
       students: totalStudents || "",
     };
   });
@@ -441,6 +468,7 @@ export function flattenBoardViva(
   courses: SessionalCourse[],
   additionalTeachers: VivaBoardTeacher[] = [],
   defaultStudents: number | "" = "",
+  memberOrder: string[] = [],
 ): BoardVivaRow[] {
   const rows: BoardVivaRow[] = [];
   const seen = new Set<string>();
@@ -468,7 +496,7 @@ export function flattenBoardViva(
       // De-duplicate: same teacher may attend viva for multiple sessional courses
       if (seen.has(line)) return;
       seen.add(line);
-      rows.push({ teacherLine: line, students: entry.students.boardViva });
+      rows.push({ teacherLine: line, students: defaultStudents });
     });
   });
   additionalTeachers.forEach((teacher) => {
@@ -478,7 +506,18 @@ export function flattenBoardViva(
     seen.add(line);
     rows.push({ teacherLine: line, students: defaultStudents });
   });
-  return rows;
+  const orderIndex = new Map(memberOrder.map((teacherLine, index) => [teacherLine, index]));
+  return rows
+    .map((row, sourceIndex) => ({ row, sourceIndex }))
+    .sort((left, right) => {
+      const leftIndex = orderIndex.get(left.row.teacherLine);
+      const rightIndex = orderIndex.get(right.row.teacherLine);
+      if (leftIndex == null && rightIndex == null) return left.sourceIndex - right.sourceIndex;
+      if (leftIndex == null) return 1;
+      if (rightIndex == null) return -1;
+      return leftIndex - rightIndex;
+    })
+    .map(({ row }) => row);
 }
 
 // ------------------------------

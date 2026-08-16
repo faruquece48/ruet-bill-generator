@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Fragment } from "react";
 import type { ColumnWidths } from "../../create/components/types";
-import type { CourseGroup } from "../../create/components/pdf/pdfHelpers";
+import { formatPaddedTableValue, type CourseGroup } from "../../create/components/pdf/pdfHelpers";
 
 export interface GroupedColumn {
   key: string;
@@ -36,7 +36,7 @@ export default function GroupedCourseTable<T extends Record<string, any>>({
     a === "center" ? "text-center" : a === "right" ? "text-right" : "text-left";
 
   return (
-    <div className="w-full overflow-x-auto rounded-lg border border-gray-400">
+    <div className="w-full overflow-x-auto">
       <table className="w-full table-fixed border-collapse text-xs">
         <colgroup>
           <col style={{ width: `${widths.course ?? 0}%` }} />
@@ -129,5 +129,5 @@ function formatCell(value: any): React.ReactNode {
     value === null
   )
     return "-";
-  return String(value);
+  return formatPaddedTableValue(value);
 }

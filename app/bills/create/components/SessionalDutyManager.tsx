@@ -37,16 +37,19 @@ const summaryValue = (value: string) =>
   value.trim() === "" || Number(value) === 0 ? "-" : value;
 
 interface Props {
+  examType: "semester" | "backlog" | "short";
   defaultStudentCount: string;
   sessionalDuties: SessionalCourse[];
   setSessionalDuties: (data: SessionalCourse[]) => void;
 }
 
 export default function SessionalDutyManager({
+  examType,
   defaultStudentCount,
   sessionalDuties,
   setSessionalDuties,
 }: Props) {
+  const isShortSemester = examType === "short";
   const [minimizedCourses, setMinimizedCourses] = useState<Set<number>>(
     () => new Set(sessionalDuties.map((_, index) => index))
   );
@@ -84,7 +87,7 @@ export default function SessionalDutyManager({
         teacher: "",
         designation: "Assistant Professor",
         department: "Dept. of BECM, RUET",
-        duties: { ...defaultDuty },
+        duties: { ...defaultDuty, courseFile: !isShortSemester },
         students: {
           courseFile: studentCount,
           sessional: studentCount,
@@ -431,7 +434,9 @@ export default function SessionalDutyManager({
           <div>
             <h4 className="text-sm font-medium mb-2">Duty Selection</h4>
             <div className="grid md:grid-cols-3 gap-3">
-              {(Object.keys(course.duties) as (keyof SessionalDutyOption)[]).map(
+              {(Object.keys(course.duties) as (keyof SessionalDutyOption)[])
+                .filter((duty) => !isShortSemester || duty !== "courseFile")
+                .map(
                 (duty) => {
                   const checked =
                     course.duties[duty] ||
@@ -572,7 +577,7 @@ export default function SessionalDutyManager({
                   Object.keys(
                     course.additionalTeachers[0].duties
                   ) as (keyof SessionalDutyOption)[]
-                ).map((duty) => {
+                ).filter((duty) => !isShortSemester || duty !== "courseFile").map((duty) => {
                   if (!course.additionalTeachers[0].duties[duty]) return null;
                   return (
                     <div key={duty} className="flex items-center gap-2">

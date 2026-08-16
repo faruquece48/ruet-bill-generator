@@ -182,21 +182,24 @@ export default function PreviewPage() {
   const [isGeneratingWord, setIsGeneratingWord] = useState(false);
   const hydrated = useRef(false);
   const isBacklog = billData.billInfo.examType === "backlog";
+  const isShortSemester = billData.billInfo.examType === "short";
   const isMixedEvaluation = billData.billInfo.evaluationSystem === "mixed";
   const paperSetterRows = isMixedEvaluation
     ? [...flattenPaperSetter(billData.courseDuties.obe), ...flattenPaperSetter(billData.courseDuties.nonObe)]
     : flattenPaperSetter(billData.courseDuties.obe);
-  const obeClassTestRows = flattenClassTest(billData.courseDuties.obe);
+  const defaultClassTestStudents = Number(billData.billInfo.totalStudents) || "";
+  const obeClassTestRows = flattenClassTest(billData.courseDuties.obe, defaultClassTestStudents, isShortSemester, isShortSemester ? 4 : 2);
   const classTestRows = isMixedEvaluation
-    ? combineClassTestRows(obeClassTestRows, flattenClassTest(billData.courseDuties.nonObe))
+    ? combineClassTestRows(obeClassTestRows, flattenClassTest(billData.courseDuties.nonObe, defaultClassTestStudents, isShortSemester, isShortSemester ? 4 : 2))
     : obeClassTestRows;
-  const assignmentRows = flattenAssignment(billData.courseDuties.obe);
-  const courseFileRows = flattenCourseFile(billData.courseDuties.obe, billData.sessionalDuties);
+  const assignmentRows = isShortSemester ? [] : flattenAssignment(billData.courseDuties.obe);
+  const courseFileRows = isShortSemester ? [] : flattenCourseFile(billData.courseDuties.obe, billData.sessionalDuties);
   const sessionalRows = flattenSessional(billData.sessionalDuties);
   const boardVivaRows = flattenBoardViva(
     billData.sessionalDuties,
     billData.vivaBoardTeachers,
     Number(billData.billInfo.totalStudents) || "",
+    billData.boardVivaMemberOrder ?? [],
   );
   const tabulationRows = flattenTabulation(billData.studentDuties);
   const gradeSheetRows = deriveGradeSheetRows(billData.studentDuties, billData.tabulationStudentCount);
@@ -204,6 +207,7 @@ export default function PreviewPage() {
     ? billData.scrutinies.obe.length + billData.scrutinies.nonObe.length > 0
     : billData.scrutinies.obe.length > 0;
   const isFourthYearEven = billData.billInfo.year === "4th Year" && billData.billInfo.semester === "Even";
+  const isThesisApplicable = billData.billInfo.examType === "semester" && isFourthYearEven;
   const isCourseCoordinatorApplicable =
     billData.billInfo.examType === "semester" &&
     billData.billInfo.year === "4th Year" &&
@@ -224,7 +228,7 @@ export default function PreviewPage() {
     ["gradeVerification", !isBacklog && gradeSheetRows.length > 0],
     ["courseAdviser", !isBacklog && billData.courseAdvisers.length > 0],
     ["courseCoordinator", isCourseCoordinatorApplicable && billData.courseCoordinatorTeachers.length > 0],
-    ["thesis", !isBacklog && isFourthYearEven && billData.thesisTeachers.length > 0],
+    ["thesis", isThesisApplicable && billData.thesisTeachers.length > 0],
     ["verification", billData.billInfo.hasGraduatingStudents === "yes" && billData.verificationTeachers.length > 0],
     ["practical", isFirstYearEven && !isBacklog && billData.practicalSurveyingTeachers.some((teacher) => teacher.name.trim() !== "")],
   ] as const;
@@ -246,7 +250,7 @@ export default function PreviewPage() {
     gradeSheetVerification: !isBacklog && gradeSheetRows.length > 0,
     courseAdviser: !isBacklog && billData.courseAdvisers.length > 0,
     courseCoordinator: isCourseCoordinatorApplicable && billData.courseCoordinatorTeachers.length > 0,
-    thesis: !isBacklog && isFourthYearEven && billData.thesisTeachers.length > 0,
+    thesis: isThesisApplicable && billData.thesisTeachers.length > 0,
     verification: billData.billInfo.hasGraduatingStudents === "yes" && billData.verificationTeachers.length > 0,
     practicalSurveying: isFirstYearEven && !isBacklog && billData.practicalSurveyingTeachers.some((teacher) => teacher.name.trim() !== ""),
   };
@@ -284,6 +288,14 @@ export default function PreviewPage() {
       order.splice(toIndex, 0, from);
       return { ...prev, sectionOrder: order };
     });
+  };
+
+  const moveBoardVivaMember = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= boardVivaRows.length) return;
+    const order = boardVivaRows.map((row) => row.teacherLine);
+    [order[index], order[targetIndex]] = [order[targetIndex], order[index]];
+    setBillData((prev) => ({ ...prev, boardVivaMemberOrder: order }));
   };
 
   useEffect(() => {
@@ -534,6 +546,16 @@ export default function PreviewPage() {
 
             <SectionPanel visible={boardVivaRows.length > 0} title={`${pdfNumber("boardViva")}. List of Teachers Associated with Board Viva`} {...pageBreakControl("boardViva")}>
               <ColumnWidthEditor widths={billData.layoutSettings.boardViva} setWidths={(v) => updateLayout("boardViva", v)} labels={studentDutyLabels} />
+              <div className="mt-4 space-y-2">
+                <p className="text-xs font-medium text-slate-600">Member order</p>
+                {boardVivaRows.map((row, index) => (
+                  <div key={row.teacherLine} className="flex items-center gap-2 rounded border bg-slate-50 px-3 py-2 text-xs">
+                    <span className="min-w-0 flex-1 truncate">{row.teacherLine}</span>
+                    <button type="button" onClick={() => moveBoardVivaMember(index, -1)} disabled={index === 0} className="rounded border bg-white px-2 py-1 disabled:opacity-40" aria-label={`Move ${row.teacherLine} up`}>Up</button>
+                    <button type="button" onClick={() => moveBoardVivaMember(index, 1)} disabled={index === boardVivaRows.length - 1} className="rounded border bg-white px-2 py-1 disabled:opacity-40" aria-label={`Move ${row.teacherLine} down`}>Down</button>
+                  </div>
+                ))}
+              </div>
             </SectionPanel>
 
             <SectionPanel visible={tabulationRows.length > 0} title={`${pdfNumber("tabulation")}. List of Teachers Associated with Tabulation`} {...pageBreakControl("tabulation")}>
@@ -568,7 +590,7 @@ export default function PreviewPage() {
               />
             </SectionPanel>
 
-            <SectionPanel visible={!isBacklog && isFourthYearEven && billData.thesisTeachers.length > 0} title={`${pdfNumber("thesis")}. List of Teachers Associated with Thesis/Project Examination`} {...pageBreakControl("thesis")}>
+            <SectionPanel visible={isThesisApplicable && billData.thesisTeachers.length > 0} title={`${pdfNumber("thesis")}. List of Teachers Associated with Thesis/Project Examination`} {...pageBreakControl("thesis")}>
               <ColumnWidthEditor
                 widths={billData.layoutSettings.thesis}
                 setWidths={(v) => updateLayout("thesis", v)}

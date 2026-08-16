@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ColumnWidths } from "../../create/components/types";
+import { formatPaddedTableValue } from "../../create/components/pdf/pdfHelpers";
 
 export interface PreviewColumn {
   key: string;
@@ -73,7 +74,7 @@ export default function PreviewTable({
                     key={c.key}
                     className={`border border-gray-400 px-2 py-1 align-top ${alignClass(c.align, c.key)}`}
                   >
-                    {c.key === "sl" && showSerial ? i + 1 : formatCell(row[c.key])}
+                    {c.key === "sl" && showSerial ? formatPaddedTableValue(i + 1) : formatCell(row[c.key])}
                   </td>
                 );
               })}
@@ -96,5 +97,5 @@ function formatCell(value: any): React.ReactNode {
     value === null
   )
     return "-";
-  return String(value);
+  return formatPaddedTableValue(value);
 }

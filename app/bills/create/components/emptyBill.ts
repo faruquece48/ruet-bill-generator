@@ -57,6 +57,7 @@ export const emptyBill: ExaminationBillData = {
   courseDuties: { obe: [], nonObe: [] },
   sessionalDuties: [],
   vivaBoardTeachers: [],
+  boardVivaMemberOrder: [],
   questionWorks: [],
   questionWorkTotal: "5",
   pageBreakAfter: {},

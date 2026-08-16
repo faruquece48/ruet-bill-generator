@@ -79,26 +79,29 @@ export default function PreviewDocument({ bill }: Props) {
     bill.billInfo.year === "4th Year" &&
     (bill.billInfo.semester === "Odd" || bill.billInfo.semester === "Even");
   const isMixedEvaluation = bill.billInfo.evaluationSystem === "mixed";
+  const isShortSemester = bill.billInfo.examType === "short";
 
   const obePaperSetterRows = flattenPaperSetter(bill.courseDuties.obe);
   const nonObePaperSetterRows = flattenPaperSetter(bill.courseDuties.nonObe);
   const paperSetterRows = isMixedEvaluation
     ? [...obePaperSetterRows, ...nonObePaperSetterRows]
     : obePaperSetterRows;
-  const obeClassTestRows = flattenClassTest(bill.courseDuties.obe);
+  const defaultClassTestStudents = Number(bill.billInfo.totalStudents) || "";
+  const obeClassTestRows = flattenClassTest(bill.courseDuties.obe, defaultClassTestStudents, isShortSemester, isShortSemester ? 4 : 2);
   const classTestRows = isMixedEvaluation
     ? combineClassTestRows(
         obeClassTestRows,
-        flattenClassTest(bill.courseDuties.nonObe)
+        flattenClassTest(bill.courseDuties.nonObe, defaultClassTestStudents, isShortSemester, isShortSemester ? 4 : 2)
       )
     : obeClassTestRows;
-  const assignmentRows = flattenAssignment(bill.courseDuties.obe);
-  const courseFileRows = flattenCourseFile(bill.courseDuties.obe, bill.sessionalDuties);
+  const assignmentRows = isShortSemester ? [] : flattenAssignment(bill.courseDuties.obe);
+  const courseFileRows = isShortSemester ? [] : flattenCourseFile(bill.courseDuties.obe, bill.sessionalDuties);
   const sessionalRows = flattenSessional(bill.sessionalDuties);
   const boardVivaRows = flattenBoardViva(
     bill.sessionalDuties,
     bill.vivaBoardTeachers,
     Number(bill.billInfo.totalStudents) || "",
+    bill.boardVivaMemberOrder ?? [],
   );
   const tabulationRows = flattenTabulation(bill.studentDuties);
   const gradeSheetRows = deriveGradeSheetRows(
@@ -305,7 +308,7 @@ export default function PreviewDocument({ bill }: Props) {
       title: "List of Teachers Associated with Board Viva",
       hasData: boardVivaRows.length > 0,
       includeInBacklog: true,
-      content: <PreviewTable columns={listCols} rows={boardVivaRows} widths={bill.layoutSettings.boardViva} showSerial />,
+      content: <PreviewTable columns={listCols} rows={boardVivaRows} widths={bill.layoutSettings.boardViva} showSerial mergeColumnKey="students" mergeValue={bill.billInfo.totalStudents || "—"} />,
     },
     {
       title: "List of Teachers Associated with Tabulation",

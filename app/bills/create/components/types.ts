@@ -193,6 +193,7 @@ export interface ExaminationBillData {
   courseDuties: { obe: CourseDuty[]; nonObe: CourseDuty[] };
   sessionalDuties: SessionalCourse[];
   vivaBoardTeachers: VivaBoardTeacher[];
+  boardVivaMemberOrder: string[];
   questionWorks: QuestionWork[];
   questionWorkTotal: string;
   pageBreakAfter: Record<string, boolean>;

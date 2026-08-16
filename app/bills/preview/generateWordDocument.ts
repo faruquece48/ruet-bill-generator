@@ -14,6 +14,7 @@ import {
   computeThesisVivaFormula,
   formatDesignationDept,
   formatTeacher,
+  formatPaddedTableValue,
 } from "../create/components/pdf/pdfHelpers";
 
 type Row = (string | number)[];
@@ -21,10 +22,10 @@ type WordSection = { key: string; title: string; headers: string[]; rows: Row[];
 
 const value = (input: unknown) => {
   if (input === undefined || input === null || input === "" || input === 0 || input === "0") return "—";
-  return String(input);
+  return formatPaddedTableValue(input);
 };
 
-const numbered = (rows: Row[]) => rows.map((row, index) => [index + 1, ...row]);
+const numbered = (rows: Row[]) => rows.map((row, index) => [formatPaddedTableValue(index + 1), ...row]);
 
 export async function generateWordDocument(bill: ExaminationBillData): Promise<Blob> {
   const {
@@ -45,21 +46,23 @@ export async function generateWordDocument(bill: ExaminationBillData): Promise<B
 
   const mixed = bill.billInfo.evaluationSystem === "mixed";
   const backlog = bill.billInfo.examType === "backlog";
+  const shortSemester = bill.billInfo.examType === "short";
+  const defaultClassTestStudents = Number(bill.billInfo.totalStudents) || "";
   const obePaper = flattenPaperSetter(bill.courseDuties.obe);
   const nonObePaper = flattenPaperSetter(bill.courseDuties.nonObe);
   const classTests = mixed
-    ? combineClassTestRows(flattenClassTest(bill.courseDuties.obe), flattenClassTest(bill.courseDuties.nonObe))
-    : flattenClassTest(bill.courseDuties.obe);
-  const assignments = flattenAssignment(bill.courseDuties.obe);
-  const courseFiles = flattenCourseFile(bill.courseDuties.obe, bill.sessionalDuties);
+    ? combineClassTestRows(flattenClassTest(bill.courseDuties.obe, defaultClassTestStudents, shortSemester, shortSemester ? 4 : 2), flattenClassTest(bill.courseDuties.nonObe, defaultClassTestStudents, shortSemester, shortSemester ? 4 : 2))
+    : flattenClassTest(bill.courseDuties.obe, defaultClassTestStudents, shortSemester, shortSemester ? 4 : 2);
+  const assignments = shortSemester ? [] : flattenAssignment(bill.courseDuties.obe);
+  const courseFiles = shortSemester ? [] : flattenCourseFile(bill.courseDuties.obe, bill.sessionalDuties);
   const sessionals = flattenSessional(bill.sessionalDuties);
-  const boardViva = flattenBoardViva(bill.sessionalDuties, bill.vivaBoardTeachers, Number(bill.billInfo.totalStudents) || "");
+  const boardViva = flattenBoardViva(bill.sessionalDuties, bill.vivaBoardTeachers, Number(bill.billInfo.totalStudents) || "", bill.boardVivaMemberOrder ?? []);
   const tabulation = flattenTabulation(bill.studentDuties);
   const gradeSheets = deriveGradeSheetRows(bill.studentDuties, bill.tabulationStudentCount);
   const questionTeachers = bill.questionWorks.filter((person) => person.name.trim());
   const questionShare = `${bill.questionWorkTotal || "5"}/${questionTeachers.length || 1}`;
   const thesisViva = computeThesisVivaFormula(boardViva, bill.thesisTeachers) || "—";
-  const fourthYearEven = !backlog && bill.billInfo.year === "4th Year" && bill.billInfo.semester === "Even";
+  const fourthYearEven = bill.billInfo.examType === "semester" && bill.billInfo.year === "4th Year" && bill.billInfo.semester === "Even";
   const firstYearEven = !backlog && bill.billInfo.year === "1st Year" && bill.billInfo.semester === "Even";
 
   const courseRows = <T extends object>(rows: T[], fields: string[]) => rows.map((row) => [
@@ -80,7 +83,7 @@ export async function generateWordDocument(bill: ExaminationBillData): Promise<B
     { key: "scrutinyObe", title: mixed ? "Scrutiny — OBE (New Syllabus)" : "List of Teachers Associated with Scrutiny", headers: ["Sl. No.", "Name of Teachers & Designation", "No. of Script"], rows: personRows(bill.scrutinies.obe, (p) => [value((p as { scriptCount: unknown }).scriptCount)]), backlog: true },
     { key: "scrutinyNonObe", title: "Scrutiny — Non-OBE (Old Syllabus)", headers: ["Sl. No.", "Name of Teachers & Designation", "No. of Script"], rows: personRows(bill.scrutinies.nonObe, (p) => [value((p as { scriptCount: unknown }).scriptCount)]), backlog: true },
     { key: "sessionalDuty", title: "List of Teachers Associated with Sessional", headers: ["Course No. & Title", "Credit", "Name of Teachers & Designation", "No. of Students"], rows: courseRows(sessionals, ["credit", "teacherLine", "students"]), backlog: false, groupMergeColumns: [0, 1, 3] },
-    { key: "boardViva", title: "List of Teachers Associated with Board Viva", headers: ["Sl. No.", "Name of Teachers & Designation", "No. of Students"], rows: numbered(boardViva.map((row) => [value(row.teacherLine), value(row.students)])), backlog: true },
+    { key: "boardViva", title: "List of Teachers Associated with Board Viva", headers: ["Sl. No.", "Name of Teachers & Designation", "No. of Students"], rows: numbered(boardViva.map((row) => [value(row.teacherLine), bill.billInfo.totalStudents || "—"])), backlog: true, mergeColumn: 2 },
     { key: "tabulation", title: "List of Teachers Associated with Tabulation", headers: ["Sl. No.", "Name of Teachers & Designation", "No. of Students"], rows: numbered(tabulation.map((row) => [value(row.teacherLine), bill.tabulationStudentCount || "—"])), backlog: true, mergeColumn: 2 },
     { key: "gradeSheetPreparation", title: backlog ? "List of Teachers Associated with Grade Sheet Preparation & Verification" : "List of Teachers Associated with Grade Sheet Preparation", headers: ["Sl. No.", "Name of Teachers & Designation", "No. of Students"], rows: numbered(gradeSheets.map((row) => [value(row.teacherLine), value(row.studentsDisplay)])), backlog: true, mergeColumn: 2 },
     { key: "gradeSheetVerification", title: "List of Teachers Associated with Grade Sheet Verification", headers: ["Sl. No.", "Name of Teachers & Designation", "No. of Students"], rows: numbered(gradeSheets.map((row) => [value(row.teacherLine), value(row.studentsDisplay)])), backlog: false, mergeColumn: 2 },
@@ -134,7 +137,7 @@ export async function generateWordDocument(bill: ExaminationBillData): Promise<B
     margins: { top: 80, bottom: 80, left: 80, right: 80 },
     ...(verticalMerge ? { verticalMerge: verticalMerge === "restart" ? VerticalMergeType.RESTART : VerticalMergeType.CONTINUE } : {}),
     borders: { top: borders, bottom: borders, left: borders, right: borders },
-    children: String(text).split("\n").map((line) => new Paragraph({
+    children: formatPaddedTableValue(text).split("\n").map((line) => new Paragraph({
       alignment: center ? AlignmentType.CENTER : AlignmentType.LEFT,
       keepNext: keepWithNextRow,
       keepLines: true,

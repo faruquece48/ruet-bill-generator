@@ -198,6 +198,7 @@ export default function Home() {
           />
 
           <CourseDutyManager
+            examType={billData.billInfo.examType}
             evaluationSystem={billData.billInfo.evaluationSystem}
             defaultStudentCount={billData.billInfo.totalStudents}
             courseDuties={billData.courseDuties}
@@ -207,6 +208,7 @@ export default function Home() {
           />
 
           <SessionalDutyManager
+            examType={billData.billInfo.examType}
             defaultStudentCount={billData.billInfo.totalStudents}
             sessionalDuties={billData.sessionalDuties}
             setSessionalDuties={(data) =>

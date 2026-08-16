@@ -18,6 +18,7 @@ import {
   formatTeacher,
   formatDesignationDept,
   buildExamLine,
+  formatPaddedTableValue,
 } from "./pdfHelpers";
 // Requires the actual Monotype Corsiva .ttf file at /public/fonts/monotype-corsiva.ttf
 // (Monotype Corsiva is proprietary — typically bundled with Windows/Office — so you must
@@ -77,12 +78,12 @@ const styles = StyleSheet.create({
   groupedRow: {
     borderTopWidth: BW,
     borderBottomWidth: BW,
-    borderLeftWidth: BW,
-    borderRightWidth: BW,
     borderColor: BORDER,
     marginTop: -BW,
   },
   innerRowDivider: { borderTopWidth: BW, borderColor: BORDER },
+  groupedEntryArea: { flexDirection: "column", alignSelf: "stretch" },
+  groupedEntryRow: { flexDirection: "row", alignItems: "stretch", flexGrow: 1 },
   cellBottomEdge: { borderBottomWidth: BW },
   center: { textAlign: "center" },
   // Right-corner footer block: fixed width, anchored to the bottom-right,
@@ -123,7 +124,7 @@ function formatCell(value: any): string {
     value === null
   )
     return "-";
-  return String(value);
+  return formatPaddedTableValue(value);
 }
 function SimpleTable({
   columns,
@@ -152,7 +153,7 @@ function SimpleTable({
           {normalizedColumns.map((c, i) => (
             <View key={c.key} style={[styles.cell, { width: `${c.width}%` }, i === 0 ? styles.cellLeftEdge : {}, ri === rows.length - 1 ? styles.cellBottomEdge : {}]}>
               <Text style={c.align === "center" || c.key === "sl" ? styles.center : undefined}>
-                {c.key === "sl" ? String(ri + 1) : formatCell(row[c.key])}
+                {c.key === "sl" ? formatPaddedTableValue(ri + 1) : formatCell(row[c.key])}
               </Text>
             </View>
           ))}
@@ -224,7 +225,7 @@ function GroupedTable({
 
       {groups.map((group, groupIndex) => (
         <View key={groupIndex} style={[styles.table, styles.row, styles.groupedRow, { alignItems: "stretch" }]} wrap={false}>
-          <View style={[styles.cell, { width: `${normalizedCourseWidth}%`, justifyContent: "center" }]}>
+          <View style={[styles.cell, styles.cellLeftEdge, { width: `${normalizedCourseWidth}%`, justifyContent: "center" }]}>
             <Text>{formatCell(group.courseCode)}</Text>
             <Text>{formatCell(group.courseTitle)}</Text>
           </View>
@@ -233,18 +234,18 @@ function GroupedTable({
               <Text style={c.align === "center" ? styles.center : undefined}>{formatCell(group.entries[0]?.[c.key])}</Text>
             </View>
           ))}
-          <View style={{ width: `${entryTotal}%` }}>
+          <View style={[styles.groupedEntryArea, { width: `${entryTotal}%` }]}>
             {group.entries.map((entry, ei) => (
               <View
                 key={ei}
                   style={[
-                    { flexDirection: "row", alignItems: "stretch" },
+                    styles.groupedEntryRow,
                     ei > 0 ? styles.innerRowDivider : {},
                   ]}
                   wrap={false}
               >
-                {repeatingEntryColumns.map((c, columnIndex) => (
-                    <View key={c.key} style={[styles.cell, { width: `${(c.width / entryTotal) * 100}%` }, !normalizedMergeColumn && columnIndex === repeatingEntryColumns.length - 1 ? styles.cellNoRightEdge : {}]}>
+                {repeatingEntryColumns.map((c) => (
+                    <View key={c.key} style={[styles.cell, { width: `${(c.width / entryTotal) * 100}%` }]}>
                       <Text style={c.align === "center" ? styles.center : undefined}>{formatCell(entry[c.key])}</Text>
                     </View>
                 ))}
@@ -252,7 +253,7 @@ function GroupedTable({
             ))}
           </View>
           {normalizedMergeColumn && groupMergeColumn && (
-            <View style={[styles.cell, styles.cellNoRightEdge, { width: `${normalizedMergeColumn.width}%`, justifyContent: "center" }]}>
+            <View style={[styles.cell, { width: `${normalizedMergeColumn.width}%`, justifyContent: "center" }]}>
               <Text style={styles.center}>{formatCell(groupMergeColumn.value(group))}</Text>
             </View>
           )}
@@ -300,7 +301,7 @@ function MergedColumnTable({
                 {leftCols.map((c, ci) => (
                   <View key={c.key} style={[styles.cell, { width: `${(c.width / leftTotal) * 100}%` }, ci === 0 ? styles.cellLeftEdge : {}, ri === rows.length - 1 ? styles.cellBottomEdge : {}]}>
                     <Text style={c.align === "center" || c.key === "sl" ? styles.center : undefined}>
-                      {c.key === "sl" ? String(ri + 1) : formatCell(row[c.key])}
+                      {c.key === "sl" ? formatPaddedTableValue(ri + 1) : formatCell(row[c.key])}
                     </Text>
                   </View>
                 ))}
@@ -341,7 +342,7 @@ function Footer({ bill }: { bill: ExaminationBillData["billInfo"] }) {
 export default function BillPdfDocument({ bill }: { bill: ExaminationBillData }) {
   const isBacklog = bill.billInfo.examType === "backlog";
   const isThesisApplicable =
-    !isBacklog &&
+    bill.billInfo.examType === "semester" &&
     bill.billInfo.year === "4th Year" &&
     bill.billInfo.semester === "Even";
   const isVerificationApplicable = bill.billInfo.hasGraduatingStudents === "yes";
@@ -354,26 +355,29 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     bill.billInfo.year === "1st Year" &&
     bill.billInfo.semester === "Even";
   const isMixedEvaluation = bill.billInfo.evaluationSystem === "mixed";
+  const isShortSemester = bill.billInfo.examType === "short";
   const obePaperSetterRows = flattenPaperSetter(bill.courseDuties.obe);
   const nonObePaperSetterRows = flattenPaperSetter(bill.courseDuties.nonObe);
   const paperSetterRows = isMixedEvaluation
     ? [...obePaperSetterRows, ...nonObePaperSetterRows]
     : obePaperSetterRows;
-  const obeClassTestRows = flattenClassTest(bill.courseDuties.obe);
+  const defaultClassTestStudents = Number(bill.billInfo.totalStudents) || "";
+  const obeClassTestRows = flattenClassTest(bill.courseDuties.obe, defaultClassTestStudents, isShortSemester, isShortSemester ? 4 : 2);
   const classTestRows = isMixedEvaluation
     ? combineClassTestRows(
         obeClassTestRows,
-        flattenClassTest(bill.courseDuties.nonObe)
+        flattenClassTest(bill.courseDuties.nonObe, defaultClassTestStudents, isShortSemester, isShortSemester ? 4 : 2)
       )
     : obeClassTestRows;
-  const assignmentRows = flattenAssignment(bill.courseDuties.obe);
-  const courseFileRows = flattenCourseFile(bill.courseDuties.obe, bill.sessionalDuties);
+  const assignmentRows = isShortSemester ? [] : flattenAssignment(bill.courseDuties.obe);
+  const courseFileRows = isShortSemester ? [] : flattenCourseFile(bill.courseDuties.obe, bill.sessionalDuties);
   const sessionalRows = flattenSessional(bill.sessionalDuties);
   const sessionalGroups = groupByCourse(sessionalRows);
   const boardVivaRows = flattenBoardViva(
     bill.sessionalDuties,
     bill.vivaBoardTeachers,
     Number(bill.billInfo.totalStudents) || "",
+    bill.boardVivaMemberOrder ?? [],
   );
   const tabulationRows = flattenTabulation(bill.studentDuties);
   const gradeSheetRows = deriveGradeSheetRows(
@@ -604,13 +608,15 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       hasData: boardVivaRows.length > 0,
       includeInBacklog: true,
       content: (
-        <SimpleTable
+        <MergedColumnTable
           columns={[
             { key: "sl", label: "Sl. No.", width: lw.boardViva.sl ?? 7, align: "center" },
             { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.boardViva.teacherLine ?? 78 },
             { key: "students", label: "No. of Students", width: lw.boardViva.students ?? 15, align: "center" },
           ]}
           rows={boardVivaRows}
+          mergeKey="students"
+          mergeValue={bill.billInfo.totalStudents || "—"}
         />
       ),
     },

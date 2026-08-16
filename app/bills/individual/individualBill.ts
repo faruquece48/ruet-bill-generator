@@ -150,6 +150,16 @@ export function deriveTeacherRows(
     ...bill.courseDuties.obe.map((course) => ({ course, isNonObe: false })),
     ...bill.courseDuties.nonObe.map((course) => ({ course, isNonObe: true })),
   ].forEach(({ course, isNonObe }) => {
+    const shortSemesterClassTestTeachers =
+      bill.billInfo.examType === "short"
+        ? course.parts.flatMap((part) => [
+            ...(part.duties.classTest && part.teacher.trim() ? [part.teacher] : []),
+          ])
+        : [];
+    const shortSemesterClassTestTeacher =
+      shortSemesterClassTestTeachers.length > 0
+        ? shortSemesterClassTestTeachers[0]
+        : undefined;
     course.parts.forEach((part) => {
       const entries = [
         { name: part.teacher, duties: part.duties, students: part.students },
@@ -160,6 +170,11 @@ export function deriveTeacherRows(
         })),
       ];
       entries.filter((entry) => sameTeacher(entry.name, teacherName)).forEach((entry) => {
+        const classTestStudents =
+          entry.students.classTestStudents === "" ||
+          entry.students.classTestStudents == null
+            ? bill.billInfo.totalStudents
+            : entry.students.classTestStudents;
         if (entry.duties.paperSetter)
           add({ description: "প্রশ্নপত্র প্রণয়ন", course: course.courseCode, quantity: "", courseCount: "1", classTestCount: "", rate: "5000" });
         // A semester-final row with zero scripts/students is not billable;
@@ -168,15 +183,18 @@ export function deriveTeacherRows(
           add({ description: "সেমিস্টার ফাইনাল", course: course.courseCode, quantity: entry.students.examiner, courseCount: "1", classTestCount: "", rate: "120", minimumAmount: 1000 });
         if (
           entry.duties.classTest &&
-          Number(entry.students.classTestStudents) > 0 &&
-          Number(entry.students.classTestCount) > 0
+          (bill.billInfo.examType !== "short" ||
+            (shortSemesterClassTestTeacher !== undefined &&
+              sameTeacher(entry.name, shortSemesterClassTestTeacher))) &&
+          Number(classTestStudents) > 0 &&
+          (Number(entry.students.classTestCount) > 0 || bill.billInfo.examType === "short")
         )
-          add({ description: "ক্লাস টেস্ট", course: course.courseCode, quantity: String(entry.students.classTestStudents || ""), courseCount: "1", classTestCount: String(entry.students.classTestCount || 2), rate: "50" });
-        if (entry.duties.assignment && !isNonObe) {
+          add({ description: "ক্লাস টেস্ট", course: course.courseCode, quantity: String(classTestStudents || ""), courseCount: "1", classTestCount: String(entry.students.classTestCount || (bill.billInfo.examType === "short" ? 4 : 2)), rate: "50" });
+        if (entry.duties.assignment && !isNonObe && bill.billInfo.examType !== "short") {
           const students = entry.students.classTestStudents;
           add({ description: "এসাইনমেন্ট / প্রেজেন্টেশন", course: course.courseCode, quantity: students ? `${students}/2` : entry.students.assignment, courseCount: "1", classTestCount: "2", rate: "50" });
         }
-        if (entry.duties.courseFile && !isNonObe)
+        if (entry.duties.courseFile && !isNonObe && bill.billInfo.examType !== "short")
           add({ description: "কোর্স ফাইল প্রস্তুতকরণ", course: course.courseCode, quantity: "", courseCount: "1/2", classTestCount: "", rate: "6000" });
       });
     });
@@ -219,7 +237,7 @@ export function deriveTeacherRows(
         add({ description: Number(course.credit) === 1.5 ? "সেশনাল (১.৫)" : "সেশনাল (০.৭৫)", course: course.courseCode, quantity: String(entry.students.sessional || ""), courseCount: sharedCourseCount, classTestCount: "", rate: "400", minimumAmount: Number(course.credit) === 1.5 ? 1500 : undefined });
       if (entry.duties.boardViva)
         add({ description: "ভাইভা (সেন্ট্রাল/বোর্ড)", course: course.courseCode, quantity: String(entry.students.boardViva || ""), courseCount: "1", classTestCount: "", rate: "150", minimumAmount: 500 });
-      if (entry.duties.courseFile)
+      if (entry.duties.courseFile && bill.billInfo.examType !== "short")
         add({ description: "কোর্স ফাইল প্রস্তুতকরণ", course: course.courseCode, quantity: "", courseCount: sharedCourseCount, classTestCount: "", rate: "6000" });
     });
   });
@@ -277,7 +295,12 @@ export function deriveTeacherRows(
   );
   if (isThesisApplicable(bill)) {
     const thesisVivaFormula = computeThesisVivaFormula(
-      flattenBoardViva(bill.sessionalDuties),
+      flattenBoardViva(
+        bill.sessionalDuties,
+        bill.vivaBoardTeachers,
+        Number(bill.billInfo.totalStudents) || "",
+        bill.boardVivaMemberOrder ?? []
+      ),
       bill.thesisTeachers
     );
     bill.thesisTeachers

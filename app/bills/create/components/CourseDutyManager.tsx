@@ -38,6 +38,7 @@ const summaryValue = (value: string) =>
 type FractionDuty = "examiner" | "assignment";
 
 interface Props {
+  examType: "semester" | "backlog" | "short";
   evaluationSystem: "obe" | "mixed";
   defaultStudentCount: string;
   courseDuties: { obe: CourseDuty[]; nonObe: CourseDuty[] };
@@ -45,11 +46,13 @@ interface Props {
 }
 
 export default function CourseDutyManager({
+  examType,
   evaluationSystem,
   defaultStudentCount,
   courseDuties,
   setCourseDuties,
 }: Props) {
+  const isShortSemester = examType === "short";
   const [minimizedCourses, setMinimizedCourses] = useState<Set<string>>(
     () => new Set()
   );
@@ -97,10 +100,10 @@ export default function CourseDutyManager({
       ? {
           examiner: String(studentCount),
           assignment: String(studentCount),
-          classTestCount: 2,
+          classTestCount: isShortSemester ? 4 : 2,
           classTestStudents: studentCount,
         }
-      : { examiner: "", assignment: "", classTestCount: 2, classTestStudents: "" };
+      : { examiner: "", assignment: "", classTestCount: isShortSemester ? 4 : 2, classTestStudents: "" };
     setList(type, [
       ...getList(type),
       {
@@ -113,8 +116,9 @@ export default function CourseDutyManager({
           department: "Dept. of BECM, RUET",
           duties: {
             ...defaultDuty,
-            assignment: type === "nonObe" ? false : defaultDuty.assignment,
-            courseFile: type === "nonObe" ? false : defaultDuty.courseFile,
+            classTest: !isShortSemester,
+            assignment: isShortSemester || type === "nonObe" ? false : defaultDuty.assignment,
+            courseFile: isShortSemester || type === "nonObe" ? false : defaultDuty.courseFile,
           },
           students: { ...initialStudents },
           additionalTeachers: [],
@@ -241,6 +245,17 @@ export default function CourseDutyManager({
     const part = updated[ci].parts[pi];
     part.duties[field] = !part.duties[field];
 
+    if (isShortSemester && field === "classTest" && part.duties.classTest) {
+      updated[ci].parts.forEach((otherPart, otherPartIndex) => {
+        if (otherPartIndex === pi) return;
+        otherPart.duties.classTest = false;
+        otherPart.additionalTeachers.forEach((teacher) => {
+          teacher.duties.classTest = false;
+        });
+      });
+      part.students.classTestCount = 4;
+    }
+
     const remainingDuty: DutyOption = {
       paperSetter: false,
       examiner: false,
@@ -252,6 +267,7 @@ export default function CourseDutyManager({
 
     (Object.keys(part.duties) as (keyof DutyOption)[]).forEach((key) => {
       if (!part.duties[key]) {
+        if (isShortSemester && key === "classTest") return;
         remainingDuty[key] = true;
         if (key === "classTest") {
           remainingStudent.classTestCount = part.students.classTestCount;
@@ -263,7 +279,7 @@ export default function CourseDutyManager({
       }
     });
 
-    part.additionalTeachers = Object.values(remainingDuty).some(Boolean)
+    part.additionalTeachers = !isShortSemester && Object.values(remainingDuty).some(Boolean)
       ? [
           {
             name: "",
@@ -392,6 +408,7 @@ export default function CourseDutyManager({
                   <h4 className="text-sm font-medium mb-2">Duty Selection</h4>
                   <div className="grid md:grid-cols-3 gap-3">
                     {(Object.keys(part.duties) as (keyof DutyOption)[])
+                      .filter((key) => !isShortSemester || (key !== "assignment" && key !== "courseFile"))
                       .filter(
                         (key) =>
                           type !== "nonObe" ||
@@ -510,7 +527,7 @@ export default function CourseDutyManager({
                       );
                       })}
                   </div>
-                  {part.additionalTeachers.length > 0 && (
+                  {!isShortSemester && part.additionalTeachers.length > 0 && (
                     <div className="mt-4 rounded-lg border bg-white p-4 space-y-3">
                       <h4 className="font-bold">Additional Teacher Required</h4>
                       <div className="grid gap-3 md:grid-cols-3">
@@ -570,6 +587,7 @@ export default function CourseDutyManager({
                             part.additionalTeachers[0].duties
                           ) as (keyof DutyOption)[]
                         )
+                          .filter((d) => !isShortSemester || (d !== "assignment" && d !== "courseFile" && d !== "classTest"))
                           .filter(
                             (d) =>
                               type !== "nonObe" ||
