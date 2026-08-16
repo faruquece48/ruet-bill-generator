@@ -1,5 +1,7 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Children, cloneElement, isValidElement, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { unicodeToBijoy } from "@abdalgolabs/ansi-unicode-converter";
 import { emptyBill } from "../create/components/emptyBill";
 import type { ExaminationBillData } from "../create/components/types";
 import { loadCurrentWork } from "@/lib/storage/draft";
@@ -23,6 +25,22 @@ import {
 const inputClass = "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500";
 const defaultAddressBangla = "বিইসিএম বিভাগ, রুয়েট।";
 
+function toSutonnyText(value: string | number) {
+  const bengaliDigits = String(value).replace(/\d/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
+  return unicodeToBijoy(bengaliDigits);
+}
+
+function convertBillText(node: ReactNode): ReactNode {
+  if (typeof node === "string" || typeof node === "number") return toSutonnyText(node);
+  if (!isValidElement<{ children?: ReactNode; className?: string }>(node)) return node;
+  if (node.props.className?.includes("individual-course-code")) return node;
+  return cloneElement(node, undefined, Children.map(node.props.children, convertBillText));
+}
+
+function SutonnyBillText({ children }: { children: ReactNode }) {
+  return Children.map(children, convertBillText);
+}
+
 export default function IndividualTeacherBillPage() {
   const [bill, setBill] = useState<ExaminationBillData>(emptyBill);
   const [teacher, setTeacher] = useState("");
@@ -31,12 +49,11 @@ export default function IndividualTeacherBillPage() {
   const [addressBangla, setAddressBangla] = useState(defaultAddressBangla);
   const [accountNumber, setAccountNumber] = useState("");
   const [teacherSaveStatus, setTeacherSaveStatus] = useState("");
-  const [pdfStatus, setPdfStatus] = useState("");
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [divisionGaps, setDivisionGaps] = useState<Record<string, number>>({ header: 3, teacher: 3, exam: 3, mainTable: 5, signature: 6, account: 5, footer: 0 });
+  const [divisionGaps, setDivisionGaps] = useState<Record<string, number>>({ header: 0, teacher: 0, exam: 1, mainTable: 0, signature: 0, account: 0, footer: 0 });
+  const [sectionFontSizes, setSectionFontSizes] = useState<Record<string, number>>({ header: 12, teacher: 12, exam: 12, mainTable: 10, signature: 13, account: 13, footer: 10 });
   const [remunerationOpen, setRemunerationOpen] = useState(false);
   const [metaWidths, setMetaWidths] = useState<ColumnWidths>({ qualifications: 37, examination: 47, billNumber: 16 });
-  const [tableWidths, setTableWidths] = useState<ColumnWidths>({ serial: 7, descriptionGroup: 11, description: 18, course: 13, quantity: 10, courseCount: 6, classTestCount: 9, rate: 12, amount: 14 });
+  const [tableWidths, setTableWidths] = useState<ColumnWidths>({ serial: 7, descriptionGroup: 11, description: 19, course: 13, quantity: 10, courseCount: 6, classTestCount: 9, rate: 12, amount: 13 });
   const billSheetRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -93,89 +110,6 @@ export default function IndividualTeacherBillPage() {
     setTeacherSaveStatus(saved ? "Teacher information saved." : "Unable to save teacher information.");
   };
 
-  const generatePdf = async () => {
-    const billSheet = billSheetRef.current;
-    if (!billSheet || isGeneratingPdf) return;
-    setIsGeneratingPdf(true);
-    setPdfStatus("");
-    try {
-      // Wait for web fonts AND a settled paint before capturing. Capturing
-      // on the same tick as a state update (e.g. right after selecting a
-      // teacher) can grab the DOM mid-layout, which is what causes rows or
-      // sections to appear missing in the exported image.
-      await document.fonts.ready;
-      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
-      const [{ toPng }, { jsPDF }] = await Promise.all([
-        import("html-to-image"),
-        import("jspdf"),
-      ]);
-
-      // Capture the full, untruncated size of the sheet rather than
-      // whatever is currently visible/scrolled inside the preview panel.
-      const fullWidth = billSheet.scrollWidth;
-      const fullHeight = billSheet.scrollHeight;
-
-      // toPng (lossless) instead of toJpeg: JPEG's chroma subsampling and
-      // compression blur thin Bengali glyphs, matras, and hairline table
-      // borders into gray. PNG keeps text and rules pure black.
-      const imageData = await toPng(billSheet, {
-        backgroundColor: "#ffffff",
-        pixelRatio: Math.max(2, window.devicePixelRatio || 1),
-        cacheBust: true,
-        width: fullWidth,
-        height: fullHeight,
-        style: {
-          boxShadow: "none",
-          width: `${fullWidth}px`,
-          height: `${fullHeight}px`,
-          overflow: "visible",
-          transform: "none",
-        },
-      });
-
-      // Sanity check: a failed/empty capture from html-to-image is still a
-      // valid (tiny) data URL, so verify it actually decodes to the
-      // expected canvas size before spending time building a PDF around it.
-      await new Promise<void>((resolve, reject) => {
-        const probe = new Image();
-        probe.onload = () => {
-          if (probe.width === 0 || probe.height === 0) {
-            reject(new Error("Captured image is empty."));
-          } else {
-            resolve();
-          }
-        };
-        probe.onerror = () => reject(new Error("Captured image failed to decode."));
-        probe.src = imageData;
-      });
-
-      // Build the PDF page from the sheet's actual aspect ratio instead of
-      // a fixed Legal size. The sheet's CSS width is fixed at 215.9mm, so
-      // deriving the page height from fullHeight/fullWidth reproduces the
-      // on-screen preview exactly. The image then fills the page at (0,0)
-      // with no fit-scaling and no manual offset, so nothing can end up
-      // clipped off an edge.
-      const pageWidthMm = 215.9;
-      const pageHeightMm = pageWidthMm * (fullHeight / fullWidth);
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [pageWidthMm, pageHeightMm], compress: true });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      pdf.addImage(imageData, "PNG", 0, 0, pageWidth, pageHeight, undefined, "FAST");
-
-      const safeTeacherName = (teacher || nameBangla || "individual-teacher")
-        .replace(/[<>:"/\\|?*]+/g, "-")
-        .trim();
-      pdf.save(`${safeTeacherName || "individual-teacher"}-bill.pdf`);
-      setPdfStatus("PDF generated successfully.");
-    } catch (error) {
-      console.error("Unable to generate individual bill PDF", error);
-      setPdfStatus("Unable to generate PDF. Please try again.");
-    } finally {
-      setIsGeneratingPdf(false);
-    }
-  };
-
   const printOrSavePdf = async () => {
     await document.fonts.ready;
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -191,9 +125,7 @@ export default function IndividualTeacherBillPage() {
             <p className="text-sm text-slate-500">বাংলা নির্ধারিত ফরমে ব্যক্তিগত পরীক্ষার পারিশ্রমিক বিল</p>
           </div>
           <div className="flex items-center gap-3">
-            {pdfStatus && <span role="status" className={`text-xs ${pdfStatus.startsWith("Unable") ? "text-red-600" : "text-emerald-700"}`}>{pdfStatus}</span>}
             <button type="button" onClick={printOrSavePdf} className="rounded-md border border-blue-600 bg-white px-5 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-50">Legal Print Preview / Save as PDF</button>
-            <button type="button" onClick={generatePdf} disabled={isGeneratingPdf} className="rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-wait disabled:bg-blue-400">{isGeneratingPdf ? "Generating PDF…" : "Generate PDF"}</button>
           </div>
         </div>
         <div className="grid items-start gap-6 xl:grid-cols-[430px_1fr]">
@@ -232,6 +164,7 @@ export default function IndividualTeacherBillPage() {
             <div className="space-y-4 border-t pt-4">
               <div className="space-y-3 rounded-lg border bg-slate-50 p-4">
                 <h2 className="font-semibold">Document division gaps</h2>
+                <div className="grid grid-cols-[1fr_72px_72px] gap-3 text-xs font-semibold text-slate-500"><span>Section</span><span>Gap (mm)</span><span>Font (px)</span></div>
                 {([
                   ["header", "1. Header"],
                   ["teacher", "2. Teacher information"],
@@ -241,9 +174,10 @@ export default function IndividualTeacherBillPage() {
                   ["account", "6. Account section"],
                   ["footer", "7. Footer"],
                 ] as const).map(([key, label]) => (
-                  <label key={key} className="grid grid-cols-[1fr_90px] items-center gap-3 text-sm">
+                  <label key={key} className="grid grid-cols-[1fr_72px_72px] items-center gap-3 text-sm">
                     <span>{label}</span>
                     <input type="number" min="0" max="30" step="1" value={divisionGaps[key] ?? 0} onChange={(event) => setDivisionGaps((current) => ({ ...current, [key]: Math.min(30, Math.max(0, Number(event.target.value) || 0)) }))} className={inputClass} aria-label={`Gap after ${label} in millimeters`} />
+                    <input type="number" min="6" max="30" step="1" value={sectionFontSizes[key] ?? 10} onChange={(event) => setSectionFontSizes((current) => ({ ...current, [key]: Math.min(30, Math.max(6, Number(event.target.value) || 6)) }))} className={inputClass} aria-label={`Font size for ${label} in pixels`} />
                   </label>
                 ))}
               </div>
@@ -252,7 +186,8 @@ export default function IndividualTeacherBillPage() {
             </div>
           </section>
           <section className="preview-shell overflow-auto rounded-xl bg-slate-300 p-5">
-            <article ref={billSheetRef} className="bill-sheet individual-print-document mx-auto bg-white text-black shadow-xl" lang="bn" style={{ "--teacher-gap": `${divisionGaps.teacher}mm`, "--exam-gap": `${divisionGaps.exam}mm`, "--main-table-gap": `${divisionGaps.mainTable}mm`, "--signature-gap": `${divisionGaps.signature}mm`, "--account-gap": `${divisionGaps.account}mm`, "--footer-gap": `${divisionGaps.footer}mm` } as React.CSSProperties}>
+            <article ref={billSheetRef} className="bill-sheet individual-print-document mx-auto bg-white text-black shadow-xl" lang="bn" style={{ "--teacher-gap": `${divisionGaps.teacher}mm`, "--exam-gap": `${divisionGaps.exam}mm`, "--main-table-gap": `${divisionGaps.mainTable}mm`, "--signature-gap": `${divisionGaps.signature}mm`, "--account-gap": `${divisionGaps.account}mm`, "--footer-gap": `${divisionGaps.footer}mm`, "--header-font-size": `${sectionFontSizes.header}px`, "--teacher-font-size": `${sectionFontSizes.teacher}px`, "--exam-font-size": `${sectionFontSizes.exam}px`, "--main-table-font-size": `${sectionFontSizes.mainTable}px`, "--signature-font-size": `${sectionFontSizes.signature}px`, "--account-font-size": `${sectionFontSizes.account}px`, "--footer-font-size": `${sectionFontSizes.footer}px` } as React.CSSProperties}>
+              <SutonnyBillText>
               <header className="relative text-center bill-header" style={{ marginBottom: `${divisionGaps.header}mm` }}>
                 <p className="text-[10px]">ঐশী জ্যোতিই আমাদের পথ প্রদর্শক</p>
                 <h2 className="mt-1 text-[18px] font-bold">রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</h2>
@@ -275,7 +210,7 @@ export default function IndividualTeacherBillPage() {
                           {workDescriptionRowSpan > 0 && (
                             <td rowSpan={workDescriptionRowSpan}>{chartRow.description}</td>
                           )}
-                          <td className="text-center">{duty?.course || ""}</td>
+                          <td className="individual-course-code text-center">{duty?.course || ""}</td>
                           <td className="text-center">{duty?.quantity ? toBengaliDigits(String(duty.quantity)) : ""}</td>
                           <td className="text-center">{duty?.courseCount ? toBengaliDigits(String(duty.courseCount)) : ""}</td>
                           <td className="text-center">{duty?.classTestCount ? toBengaliDigits(String(duty.classTestCount)) : ""}</td>
@@ -292,34 +227,32 @@ export default function IndividualTeacherBillPage() {
                     })
                   )}
                 </tbody>
-                <tfoot><tr><td className="text-center font-semibold">কথায়ঃ</td><td colSpan={6} className="font-semibold">{amountInBanglaWords(total)} মাত্র</td><td className="text-center font-semibold">মোটঃ</td><td className="text-center font-bold">{total.toLocaleString("bn-BD")}</td></tr></tfoot>
+                <tfoot><tr><td className="text-center font-semibold">কথায়ঃ</td><td colSpan={6} className="font-semibold">{amountInBanglaWords(total)} মাত্র |</td><td className="text-center font-semibold">মোটঃ</td><td className="text-center font-bold">{total.toLocaleString("bn-BD")}</td></tr></tfoot>
               </table>
               <div className="legacy-bottom">
               <p className="mt-5 text-[11px]">প্রতি স্বাক্ষরিত</p>
               <div className="mt-12 grid grid-cols-2 text-center text-[11px]"><div><div className="mx-auto w-56 border-t border-black pt-1">সভাপতি, পরীক্ষা কমিটি।</div></div><div><div className="mx-auto w-56 border-t border-black pt-1">পরীক্ষকের স্বাক্ষর</div><p className="mt-1">তারিখঃ</p></div></div>
               <p className="mt-6 text-center text-[11px] font-semibold underline">বিত্ত শাখা পূরণ করিবেন</p>
-              <p className="mt-4 text-[11px]">{nameBangla || "................................"}-কে {amountInBanglaWords(total)} মাত্র পরিশোধ করা হইল।</p>
+              <p className="mt-4 text-[11px]">{nameBangla || "................................"}-কে {amountInBanglaWords(total)} মাত্র | পরিশোধ করা হইল।</p>
               <div className="mt-12 grid grid-cols-4 text-center text-[10px]"><p>হিসাব সহকারী</p><p>হিসাব রক্ষক</p><p>সহকারী কম্পট্রোলার</p><p>কম্পট্রোলার<br/>রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</p></div>
               <div className="mt-7 border-t border-black pt-2 text-[9px] leading-5"><p><strong>বিঃদ্রঃ-</strong> বিলের মোট পরিমাণ ২০০/- টাকার উপরে হইলে ১০/- টাকা মূল্যের রাজস্ব স্ট্যাম্প দিতে হইবে।</p><p>সরকারি শিক্ষক/অফিসারদের ক্ষেত্রে যথাযথ কর্তৃপক্ষের অনুমোদন প্রয়োজন। উল্লেখ্য যে, প্রত্যেক সেমিস্টার পরীক্ষার জন্য পৃথকভাবে বিল জমা দিতে হইবে।</p></div>
               </div>
-              <p className="mt-5 text-center text-[11px]">প্রতি স্বাক্ষরিত</p>
-              <div className="mt-16 grid grid-cols-2 text-center text-[11px]"><div><p className="mb-8">সভাপতি, পরীক্ষা কমিটি।</p></div><div><div className="mx-auto w-56 border-t border-black pt-1">পরীক্ষকের স্বাক্ষর</div><p className="mt-2">তারিখঃ</p></div></div>
-              <div className="mt-6 border border-black text-center text-[11px]"><p className="border-b border-black py-1 font-semibold">হিসাব শাখা পূরণ করিবেন</p><p className="py-3">{nameBangla || "................................"} কে {amountInBanglaWords(total)} মাত্র পরিশোধ করা হইল।</p></div>
-              <div className="mt-10 grid grid-cols-4 text-center text-[10px]"><p>হিসাব সহকারী</p><p>হিসাব রক্ষক</p><p>সহকারী কম্পট্রোলার</p><p>কম্পট্রোলার<br/>রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</p></div>
-              <div className="mt-5 border-t border-black pt-2 text-center text-[9px] leading-5"><p>বিঃদ্রঃ বিলের মোট পরিমাণ ২০০/- টাকার উপরে হইলে ১০/- টাকা মূল্যের রাজস্ব স্ট্যাম্প দিতে হইবে।</p><p>সরকারি শিক্ষক/অফিসারদের ক্ষেত্রে যথাযথ কর্তৃপক্ষের অনুমোদন প্রয়োজন। উল্লেখ্য যে, প্রত্যেক সেমিস্টার পরীক্ষার জন্য পৃথকভাবে বিল জমা দিতে হইবে।</p></div>
+              <p className="signature-section mt-5 text-center">প্রতি স্বাক্ষরিত</p>
+              <div className="signature-section mt-16 grid grid-cols-2 text-center"><div><p className="mb-8">সভাপতি, পরীক্ষা কমিটি।</p></div><div><div className="mx-auto w-56 border-t border-black pt-1">পরীক্ষকের স্বাক্ষর</div><p className="mt-2">তারিখঃ</p></div></div>
+              <div className="account-section mt-6 border border-black text-center"><p className="border-b border-black py-1 font-semibold">হিসাব শাখা পূরণ করিবেন</p><p className="py-3">{nameBangla || "................................"} কে {amountInBanglaWords(total)} মাত্র | পরিশোধ করা হইল।</p></div>
+              <div className="account-section mt-10 grid grid-cols-4 text-center"><p>হিসাব সহকারী</p><p>হিসাব রক্ষক</p><p>সহকারী কম্পট্রোলার</p><p>কম্পট্রোলার<br/>রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</p></div>
+              <div className="footer-section mt-5 border-t border-black pt-2 text-center leading-5"><p>বিঃদ্রঃ বিলের মোট পরিমাণ ২০০/- টাকার উপরে হইলে ১০/- টাকা মূল্যের রাজস্ব স্ট্যাম্প দিতে হইবে।</p><p>সরকারি শিক্ষক/অফিসারদের ক্ষেত্রে যথাযথ কর্তৃপক্ষের অনুমোদন প্রয়োজন। উল্লেখ্য যে, প্রত্যেক সেমিস্টার পরীক্ষার জন্য পৃথকভাবে বিল জমা দিতে হইবে।</p></div>
+              </SutonnyBillText>
              </article>
            </section>
                  </div>
        </div>
       <style jsx global>{`
-        /* The bill strings are Unicode Bengali. SutonnyMJ uses legacy Bijoy
-           encoding and renders Unicode text as scrambled glyphs, so use a
-           Unicode Bengali font for the readable preview/print output. */
         .bill-sheet {
           box-sizing: border-box;
           width: 215.9mm;
           padding: 12mm 13mm;
-          font-family: "Nirmala UI", "Vrinda", "SolaimanLipi", sans-serif;
+          font-family: "SutonnyMJ", serif;
           color: #000;
           /* Fully opaque background stops html-to-image from compositing
              the capture against a transparent/gray canvas fallback, which
@@ -328,6 +261,20 @@ export default function IndividualTeacherBillPage() {
           -webkit-font-smoothing: antialiased;
         }
         .bill-sheet * { color: inherit; }
+        .bill-sheet .individual-course-code,
+        .bill-sheet .individual-course-code * {
+          font-family: "Times New Roman", Times, serif !important;
+        }
+        .bill-header { font-size: var(--header-font-size); }
+        .bill-header > p { font-size: calc(var(--header-font-size) - 2px); }
+        .bill-header > h2 { font-size: calc(var(--header-font-size) + 6px); }
+        .bill-header > h1 { font-size: calc(var(--header-font-size) + 5px); }
+        .teacher-info { font-size: var(--teacher-font-size); }
+        .bill-meta { font-size: var(--exam-font-size); }
+        .bill-table { font-size: var(--main-table-font-size); }
+        .signature-section { font-size: var(--signature-font-size); }
+        .account-section { font-size: var(--account-font-size); }
+        .footer-section { font-size: var(--footer-font-size); }
         .teacher-info { margin-bottom: var(--teacher-gap); }
         .bill-meta, .bill-table { border-collapse: collapse; border-spacing: 0; }
         .bill-meta, .bill-table { width: 100%; max-width: 100%; min-width: 0; }
