@@ -36,7 +36,7 @@ export default function IndividualTeacherBillPage() {
   const [headerGap, setHeaderGap] = useState(3);
   const [remunerationOpen, setRemunerationOpen] = useState(false);
   const [metaWidths, setMetaWidths] = useState<ColumnWidths>({ qualifications: 37, examination: 47, billNumber: 16 });
-  const [tableWidths, setTableWidths] = useState<ColumnWidths>({ serial: 6, descriptionGroup: 11, description: 18, course: 13, quantity: 10, courseCount: 6, classTestCount: 9, rate: 12, amount: 15 });
+  const [tableWidths, setTableWidths] = useState<ColumnWidths>({ serial: 7, descriptionGroup: 11, description: 18, course: 13, quantity: 10, courseCount: 6, classTestCount: 9, rate: 12, amount: 14 });
   const billSheetRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
