@@ -363,7 +363,7 @@ export function deriveTeacherRows(
           : "",
         courseCount: "",
         classTestCount: "",
-        rate: "255",
+        rate: "225",
       })
     );
   if (isThesisApplicable(bill)) {
