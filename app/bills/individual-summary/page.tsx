@@ -49,9 +49,12 @@ export default function IndividualSummaryBillPage() {
   }, [pages, selectedDepartment]);
   const selectedPages = useMemo(
     () => pages
-      .filter((page) => teacherKey(page.teacher) === teacherKey(selectedTeacher))
+      .filter((page) => (
+        teacherKey(page.teacher) === teacherKey(selectedTeacher)
+        && (!selectedDepartment || page.department === selectedDepartment)
+      ))
       .sort((left, right) => collator.compare(left.fileName, right.fileName)),
-    [pages, selectedTeacher]
+    [pages, selectedTeacher, selectedDepartment]
   );
   const document = useMemo(
     () => <IndividualSummaryPdfDocument pages={selectedPages} />,

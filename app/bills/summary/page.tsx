@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { pdf } from "@react-pdf/renderer";
 import { ArrowDown, ArrowUp, FilePlus2, Trash2 } from "lucide-react";
 import CombinedBillPdfPreview from "../combined/CombinedBillPdfPreview";
@@ -9,6 +9,11 @@ import type { TableLayoutSettings } from "../create/components/types";
 import ColumnWidthEditor from "../preview/components/ColumnWidthEditor";
 import SectionPanel from "../preview/components/SectionPanel";
 import SummaryPdfDocument from "./SummaryPdfDocument";
+import {
+  clearSummarySession,
+  loadSummarySession,
+  saveSummarySession,
+} from "@/lib/storage/summary";
 import {
   examinationSummaryTitle,
   normalizeImportedBill,
@@ -114,10 +119,35 @@ export default function SummaryPage() {
   const [bills, setBills] = useState<ImportedSummaryBill[]>([]);
   const [message, setMessage] = useState("");
   const [downloading, setDownloading] = useState(false);
+  const [isGeneratingWord, setIsGeneratingWord] = useState(false);
   const [tableGap, setTableGap] = useState(10);
   const [remunerationListYear, setRemunerationListYear] = useState("2025-II");
   const [indexTableWidth, setIndexTableWidth] = useState(75);
+  const [hydrated, setHydrated] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const saved = loadSummarySession();
+    const restore = window.setTimeout(() => {
+      if (saved) {
+        setBills(saved.bills.map((item) => ({
+          ...item,
+          bill: normalizeImportedBill(item.bill),
+        })));
+        setTableGap(saved.tableGap);
+        setRemunerationListYear(saved.remunerationListYear);
+        setIndexTableWidth(saved.indexTableWidth);
+      }
+      setHydrated(true);
+    }, 0);
+    return () => window.clearTimeout(restore);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveSummarySession({ bills, tableGap, remunerationListYear, indexTableWidth });
+  }, [bills, hydrated, indexTableWidth, remunerationListYear, tableGap]);
+
   const document = useMemo(
     () => <SummaryPdfDocument bills={bills} tableGap={tableGap} remunerationListYear={remunerationListYear} indexTableWidth={indexTableWidth} />,
     [bills, tableGap, remunerationListYear, indexTableWidth]
@@ -164,6 +194,13 @@ export default function SummaryPage() {
     setBills((current) => current.filter((item) => item.id !== id));
   };
 
+  const clearFiles = () => {
+    if (!bills.length || !window.confirm("Clear all loaded bill files from this page?")) return;
+    setBills([]);
+    clearSummarySession();
+    setMessage("Loaded bill files cleared.");
+  };
+
   const updateBill = (id: string, bill: ExaminationBillData) => {
     setBills((current) => current.map((item) => item.id === id ? { ...item, bill } : item));
   };
@@ -194,6 +231,29 @@ export default function SummaryPage() {
     }
   };
 
+  const downloadWord = async () => {
+    if (!bills.length) return;
+    setIsGeneratingWord(true);
+    try {
+      const { generateEditableSummaryWordDocument } = await import("./generateEditableSummaryWordDocument");
+      const wordBlob = await generateEditableSummaryWordDocument(
+        bills,
+        remunerationListYear,
+        indexTableWidth,
+      );
+      const url = URL.createObjectURL(wordBlob);
+      const link = window.document.createElement("a");
+      link.href = url;
+      link.download = "Examination_Bill_Summary.docx";
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert("Failed to generate Word file: " + (error as Error).message);
+    } finally {
+      setIsGeneratingWord(false);
+    }
+  };
+
   return <main className="mx-auto max-w-[1600px] p-6">
     <input
       ref={inputRef}
@@ -211,14 +271,24 @@ export default function SummaryPage() {
           Import exported bill files to create one teacher list per bill and a consolidated final summary.
         </p>
       </div>
-      <button
-        type="button"
-        onClick={download}
-        disabled={!bills.length || downloading}
-        className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-400"
-      >
-        {downloading ? "Generating…" : "Download Summary PDF"}
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => void downloadWord()}
+          disabled={!bills.length || isGeneratingWord}
+          className="hidden rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-400"
+        >
+          {isGeneratingWord ? "Generating Word…" : "Download Summary Word"}
+        </button>
+        <button
+          type="button"
+          onClick={() => void download()}
+          disabled={!bills.length || downloading}
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-400"
+        >
+          {downloading ? "Generating…" : "Download Summary PDF"}
+        </button>
+      </div>
     </div>
 
     <div className="grid items-start gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
@@ -227,6 +297,24 @@ export default function SummaryPage() {
           <h2 className="font-semibold">Imported bill files</h2>
           <p className="text-xs text-slate-500">{bills.length} file(s) selected</p>
         </div>
+
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white"
+        >
+          <FilePlus2 className="h-4 w-4" />
+          Add bill files
+        </button>
+        <button
+          type="button"
+          onClick={clearFiles}
+          disabled={!bills.length}
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-md border border-red-200 px-3 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Trash2 className="h-4 w-4" />
+          Clear loaded files
+        </button>
 
         <div className="space-y-2 pr-1">
           {bills.map((item, index) => <div key={item.id} className="rounded-lg border bg-slate-50 p-3">
@@ -275,14 +363,6 @@ export default function SummaryPage() {
           </div>)}
         </div>
 
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white"
-        >
-          <FilePlus2 className="h-4 w-4" />
-          Add bill files
-        </button>
         <label className="mt-4 block border-t pt-4 text-sm font-medium">
           <span>Remuneration list year</span>
           <input

@@ -216,8 +216,14 @@ export function deriveTeacherRows(
         )
           add({ description: "ক্লাস টেস্ট", course: course.courseCode, quantity: String(classTestStudents || ""), courseCount: "1", classTestCount: String(entry.students.classTestCount || (bill.billInfo.examType === "short" ? 4 : 2)), rate: "50" });
         if (entry.duties.assignment && !isNonObe && bill.billInfo.examType !== "short") {
-          const students = entry.students.classTestStudents;
-          add({ description: "এসাইনমেন্ট / প্রেজেন্টেশন", course: course.courseCode, quantity: students ? `${students}/2` : entry.students.assignment, courseCount: "1", classTestCount: "2", rate: "50" });
+          add({
+            description: "এসাইনমেন্ট / প্রেজেন্টেশন",
+            course: course.courseCode,
+            quantity: Number(classTestStudents) > 0 ? `${classTestStudents}/2` : "",
+            courseCount: "1",
+            classTestCount: "",
+            rate: "50",
+          });
         }
         if (entry.duties.courseFile && !isNonObe && bill.billInfo.examType !== "short")
           add({ description: "কোর্স ফাইল প্রস্তুতকরণ", course: course.courseCode, quantity: "", courseCount: "1/2", classTestCount: "", rate: "6000" });

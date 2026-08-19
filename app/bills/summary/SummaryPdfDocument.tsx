@@ -131,7 +131,7 @@ export default function SummaryPdfDocument({
   indexTableWidth?: number;
 }) {
   return <Document title="Examination Bill Summary">
-    <Page size="A4" style={styles.indexPage}>
+    <Page size="LEGAL" style={styles.indexPage}>
       <Text style={styles.indexDepartment}>Department of BECM</Text>
       <Text style={styles.indexTitle}>Remuneration List – {remunerationListYear}</Text>
       <View style={[styles.indexTable, { width: `${indexTableWidth}%` }]}>
@@ -149,12 +149,12 @@ export default function SummaryPdfDocument({
       <Footer />
     </Page>
     {bills.map(({ id, bill }) => <BillPdfPages key={`preview-${id}`} bill={bill} />)}
-    {bills.map(({ id, bill }) => <Page key={id} size="A4" style={styles.page}>
+    {bills.map(({ id, bill }) => <Page key={id} size="LEGAL" style={styles.page}>
       <Header title={examinationSummaryTitle(bill)} tableGap={tableGap} />
       <TeacherTable teachers={teachersForBill(bill)} />
       <Footer />
     </Page>)}
-    <Page size="A4" style={styles.page}>
+    <Page size="LEGAL" style={styles.page}>
       <Header title="Consolidated Remuneration List of Dept. of BECM for All Imported Examination Bills" tableGap={tableGap} />
       <TeacherTable teachers={aggregateTeachers(bills)} />
       <Footer />

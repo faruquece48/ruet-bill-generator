@@ -372,7 +372,7 @@ export default function PreviewPage() {
     setIsGeneratingWord(true);
     try {
       const { generateWordDocument } = await import("./generateWordDocument");
-      const wordBlob = await generateWordDocument(billData);
+      const wordBlob = await generateWordDocument(<BillPdfDocument bill={billData} />);
       const url = URL.createObjectURL(wordBlob);
       const link = window.document.createElement("a");
       link.href = url;

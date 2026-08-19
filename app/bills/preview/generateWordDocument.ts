@@ -1,9 +1,6 @@
-import type { ExaminationBillData } from "../create/components/types";
 import type { DocumentProps } from "@react-pdf/renderer";
 import type { ReactElement } from "react";
 
-const LEGAL_WIDTH_PX = 816;
-const LEGAL_HEIGHT_PX = 1344;
 const PDF_TO_CSS_PIXEL_SCALE = 96 / 72;
 
 function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {
@@ -20,12 +17,12 @@ function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {
  * preview and PDF download. Embedding each rendered page prevents Word's
  * table and pagination engine from changing the layout.
  */
-export async function generateWordDocument(bill: ExaminationBillData): Promise<Blob> {
-  const [{ createElement }, { pdf }, pdfjs, { default: BillPdfDocument }, docx] = await Promise.all([
-    import("react"),
+export async function generateWordDocument(
+  pdfElement: ReactElement<DocumentProps>
+): Promise<Blob> {
+  const [{ pdf }, pdfjs, docx] = await Promise.all([
     import("@react-pdf/renderer"),
     import("pdfjs-dist"),
-    import("../create/components/pdf/BillPdfDocument"),
     import("docx"),
   ]);
 
@@ -34,14 +31,20 @@ export async function generateWordDocument(bill: ExaminationBillData): Promise<B
     import.meta.url,
   ).toString();
 
-  const pdfDocument = createElement(BillPdfDocument, { bill }) as unknown as ReactElement<DocumentProps>;
-  const pdfBlob = await pdf(pdfDocument).toBlob();
+  const pdfBlob = await pdf(pdfElement).toBlob();
   const loadedPdf = await pdfjs.getDocument(await pdfBlob.arrayBuffer()).promise;
-  const pageImages: Uint8Array[] = [];
+  const pageImages: Array<{
+    data: Uint8Array;
+    width: number;
+    height: number;
+    pageWidth: number;
+    pageHeight: number;
+  }> = [];
 
   for (let pageNumber = 1; pageNumber <= loadedPdf.numPages; pageNumber += 1) {
     const page = await loadedPdf.getPage(pageNumber);
     const viewport = page.getViewport({ scale: PDF_TO_CSS_PIXEL_SCALE });
+    const pageSize = page.getViewport({ scale: 1 });
     const canvas = window.document.createElement("canvas");
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Canvas rendering is unavailable in this browser.");
@@ -49,30 +52,35 @@ export async function generateWordDocument(bill: ExaminationBillData): Promise<B
     canvas.width = Math.round(viewport.width);
     canvas.height = Math.round(viewport.height);
     await page.render({ canvasContext: context, viewport }).promise;
-    pageImages.push(new Uint8Array(await (await canvasToPng(canvas)).arrayBuffer()));
+    pageImages.push({
+      data: new Uint8Array(await (await canvasToPng(canvas)).arrayBuffer()),
+      width: Math.round(viewport.width),
+      height: Math.round(viewport.height),
+      pageWidth: Math.round(pageSize.width * 20),
+      pageHeight: Math.round(pageSize.height * 20),
+    });
     page.cleanup();
   }
 
   await loadedPdf.destroy();
 
   const document = new docx.Document({
-    sections: [{
+    sections: pageImages.map(({ data, width, height, pageWidth, pageHeight }) => ({
       properties: {
         page: {
-          size: { width: 12240, height: 20160 },
+          size: { width: pageWidth, height: pageHeight },
           margin: { top: 0, right: 0, bottom: 0, left: 0, header: 0, footer: 0, gutter: 0 },
         },
       },
-      children: pageImages.map((data, index) => new docx.Paragraph({
-        pageBreakBefore: index > 0,
+      children: [new docx.Paragraph({
         spacing: { before: 0, after: 0, line: 1 },
         children: [new docx.ImageRun({
           type: "png",
           data,
-          transformation: { width: LEGAL_WIDTH_PX, height: LEGAL_HEIGHT_PX },
+          transformation: { width, height },
         })],
-      })),
-    }],
+      })],
+    })),
   });
 
   return docx.Packer.toBlob(document);

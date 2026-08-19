@@ -281,7 +281,7 @@ export function flattenAssignment(courses: CourseDuty[]): AssignmentRow[] {
             entry.designation,
             entry.department
           ),
-          assignmentValue: entry.students.assignment,
+          assignmentValue: "",
         });
       });
     });
