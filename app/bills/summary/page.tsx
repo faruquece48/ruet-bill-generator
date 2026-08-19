@@ -123,6 +123,7 @@ export default function SummaryPage() {
   const [tableGap, setTableGap] = useState(10);
   const [remunerationListYear, setRemunerationListYear] = useState("2025-II");
   const [indexTableWidth, setIndexTableWidth] = useState(75);
+  const [sidebarWidth, setSidebarWidth] = useState(500);
   const [hydrated, setHydrated] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -137,6 +138,7 @@ export default function SummaryPage() {
         setTableGap(saved.tableGap);
         setRemunerationListYear(saved.remunerationListYear);
         setIndexTableWidth(saved.indexTableWidth);
+        setSidebarWidth(saved.sidebarWidth);
       }
       setHydrated(true);
     }, 0);
@@ -145,8 +147,8 @@ export default function SummaryPage() {
 
   useEffect(() => {
     if (!hydrated) return;
-    saveSummarySession({ bills, tableGap, remunerationListYear, indexTableWidth });
-  }, [bills, hydrated, indexTableWidth, remunerationListYear, tableGap]);
+    saveSummarySession({ bills, tableGap, remunerationListYear, indexTableWidth, sidebarWidth });
+  }, [bills, hydrated, indexTableWidth, remunerationListYear, sidebarWidth, tableGap]);
 
   const document = useMemo(
     () => <SummaryPdfDocument bills={bills} tableGap={tableGap} remunerationListYear={remunerationListYear} indexTableWidth={indexTableWidth} />,
@@ -291,7 +293,10 @@ export default function SummaryPage() {
       </div>
     </div>
 
-    <div className="grid items-start gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
+    <div
+      className="grid items-start gap-5 lg:grid-cols-[var(--summary-sidebar-width)_minmax(0,1fr)]"
+      style={{ "--summary-sidebar-width": `${sidebarWidth}px` } as React.CSSProperties}
+    >
       <aside className="rounded-xl border bg-white p-4 shadow-sm lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
         <div className="mb-3">
           <h2 className="font-semibold">Imported bill files</h2>
@@ -315,6 +320,19 @@ export default function SummaryPage() {
           <Trash2 className="h-4 w-4" />
           Clear loaded files
         </button>
+        <label className="mt-4 block border-t pt-4 text-sm font-medium">
+          <span>Left panel width ({sidebarWidth}px)</span>
+          <input
+            type="range"
+            min="260"
+            max="520"
+            step="10"
+            value={sidebarWidth}
+            onChange={(event) => setSidebarWidth(Number(event.target.value))}
+            className="mt-2 w-full accent-blue-600"
+            aria-label="Left panel width"
+          />
+        </label>
 
         <div className="space-y-2 pr-1">
           {bills.map((item, index) => <div key={item.id} className="rounded-lg border bg-slate-50 p-3">

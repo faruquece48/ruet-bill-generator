@@ -7,6 +7,7 @@ export interface SummarySession {
   tableGap: number;
   remunerationListYear: string;
   indexTableWidth: number;
+  sidebarWidth: number;
 }
 
 export function saveSummarySession(session: SummarySession): void {
@@ -32,6 +33,9 @@ export function loadSummarySession(): SummarySession | null {
       indexTableWidth: typeof parsed.indexTableWidth === "number"
         ? parsed.indexTableWidth
         : 75,
+      sidebarWidth: typeof parsed.sidebarWidth === "number"
+        ? parsed.sidebarWidth
+        : 500,
     };
   } catch {
     return null;
