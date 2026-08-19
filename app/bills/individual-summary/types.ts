@@ -6,6 +6,7 @@ export interface IndividualSummaryPage {
   fileName: string;
   bill: ExaminationBillData;
   teacher: string;
+  department: string;
   nameBangla: string;
   designationBangla: string;
   addressBangla: string;

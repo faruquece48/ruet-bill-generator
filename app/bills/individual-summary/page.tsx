@@ -27,14 +27,26 @@ const inputClass = "w-full rounded-md border border-slate-300 bg-white px-3 py-2
 export default function IndividualSummaryBillPage() {
   const [pages, setPages] = useState<IndividualSummaryPage[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
   const [message, setMessage] = useState("");
   const [downloading, setDownloading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const departments = useMemo(
+    () => Array.from(new Set(pages.map((page) => page.department).filter(Boolean)))
+      .sort((left, right) => left.localeCompare(right)),
+    [pages]
+  );
   const teachers = useMemo(() => {
-    const names = new Map<string, string>();
-    pages.forEach((page) => names.set(teacherKey(page.teacher), page.teacher));
-    return Array.from(names.values()).sort((left, right) => left.localeCompare(right));
-  }, [pages]);
+    const names = new Map<string, { name: string; billCount: number }>();
+    pages
+      .filter((page) => !selectedDepartment || page.department === selectedDepartment)
+      .forEach((page) => {
+        const key = teacherKey(page.teacher);
+        const existing = names.get(key);
+        names.set(key, { name: existing?.name || page.teacher, billCount: (existing?.billCount || 0) + 1 });
+      });
+    return Array.from(names.values()).sort((left, right) => left.name.localeCompare(right.name));
+  }, [pages, selectedDepartment]);
   const selectedPages = useMemo(
     () => pages
       .filter((page) => teacherKey(page.teacher) === teacherKey(selectedTeacher))
@@ -70,13 +82,14 @@ export default function IndividualSummaryBillPage() {
         const parsed = JSON.parse(await file.text()) as Partial<ExaminationBillData>;
         if (!parsed.billInfo || typeof parsed.billInfo !== "object") throw new Error("Missing bill information");
         const bill = normalizeImportedBill(parsed);
-        teachersForBill(bill).forEach(({ name: teacher }, teacherIndex) => {
+        teachersForBill(bill).forEach(({ name: teacher, department }, teacherIndex) => {
           const saved = information[teacherKey(teacher)];
           imported.push({
             id: `${Date.now()}-${fileIndex}-${teacherIndex}-${file.name}`,
             fileName: file.name,
             bill,
             teacher,
+            department: department || saved?.departmentKey || "",
             nameBangla: saved?.nameBangla || teacher.replace(/^(mr|mrs|ms|mst)\.?\s+/i, ""),
             designationBangla: saved?.designationBangla || "",
             addressBangla: saved?.addressBangla || defaultAddress,
@@ -140,13 +153,17 @@ export default function IndividualSummaryBillPage() {
         <aside className="rounded-xl border bg-white p-4 shadow-sm lg:sticky lg:top-20 lg:flex lg:max-h-[calc(100vh-6rem)] lg:flex-col">
           <div className="shrink-0"><h2 className="font-semibold">Select teacher</h2><p className="text-xs text-slate-500">The preview and PDF include only the selected teacher.</p></div>
           <label className="mt-3 block shrink-0 text-xs font-medium text-slate-600">
+            Department
+            <select value={selectedDepartment} onChange={(event) => { setSelectedDepartment(event.target.value); setSelectedTeacher(""); }} className={`${inputClass} mt-1.5`}>
+              <option value="">All departments</option>
+              {departments.map((department) => <option key={department} value={department}>{department}</option>)}
+            </select>
+          </label>
+          <label className="mt-3 block shrink-0 text-xs font-medium text-slate-600">
             Teacher name
             <select value={selectedTeacher} onChange={(event) => setSelectedTeacher(event.target.value)} className={`${inputClass} mt-1.5`}>
               <option value="">Select teacher</option>
-              {teachers.map((teacher) => {
-                const billCount = pages.filter((page) => teacherKey(page.teacher) === teacherKey(teacher)).length;
-                return <option key={teacherKey(teacher)} value={teacher}>{teacher} ({billCount} bills)</option>;
-              })}
+              {teachers.map(({ name, billCount }) => <option key={teacherKey(name)} value={name}>{name} ({billCount} bills)</option>)}
             </select>
           </label>
           {selectedTeacher && (
