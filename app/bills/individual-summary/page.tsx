@@ -21,6 +21,7 @@ const defaultTableWidths: ColumnWidths = { serial: 6, descriptionGroup: 9, descr
 const defaultAddress = "বিইসিএম বিভাগ, রুয়েট।";
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 const teacherKey = (name: string) => name.trim().toLocaleLowerCase();
+const fileSafeName = (name: string) => name.trim().replace(/[\\/:*?"<>|]/g, "-") || "Selected_Teacher";
 
 const inputClass = "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm";
 
@@ -129,7 +130,7 @@ export default function IndividualSummaryBillPage() {
       const url = URL.createObjectURL(blob);
       const link = window.document.createElement("a");
       link.href = url;
-      link.download = "Individual_Summary_Bills.pdf";
+      link.download = `${fileSafeName(selectedTeacher)}_Individual_Summary_Bills.pdf`;
       link.click();
       URL.revokeObjectURL(url);
     } finally {
