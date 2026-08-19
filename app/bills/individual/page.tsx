@@ -50,10 +50,11 @@ export default function IndividualTeacherBillPage() {
   const [accountNumber, setAccountNumber] = useState("");
   const [teacherSaveStatus, setTeacherSaveStatus] = useState("");
   const [divisionGaps, setDivisionGaps] = useState<Record<string, number>>({ header: 0, teacher: 0, exam: 1, mainTable: 0, signature: 0, account: 0, footer: 0 });
+  const [approvalSignatureGap, setApprovalSignatureGap] = useState(16);
   const [sectionFontSizes, setSectionFontSizes] = useState<Record<string, number>>({ header: 12, teacher: 12, exam: 12, mainTable: 10, signature: 13, account: 13, footer: 10 });
   const [remunerationOpen, setRemunerationOpen] = useState(false);
-  const [metaWidths, setMetaWidths] = useState<ColumnWidths>({ qualifications: 37, examination: 47, billNumber: 16 });
-  const [tableWidths, setTableWidths] = useState<ColumnWidths>({ serial: 7, descriptionGroup: 11, description: 19, course: 13, quantity: 10, courseCount: 6, classTestCount: 9, rate: 12, amount: 13 });
+  const [metaWidths, setMetaWidths] = useState<ColumnWidths>({ qualifications: 40, examination: 42, billNumber: 18 });
+  const [tableWidths, setTableWidths] = useState<ColumnWidths>({ serial: 6, descriptionGroup: 9, description: 22, course: 18, quantity: 10, courseCount: 8, classTestCount: 9, rate: 10, amount: 8 });
   const billSheetRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -180,12 +181,29 @@ export default function IndividualTeacherBillPage() {
                     <input type="number" min="6" max="30" step="1" value={sectionFontSizes[key] ?? 10} onChange={(event) => setSectionFontSizes((current) => ({ ...current, [key]: Math.min(30, Math.max(6, Number(event.target.value) || 6)) }))} className={inputClass} aria-label={`Font size for ${label} in pixels`} />
                   </label>
                 ))}
+                <label className="grid grid-cols-[1fr_72px] items-center gap-3 border-t pt-3 text-sm">
+                  <span>Gap between countersigned text and signature lines</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="60"
+                    step="1"
+                    value={approvalSignatureGap}
+                    onChange={(event) => setApprovalSignatureGap(Math.min(60, Math.max(0, Number(event.target.value) || 0)))}
+                    className={inputClass}
+                    aria-label="Gap between countersigned text and signature lines in millimeters"
+                  />
+                </label>
               </div>
               <div><h2 className="mb-2 font-semibold">Information table widths</h2><ColumnWidthEditor widths={metaWidths} setWidths={setMetaWidths} labels={{ qualifications: "Qualifications", examination: "Examination", billNumber: "Bill number" }} /></div>
               <div><h2 className="mb-2 font-semibold">Remuneration table widths</h2><ColumnWidthEditor widths={tableWidths} setWidths={setTableWidths} labels={{ serial: "Serial", descriptionGroup: "Description", description: "Individual description", course: "Course", quantity: "Scripts/students", courseCount: "Courses", classTestCount: "Class tests", rate: "Rate", amount: "Amount" }} /></div>
             </div>
           </section>
           <section className="preview-shell overflow-auto rounded-xl bg-slate-300 p-5">
+            <div className="legal-page-preview relative mx-auto w-[215.9mm]">
+            <div className="legal-page-limit no-print" aria-hidden="true">
+              <span>Legal page limit (14 in)</span>
+            </div>
             <article ref={billSheetRef} className="bill-sheet individual-print-document mx-auto bg-white text-black shadow-xl" lang="bn" style={{ "--teacher-gap": `${divisionGaps.teacher}mm`, "--exam-gap": `${divisionGaps.exam}mm`, "--main-table-gap": `${divisionGaps.mainTable}mm`, "--signature-gap": `${divisionGaps.signature}mm`, "--account-gap": `${divisionGaps.account}mm`, "--footer-gap": `${divisionGaps.footer}mm`, "--header-font-size": `${sectionFontSizes.header}px`, "--teacher-font-size": `${sectionFontSizes.teacher}px`, "--exam-font-size": `${sectionFontSizes.exam}px`, "--main-table-font-size": `${sectionFontSizes.mainTable}px`, "--signature-font-size": `${sectionFontSizes.signature}px`, "--account-font-size": `${sectionFontSizes.account}px`, "--footer-font-size": `${sectionFontSizes.footer}px` } as React.CSSProperties}>
               <SutonnyBillText>
               <header className="relative text-center bill-header" style={{ marginBottom: `${divisionGaps.header}mm` }}>
@@ -238,12 +256,13 @@ export default function IndividualTeacherBillPage() {
               <div className="mt-7 border-t border-black pt-2 text-[9px] leading-5"><p><strong>বিঃদ্রঃ-</strong> বিলের মোট পরিমাণ ২০০/- টাকার উপরে হইলে ১০/- টাকা মূল্যের রাজস্ব স্ট্যাম্প দিতে হইবে।</p><p>সরকারি শিক্ষক/অফিসারদের ক্ষেত্রে যথাযথ কর্তৃপক্ষের অনুমোদন প্রয়োজন। উল্লেখ্য যে, প্রত্যেক সেমিস্টার পরীক্ষার জন্য পৃথকভাবে বিল জমা দিতে হইবে।</p></div>
               </div>
               <p className="signature-section mt-5 text-center">প্রতি স্বাক্ষরিত</p>
-              <div className="signature-section mt-16 grid grid-cols-2 text-center"><div><p className="mb-8">সভাপতি, পরীক্ষা কমিটি।</p></div><div><div className="mx-auto w-56 border-t border-black pt-1">পরীক্ষকের স্বাক্ষর</div><p className="mt-2">তারিখঃ</p></div></div>
+              <div className="signature-section grid grid-cols-2 text-center" style={{ marginTop: `${approvalSignatureGap}mm` }}><div><p className="mb-8">সভাপতি, পরীক্ষা কমিটি।</p></div><div><div className="mx-auto w-56 border-t border-black pt-1">পরীক্ষকের স্বাক্ষর</div><p className="mt-2">তারিখঃ</p></div></div>
               <div className="account-section mt-6 border border-black text-center"><p className="border-b border-black py-1 font-semibold">হিসাব শাখা পূরণ করিবেন</p><p className="py-3">{nameBangla || "................................"} কে {amountInBanglaWords(total)} মাত্র | পরিশোধ করা হইল।</p></div>
               <div className="account-section mt-10 grid grid-cols-4 text-center"><p>হিসাব সহকারী</p><p>হিসাব রক্ষক</p><p>সহকারী কম্পট্রোলার</p><p>কম্পট্রোলার<br/>রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়</p></div>
               <div className="footer-section mt-5 border-t border-black pt-2 text-center leading-5"><p>বিঃদ্রঃ বিলের মোট পরিমাণ ২০০/- টাকার উপরে হইলে ১০/- টাকা মূল্যের রাজস্ব স্ট্যাম্প দিতে হইবে।</p><p>সরকারি শিক্ষক/অফিসারদের ক্ষেত্রে যথাযথ কর্তৃপক্ষের অনুমোদন প্রয়োজন। উল্লেখ্য যে, প্রত্যেক সেমিস্টার পরীক্ষার জন্য পৃথকভাবে বিল জমা দিতে হইবে।</p></div>
               </SutonnyBillText>
              </article>
+             </div>
            </section>
                  </div>
        </div>
@@ -251,6 +270,7 @@ export default function IndividualTeacherBillPage() {
         .bill-sheet {
           box-sizing: border-box;
           width: 215.9mm;
+          min-height: 355.6mm;
           padding: 12mm 13mm;
           font-family: "SutonnyMJ", serif;
           color: #000;
@@ -259,6 +279,27 @@ export default function IndividualTeacherBillPage() {
              is what makes exported text look washed-out/ash colored. */
           background-color: #ffffff;
           -webkit-font-smoothing: antialiased;
+        }
+        .legal-page-limit {
+          position: absolute;
+          top: 355.6mm;
+          left: 0;
+          right: 0;
+          z-index: 20;
+          border-top: 2px dashed #dc2626;
+          pointer-events: none;
+        }
+        .legal-page-limit span {
+          position: absolute;
+          right: 8px;
+          bottom: 4px;
+          border-radius: 4px;
+          background: #dc2626;
+          padding: 2px 7px;
+          color: white;
+          font-family: Arial, sans-serif;
+          font-size: 11px;
+          font-weight: 600;
         }
         .bill-sheet * { color: inherit; }
         .bill-sheet .individual-course-code,

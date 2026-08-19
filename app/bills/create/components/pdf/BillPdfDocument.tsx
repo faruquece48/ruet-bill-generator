@@ -10,6 +10,7 @@ import {
   flattenCourseFile,
   flattenSessional,
   flattenBoardViva,
+  mixedSessionalStudentTotal,
   flattenTabulation,
   deriveGradeSheetRows,
   formatCourseAdviserStudents,
@@ -370,19 +371,26 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       )
     : obeClassTestRows;
   const assignmentRows = isShortSemester ? [] : flattenAssignment(bill.courseDuties.obe);
-  const courseFileRows = isShortSemester ? [] : flattenCourseFile(bill.courseDuties.obe, bill.sessionalDuties);
-  const sessionalRows = flattenSessional(bill.sessionalDuties);
-  const sessionalGroups = groupByCourse(sessionalRows);
+  const sessionalIsMixed = bill.sessionalEvaluationSystem === "mixed";
+  const obeSessionalDuties = bill.sessionalDuties.filter((course) => (course.syllabus ?? "obe") === "obe");
+  const nonObeSessionalDuties = bill.sessionalDuties.filter((course) => course.syllabus === "nonObe");
+  const visibleSessionalDuties = sessionalIsMixed ? [...obeSessionalDuties, ...nonObeSessionalDuties] : obeSessionalDuties;
+  const courseFileRows = isShortSemester ? [] : flattenCourseFile(bill.courseDuties.obe, obeSessionalDuties);
+  const obeSessionalRows = flattenSessional(obeSessionalDuties);
+  const nonObeSessionalRows = flattenSessional(nonObeSessionalDuties);
+  const sessionalRows = sessionalIsMixed ? [...obeSessionalRows, ...nonObeSessionalRows] : obeSessionalRows;
+  const mixedSessionalTotal = mixedSessionalStudentTotal(visibleSessionalDuties);
+  const sharedStudentTotal = mixedSessionalTotal || bill.tabulationStudentCount;
   const boardVivaRows = flattenBoardViva(
-    bill.sessionalDuties,
+    visibleSessionalDuties,
     bill.vivaBoardTeachers,
-    Number(bill.billInfo.totalStudents) || "",
+    mixedSessionalTotal || Number(bill.billInfo.totalStudents) || "",
     bill.boardVivaMemberOrder ?? [],
   );
   const tabulationRows = flattenTabulation(bill.studentDuties);
   const gradeSheetRows = deriveGradeSheetRows(
     bill.studentDuties,
-    bill.tabulationStudentCount
+    String(sharedStudentTotal)
   );
   const allScrutiny = isMixedEvaluation
     ? [...bill.scrutinies.obe, ...bill.scrutinies.nonObe]
@@ -405,7 +413,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     title: string;
     breakAfterKey: string;
     hasData: boolean;
-    content: React.ReactNode;
+    content: React.ReactNode | ((sectionNumber: number) => React.ReactNode);
     includeInBacklog: boolean;
   };
   const sections: Section[] = [
@@ -589,17 +597,35 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       breakAfterKey: "sessionalDuty",
       hasData: sessionalRows.length > 0,
       includeInBacklog: false,
-      content: (
+      content: (sectionNumber) => (
+        <View>
+        {sessionalIsMixed && <Text style={styles.subSectionTitle}>{sectionNumber}.1 OBE (New Syllabus)</Text>}
         <GroupedTable
           courseWidth={lw.sessionalDuty.courseLine ?? 25}
           entryColumns={[
             { key: "credit", label: "Credit", width: lw.sessionalDuty.credit ?? 7, align: "center" },
             { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.sessionalDuty.teacherLine ?? 54 },
           ]}
-          groups={sessionalGroups}
+          groups={groupByCourse(obeSessionalRows)}
           groupedEntryKeys={["credit"]}
           groupMergeColumn={{ key: "students", label: "No. of Students", width: lw.sessionalDuty.students ?? 14, align: "center", value: (group) => group.entries[0]?.students }}
         />
+        {sessionalIsMixed && (
+          <View>
+            <Text style={styles.subSectionTitle}>{sectionNumber}.2 Non-OBE (Old Syllabus)</Text>
+            <GroupedTable
+              courseWidth={lw.sessionalDuty.courseLine ?? 25}
+              entryColumns={[
+                { key: "credit", label: "Credit", width: lw.sessionalDuty.credit ?? 7, align: "center" },
+                { key: "teacherLine", label: "Name of Teachers & Designation", width: lw.sessionalDuty.teacherLine ?? 54 },
+              ]}
+              groups={groupByCourse(nonObeSessionalRows)}
+              groupedEntryKeys={["credit"]}
+              groupMergeColumn={{ key: "students", label: "No. of Students", width: lw.sessionalDuty.students ?? 14, align: "center", value: (group) => group.entries[0]?.students }}
+            />
+          </View>
+        )}
+        </View>
       ),
     },
     {
@@ -616,7 +642,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
           ]}
           rows={boardVivaRows}
           mergeKey="students"
-          mergeValue={bill.billInfo.totalStudents || "—"}
+          mergeValue={mixedSessionalTotal || bill.billInfo.totalStudents || "—"}
         />
       ),
     },
@@ -634,7 +660,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
       ]}
       rows={tabulationRows}
       mergeKey="students"
-      mergeValue={bill.tabulationStudentCount || "—"}
+      mergeValue={sharedStudentTotal || "—"}
     />
   ),
 },
@@ -844,7 +870,7 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
             <Text style={styles.sectionTitle}>
               {i + 1}. {section.title}
             </Text>
-            {section.content}
+            {typeof section.content === "function" ? section.content(i + 1) : section.content}
             <View
               style={{
                 height: Math.max(

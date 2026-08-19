@@ -10,6 +10,7 @@ import {
   flattenCourseFile,
   flattenSessional,
   flattenBoardViva,
+  mixedSessionalStudentTotal,
   flattenTabulation,
   deriveGradeSheetRows,
   formatCourseAdviserStudents,
@@ -95,18 +96,28 @@ export default function PreviewDocument({ bill }: Props) {
       )
     : obeClassTestRows;
   const assignmentRows = isShortSemester ? [] : flattenAssignment(bill.courseDuties.obe);
-  const courseFileRows = isShortSemester ? [] : flattenCourseFile(bill.courseDuties.obe, bill.sessionalDuties);
-  const sessionalRows = flattenSessional(bill.sessionalDuties);
+  const sessionalIsMixed = bill.sessionalEvaluationSystem === "mixed";
+  const obeSessionalDuties = bill.sessionalDuties.filter((course) => (course.syllabus ?? "obe") === "obe");
+  const nonObeSessionalDuties = bill.sessionalDuties.filter((course) => course.syllabus === "nonObe");
+  const visibleSessionalDuties = sessionalIsMixed
+    ? [...obeSessionalDuties, ...nonObeSessionalDuties]
+    : obeSessionalDuties;
+  const courseFileRows = isShortSemester ? [] : flattenCourseFile(bill.courseDuties.obe, obeSessionalDuties);
+  const obeSessionalRows = flattenSessional(obeSessionalDuties);
+  const nonObeSessionalRows = flattenSessional(nonObeSessionalDuties);
+  const sessionalRows = sessionalIsMixed ? [...obeSessionalRows, ...nonObeSessionalRows] : obeSessionalRows;
+  const mixedSessionalTotal = mixedSessionalStudentTotal(visibleSessionalDuties);
+  const sharedStudentTotal = mixedSessionalTotal || bill.tabulationStudentCount;
   const boardVivaRows = flattenBoardViva(
-    bill.sessionalDuties,
+    visibleSessionalDuties,
     bill.vivaBoardTeachers,
-    Number(bill.billInfo.totalStudents) || "",
+    mixedSessionalTotal || Number(bill.billInfo.totalStudents) || "",
     bill.boardVivaMemberOrder ?? [],
   );
   const tabulationRows = flattenTabulation(bill.studentDuties);
   const gradeSheetRows = deriveGradeSheetRows(
     bill.studentDuties,
-    bill.tabulationStudentCount
+    String(sharedStudentTotal)
   );
   const allScrutiny = isMixedEvaluation
     ? [...bill.scrutinies.obe, ...bill.scrutinies.nonObe]
@@ -127,7 +138,7 @@ export default function PreviewDocument({ bill }: Props) {
     role: m.role,
   }));
 
-  type Section = { title: string; hasData: boolean; content: React.ReactNode; includeInBacklog: boolean };
+  type Section = { title: string; hasData: boolean; content: React.ReactNode | ((sectionNumber: number) => React.ReactNode); includeInBacklog: boolean };
 
   const sections: Section[] = [
     {
@@ -286,13 +297,15 @@ export default function PreviewDocument({ bill }: Props) {
       title: "List of Teachers Associated with Sessional",
       hasData: sessionalRows.length > 0,
       includeInBacklog: false,
-      content: (
+      content: (sectionNumber) => (
+        <div className="space-y-4">
+        {sessionalIsMixed && <h3 className="font-bold">{sectionNumber}.1 OBE (New Syllabus)</h3>}
         <GroupedCourseTable
           entryColumns={[
             { key: "credit", label: "Credit", align: "center" },
             { key: "teacherLine", label: "Name of Teachers & Designation" },
           ]}
-          groups={groupByCourse(sessionalRows)}
+          groups={groupByCourse(obeSessionalRows)}
           widths={{
             course: bill.layoutSettings.sessionalDuty.courseLine ?? 30,
             credit: bill.layoutSettings.sessionalDuty.credit ?? 8,
@@ -302,13 +315,34 @@ export default function PreviewDocument({ bill }: Props) {
           groupedEntryKeys={["credit"]}
           groupMergeColumn={{ key: "students", label: "No. of Students", align: "center", value: (group) => group.entries[0]?.students }}
         />
+        {sessionalIsMixed && (
+          <>
+            <h3 className="font-bold">{sectionNumber}.2 Non-OBE (Old Syllabus)</h3>
+            <GroupedCourseTable
+              entryColumns={[
+                { key: "credit", label: "Credit", align: "center" },
+                { key: "teacherLine", label: "Name of Teachers & Designation" },
+              ]}
+              groups={groupByCourse(nonObeSessionalRows)}
+              widths={{
+                course: bill.layoutSettings.sessionalDuty.courseLine ?? 30,
+                credit: bill.layoutSettings.sessionalDuty.credit ?? 8,
+                teacherLine: bill.layoutSettings.sessionalDuty.teacherLine ?? 52,
+                students: bill.layoutSettings.sessionalDuty.students ?? 10,
+              }}
+              groupedEntryKeys={["credit"]}
+              groupMergeColumn={{ key: "students", label: "No. of Students", align: "center", value: (group) => group.entries[0]?.students }}
+            />
+          </>
+        )}
+        </div>
       ),
     },
     {
       title: "List of Teachers Associated with Board Viva",
       hasData: boardVivaRows.length > 0,
       includeInBacklog: true,
-      content: <PreviewTable columns={listCols} rows={boardVivaRows} widths={bill.layoutSettings.boardViva} showSerial mergeColumnKey="students" mergeValue={bill.billInfo.totalStudents || "—"} />,
+      content: <PreviewTable columns={listCols} rows={boardVivaRows} widths={bill.layoutSettings.boardViva} showSerial mergeColumnKey="students" mergeValue={mixedSessionalTotal || bill.billInfo.totalStudents || "—"} />,
     },
     {
       title: "List of Teachers Associated with Tabulation",
@@ -321,7 +355,7 @@ export default function PreviewDocument({ bill }: Props) {
           widths={bill.layoutSettings.tabulation}
           showSerial
           mergeColumnKey="students"
-          mergeValue={bill.tabulationStudentCount || "—"}
+          mergeValue={sharedStudentTotal || "—"}
         />
       ),
     },
@@ -464,7 +498,7 @@ export default function PreviewDocument({ bill }: Props) {
           <h2 className="text-lg font-bold">
             {i + 1}. {section.title}
           </h2>
-          {section.content}
+          {typeof section.content === "function" ? section.content(i + 1) : section.content}
         </div>
       ))}
       <div className="mt-8 border-t pt-3 text-center text-[11px] text-gray-500">

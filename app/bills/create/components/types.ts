@@ -95,6 +95,7 @@ export interface SessionalAdditionalTeacher {
 }
 
 export interface SessionalCourse {
+  syllabus?: "obe" | "nonObe";
   courseCode: string;
   courseTitle: string;
   credit: string;
@@ -192,6 +193,7 @@ export interface ExaminationBillData {
   committees: CommitteeMember[];
   courseDuties: { obe: CourseDuty[]; nonObe: CourseDuty[] };
   sessionalDuties: SessionalCourse[];
+  sessionalEvaluationSystem: "obe" | "mixed";
   vivaBoardTeachers: VivaBoardTeacher[];
   boardVivaMemberOrder: string[];
   questionWorks: QuestionWork[];

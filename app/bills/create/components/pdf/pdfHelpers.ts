@@ -567,6 +567,23 @@ export function formatCourseAdviserStudents(
   return adviserCount > 1 ? `${totalStudents}/${adviserCount}` : totalStudents;
 }
 
+/**
+ * When old-syllabus sessional courses are present, the shared student total
+ * is the largest OBE sessional batch plus the largest Non-OBE sessional batch.
+ */
+export function mixedSessionalStudentTotal(
+  courses: SessionalCourse[],
+): number | "" {
+  const nonObeCourses = courses.filter((course) => course.syllabus === "nonObe");
+  if (nonObeCourses.length === 0) return "";
+
+  const maximum = (items: SessionalCourse[]) =>
+    Math.max(0, ...items.map((course) => Number(course.students.sessional) || 0));
+  const obeCourses = courses.filter((course) => (course.syllabus ?? "obe") === "obe");
+  const total = maximum(obeCourses) + maximum(nonObeCourses);
+  return total || "";
+}
+
 // ------------------------------
 // Group flattened rows by course (courseCode + courseTitle), so Part A
 // and Part B of the same course share a single serial number and a

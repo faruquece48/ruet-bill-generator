@@ -38,6 +38,8 @@ const summaryValue = (value: string) =>
 
 interface Props {
   examType: "semester" | "backlog" | "short";
+  evaluationSystem: "obe" | "mixed";
+  setEvaluationSystem: (value: "obe" | "mixed") => void;
   defaultStudentCount: string;
   sessionalDuties: SessionalCourse[];
   setSessionalDuties: (data: SessionalCourse[]) => void;
@@ -45,6 +47,8 @@ interface Props {
 
 export default function SessionalDutyManager({
   examType,
+  evaluationSystem,
+  setEvaluationSystem,
   defaultStudentCount,
   sessionalDuties,
   setSessionalDuties,
@@ -75,19 +79,20 @@ export default function SessionalDutyManager({
     setSessionalDuties(data);
   };
 
-  const addCourse = () => {
+  const addCourse = (syllabus: "obe" | "nonObe" = "obe") => {
     const newIndex = courses.length;
     const studentCount = Number(defaultStudentCount) || 0;
     setCourses([
       ...courses,
       {
+        syllabus,
         courseCode: "",
         courseTitle: "",
         credit: "1.5",
         teacher: "",
         designation: "Assistant Professor",
         department: "Dept. of BECM, RUET",
-        duties: { ...defaultDuty, courseFile: !isShortSemester },
+        duties: { ...defaultDuty, courseFile: syllabus === "obe" && !isShortSemester },
         students: {
           courseFile: studentCount,
           sessional: studentCount,
@@ -165,6 +170,7 @@ export default function SessionalDutyManager({
     };
     (Object.keys(current.duties) as (keyof SessionalDutyOption)[]).forEach(
       (key) => {
+        if ((current.syllabus ?? "obe") === "nonObe" && key === "courseFile") return;
         if (!current.duties[key]) {
           remainingDuty[key] = true;
           remainingStudent[key] = current.students[key];
@@ -293,12 +299,14 @@ export default function SessionalDutyManager({
     setCourses(updated);
   };
 
-  return (
-    <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
-      <h2 className="text-xl font-bold">
-        4. List of Teachers Associated with Sessional Courses
-      </h2>
-      {courses.map((course, cIndex) => {
+  const renderCourses = (syllabus: "obe" | "nonObe") => {
+    const courseIndexes = courses
+      .map((course, index) => ({ course, index }))
+      .filter(({ course }) => (course.syllabus ?? "obe") === syllabus);
+
+    return (
+      <div className="space-y-5">
+      {courseIndexes.map(({ course, index: cIndex }, displayIndex) => {
         const minimized = minimizedCourses.has(cIndex);
         const isIndustrialAttachment =
           course.courseCode.replace(/\s+/g, "").toUpperCase() === "BECM4100";
@@ -310,7 +318,7 @@ export default function SessionalDutyManager({
           {/* Serial Number */}
           <div className="flex items-center gap-3">
             <span className="flex items-center justify-center rounded-md border bg-white px-3 py-1 text-sm font-semibold text-gray-700">
-              {String(cIndex + 1).padStart(2, "0")}.
+              {String(displayIndex + 1).padStart(2, "0")}.
             </span>
             <span className="min-w-0 flex-1 text-sm font-semibold text-gray-700">
               <span className="mr-3 inline-block">
@@ -436,6 +444,7 @@ export default function SessionalDutyManager({
             <div className="grid md:grid-cols-3 gap-3">
               {(Object.keys(course.duties) as (keyof SessionalDutyOption)[])
                 .filter((duty) => !isShortSemester || duty !== "courseFile")
+                .filter((duty) => syllabus === "obe" || duty !== "courseFile")
                 .map(
                 (duty) => {
                   const checked =
@@ -577,7 +586,10 @@ export default function SessionalDutyManager({
                   Object.keys(
                     course.additionalTeachers[0].duties
                   ) as (keyof SessionalDutyOption)[]
-                ).filter((duty) => !isShortSemester || duty !== "courseFile").map((duty) => {
+                )
+                  .filter((duty) => !isShortSemester || duty !== "courseFile")
+                  .filter((duty) => syllabus === "obe" || duty !== "courseFile")
+                  .map((duty) => {
                   if (!course.additionalTeachers[0].duties[duty]) return null;
                   return (
                     <div key={duty} className="flex items-center gap-2">
@@ -604,9 +616,42 @@ export default function SessionalDutyManager({
         </div>
         );
       })}
-      <Button type="button" onClick={addCourse}>
+      <Button type="button" onClick={() => addCourse(syllabus)}>
         + Add Sessional Course
       </Button>
+      </div>
+    );
+  };
+
+  return (
+    <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
+      <h2 className="text-xl font-bold">
+        4. List of Teachers Associated with Sessional Courses
+      </h2>
+      <label className="block max-w-sm space-y-1 text-sm font-medium">
+        <span>Sessional course syllabus</span>
+        <Select value={evaluationSystem} onValueChange={(value) => setEvaluationSystem(value as "obe" | "mixed")}>
+          <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="obe">OBE</SelectItem>
+            <SelectItem value="mixed">OBE + Non OBE</SelectItem>
+          </SelectContent>
+        </Select>
+      </label>
+      {evaluationSystem === "obe" ? (
+        renderCourses("obe")
+      ) : (
+        <div className="space-y-8">
+          <div className="rounded-lg border p-5 space-y-6">
+            <h3 className="text-lg font-bold">4.1 OBE (New Syllabus)</h3>
+            {renderCourses("obe")}
+          </div>
+          <div className="rounded-lg border p-5 space-y-6">
+            <h3 className="text-lg font-bold">4.2 Non OBE (Old Syllabus)</h3>
+            {renderCourses("nonObe")}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

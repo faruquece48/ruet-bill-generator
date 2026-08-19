@@ -31,7 +31,30 @@ const isPracticalSurveyingApplicable = (bill: ExaminationBillData) =>
   bill.billInfo.year === "1st Year" &&
   bill.billInfo.semester === "Even";
 
+const currentEvaluationData = (bill: ExaminationBillData): ExaminationBillData => {
+  const includeNonObe = bill.billInfo.evaluationSystem === "mixed";
+  const includeNonObeSessional =
+    includeNonObe && bill.sessionalEvaluationSystem === "mixed";
+  return {
+    ...bill,
+    courseDuties: {
+      ...bill.courseDuties,
+      nonObe: includeNonObe ? bill.courseDuties.nonObe : [],
+    },
+    scrutinies: {
+      ...bill.scrutinies,
+      nonObe: includeNonObe ? bill.scrutinies.nonObe : [],
+    },
+    sessionalDuties: includeNonObeSessional
+      ? bill.sessionalDuties
+      : bill.sessionalDuties.filter(
+          (course) => (course.syllabus ?? "obe") === "obe"
+        ),
+  };
+};
+
 export function collectTeacherNames(bill: ExaminationBillData): string[] {
+  bill = currentEvaluationData(bill);
   const names = new Map<string, string>();
   const add = (name: string) => {
     const displayName = withoutCourtesyTitle(name);
@@ -80,6 +103,7 @@ export interface TeacherNameWarning {
 }
 
 export function collectTeacherNameWarnings(bill: ExaminationBillData): TeacherNameWarning[] {
+  bill = currentEvaluationData(bill);
   const warnings: TeacherNameWarning[] = [];
   const check = (name: string, location: string) => {
     const trimmed = name.trim();
@@ -128,6 +152,7 @@ export function deriveTeacherRows(
   bill: ExaminationBillData,
   teacherName: string
 ): IndividualBillRow[] {
+  bill = currentEvaluationData(bill);
   if (!teacherName) return [];
   let sequence = 0;
   const rows: IndividualBillRow[] = [];

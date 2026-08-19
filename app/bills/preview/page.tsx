@@ -22,6 +22,7 @@ import {
   flattenPaperSetter,
   flattenSessional,
   flattenTabulation,
+  mixedSessionalStudentTotal,
 } from "../create/components/pdf/pdfHelpers";
 
 const PdfPreviewViewer = dynamic(
@@ -193,16 +194,24 @@ export default function PreviewPage() {
     ? combineClassTestRows(obeClassTestRows, flattenClassTest(billData.courseDuties.nonObe, defaultClassTestStudents, isShortSemester, isShortSemester ? 4 : 2))
     : obeClassTestRows;
   const assignmentRows = isShortSemester ? [] : flattenAssignment(billData.courseDuties.obe);
-  const courseFileRows = isShortSemester ? [] : flattenCourseFile(billData.courseDuties.obe, billData.sessionalDuties);
-  const sessionalRows = flattenSessional(billData.sessionalDuties);
+  const visibleSessionalDuties = billData.sessionalDuties.filter((course) =>
+    billData.sessionalEvaluationSystem === "mixed" || (course.syllabus ?? "obe") === "obe"
+  );
+  const obeSessionalDuties = billData.sessionalDuties.filter(
+    (course) => (course.syllabus ?? "obe") === "obe"
+  );
+  const courseFileRows = isShortSemester ? [] : flattenCourseFile(billData.courseDuties.obe, obeSessionalDuties);
+  const sessionalRows = flattenSessional(visibleSessionalDuties);
+  const mixedSessionalTotal = mixedSessionalStudentTotal(visibleSessionalDuties);
+  const sharedStudentTotal = mixedSessionalTotal || billData.tabulationStudentCount;
   const boardVivaRows = flattenBoardViva(
-    billData.sessionalDuties,
+    visibleSessionalDuties,
     billData.vivaBoardTeachers,
-    Number(billData.billInfo.totalStudents) || "",
+    mixedSessionalTotal || Number(billData.billInfo.totalStudents) || "",
     billData.boardVivaMemberOrder ?? [],
   );
   const tabulationRows = flattenTabulation(billData.studentDuties);
-  const gradeSheetRows = deriveGradeSheetRows(billData.studentDuties, billData.tabulationStudentCount);
+  const gradeSheetRows = deriveGradeSheetRows(billData.studentDuties, String(sharedStudentTotal));
   const hasScrutiny = isMixedEvaluation
     ? billData.scrutinies.obe.length + billData.scrutinies.nonObe.length > 0
     : billData.scrutinies.obe.length > 0;

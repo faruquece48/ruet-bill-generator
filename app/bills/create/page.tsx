@@ -31,6 +31,7 @@ const withDefaults = (data: Partial<ExaminationBillData>): ExaminationBillData =
   ...data,
   billInfo: { ...emptyBill.billInfo, ...data.billInfo },
   vivaBoardTeachers: data.vivaBoardTeachers ?? [],
+  sessionalEvaluationSystem: data.sessionalEvaluationSystem ?? "obe",
 });
 
 export default function Home() {
@@ -182,11 +183,26 @@ export default function Home() {
               })
             }
             setBill={(value) =>
-              setBillData((prev) => ({
-                ...prev,
-                billInfo:
-                  typeof value === "function" ? value(prev.billInfo) : value,
-              }))
+              setBillData((prev) => {
+                const billInfo =
+                  typeof value === "function" ? value(prev.billInfo) : value;
+                if (
+                  prev.billInfo.evaluationSystem === "mixed" &&
+                  billInfo.evaluationSystem === "obe"
+                ) {
+                  return {
+                    ...prev,
+                    billInfo,
+                    courseDuties: { ...prev.courseDuties, nonObe: [] },
+                    scrutinies: { ...prev.scrutinies, nonObe: [] },
+                    sessionalEvaluationSystem: "obe",
+                    sessionalDuties: prev.sessionalDuties.filter(
+                      (course) => (course.syllabus ?? "obe") === "obe"
+                    ),
+                  };
+                }
+                return { ...prev, billInfo };
+              })
             }
           />
 
@@ -209,6 +225,10 @@ export default function Home() {
 
           <SessionalDutyManager
             examType={billData.billInfo.examType}
+            evaluationSystem={billData.sessionalEvaluationSystem}
+            setEvaluationSystem={(evaluationSystem) =>
+              setBillData((prev) => ({ ...prev, sessionalEvaluationSystem: evaluationSystem }))
+            }
             defaultStudentCount={billData.billInfo.totalStudents}
             sessionalDuties={billData.sessionalDuties}
             setSessionalDuties={(data) =>
