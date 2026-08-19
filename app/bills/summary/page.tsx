@@ -5,6 +5,9 @@ import { pdf } from "@react-pdf/renderer";
 import { ArrowDown, ArrowUp, FilePlus2, Trash2 } from "lucide-react";
 import CombinedBillPdfPreview from "../combined/CombinedBillPdfPreview";
 import type { ExaminationBillData } from "../create/components/types";
+import type { TableLayoutSettings } from "../create/components/types";
+import ColumnWidthEditor from "../preview/components/ColumnWidthEditor";
+import SectionPanel from "../preview/components/SectionPanel";
 import SummaryPdfDocument from "./SummaryPdfDocument";
 import {
   examinationSummaryTitle,
@@ -12,6 +15,100 @@ import {
   teachersForBill,
   type ImportedSummaryBill,
 } from "./summaryData";
+
+const fileNameCollator = new Intl.Collator(undefined, {
+  numeric: true,
+  sensitivity: "base",
+});
+
+const words = (value: string) =>
+  value.replace(/([A-Z])/g, " $1").replace(/^./, (letter) => letter.toUpperCase());
+
+const columnLabel = (value: string) =>
+  value === "sl" || value === "serial" ? "Sl. No." : words(value);
+
+const breakKeyForLayout = (key: keyof TableLayoutSettings) =>
+  key === "paperSetter" ? "paperSetterObe" : key;
+
+function ImportedBillCustomization({
+  item,
+  onChange,
+}: {
+  item: ImportedSummaryBill;
+  onChange: (bill: ExaminationBillData) => void;
+}) {
+  const updateLayout = (key: keyof TableLayoutSettings, widths: TableLayoutSettings[keyof TableLayoutSettings]) =>
+    onChange({
+      ...item.bill,
+      layoutSettings: { ...item.bill.layoutSettings, [key]: widths },
+    });
+  const moveSection = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= item.bill.sectionOrder.length) return;
+    const sectionOrder = [...item.bill.sectionOrder];
+    [sectionOrder[index], sectionOrder[target]] = [sectionOrder[target], sectionOrder[index]];
+    onChange({ ...item.bill, sectionOrder });
+  };
+
+  return (
+    <div className="mt-3">
+      <SectionPanel title="Customize imported bill preview">
+        <label className="block space-y-1 text-xs text-slate-600">
+          <span>Reserved footer area (pt)</span>
+          <input
+            type="number"
+            min="45"
+            max="200"
+            value={item.bill.layoutSpacing.footerArea ?? 68}
+            onChange={(event) => onChange({
+              ...item.bill,
+              layoutSpacing: {
+                ...item.bill.layoutSpacing,
+                footerArea: Number(event.target.value) || 68,
+              },
+            })}
+            className="w-full rounded-md border bg-white px-3 py-2 text-sm"
+          />
+        </label>
+        <SectionPanel title="PDF table order">
+          <div className="space-y-1">
+            {item.bill.sectionOrder.map((key, index) => (
+              <div key={key} className="flex items-center gap-2 rounded border bg-white px-2 py-1.5 text-xs">
+                <span className="min-w-0 flex-1 truncate">{words(key)}</span>
+                <button type="button" onClick={() => moveSection(index, -1)} disabled={index === 0} className="rounded border p-1 disabled:opacity-30" aria-label={`Move ${words(key)} up`}><ArrowUp className="h-3 w-3" /></button>
+                <button type="button" onClick={() => moveSection(index, 1)} disabled={index === item.bill.sectionOrder.length - 1} className="rounded border p-1 disabled:opacity-30" aria-label={`Move ${words(key)} down`}><ArrowDown className="h-3 w-3" /></button>
+              </div>
+            ))}
+          </div>
+        </SectionPanel>
+        {(Object.keys(item.bill.layoutSettings) as Array<keyof TableLayoutSettings>).map((key) => (
+          <SectionPanel
+            key={key}
+            title={words(key)}
+            pageBreakAfter={Boolean(item.bill.pageBreakAfter[breakKeyForLayout(key)])}
+            onPageBreakAfterChange={(checked) => onChange({
+              ...item.bill,
+              pageBreakAfter: { ...item.bill.pageBreakAfter, [breakKeyForLayout(key)]: checked },
+            })}
+            tableSpacing={item.bill.tableSpacing[breakKeyForLayout(key)] ?? item.bill.layoutSpacing.sectionGap}
+            onTableSpacingChange={(value) => onChange({
+              ...item.bill,
+              tableSpacing: { ...item.bill.tableSpacing, [breakKeyForLayout(key)]: value },
+            })}
+          >
+            <ColumnWidthEditor
+              widths={item.bill.layoutSettings[key]}
+              setWidths={(widths) => updateLayout(key, widths)}
+              labels={Object.fromEntries(
+                Object.keys(item.bill.layoutSettings[key]).map((column) => [column, columnLabel(column)])
+              )}
+            />
+          </SectionPanel>
+        ))}
+      </SectionPanel>
+    </div>
+  );
+}
 
 export default function SummaryPage() {
   const [bills, setBills] = useState<ImportedSummaryBill[]>([]);
@@ -48,7 +145,13 @@ export default function SummaryPage() {
     }));
 
     const valid = imported.filter(Boolean);
-    if (valid.length) setBills((current) => [...current, ...valid]);
+    if (valid.length) {
+      setBills((current) =>
+        [...current, ...valid].sort((left, right) =>
+          fileNameCollator.compare(left.fileName, right.fileName)
+        )
+      );
+    }
     setMessage(
       rejected.length
         ? `${valid.length} file(s) added. Could not read: ${rejected.join(", ")}`
@@ -59,6 +162,10 @@ export default function SummaryPage() {
 
   const removeBill = (id: string) => {
     setBills((current) => current.filter((item) => item.id !== id));
+  };
+
+  const updateBill = (id: string, bill: ExaminationBillData) => {
+    setBills((current) => current.map((item) => item.id === id ? { ...item, bill } : item));
   };
 
   const moveBill = (index: number, direction: -1 | 1) => {
@@ -115,13 +222,13 @@ export default function SummaryPage() {
     </div>
 
     <div className="grid items-start gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
-      <aside className="rounded-xl border bg-white p-4 shadow-sm lg:sticky lg:top-20">
+      <aside className="rounded-xl border bg-white p-4 shadow-sm lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
         <div className="mb-3">
           <h2 className="font-semibold">Imported bill files</h2>
           <p className="text-xs text-slate-500">{bills.length} file(s) selected</p>
         </div>
 
-        <div className="max-h-[calc(100vh-17rem)] space-y-2 overflow-y-auto pr-1">
+        <div className="space-y-2 pr-1">
           {bills.map((item, index) => <div key={item.id} className="rounded-lg border bg-slate-50 p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -161,6 +268,10 @@ export default function SummaryPage() {
                 aria-label="Move bill down"
               ><ArrowDown className="h-3.5 w-3.5" /></button>
             </div>
+            <ImportedBillCustomization
+              item={item}
+              onChange={(bill) => updateBill(item.id, bill)}
+            />
           </div>)}
         </div>
 

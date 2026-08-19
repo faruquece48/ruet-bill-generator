@@ -50,6 +50,17 @@ export function normalizeImportedBill(
       obe: data.scrutinies?.obe ?? [],
       nonObe: data.scrutinies?.nonObe ?? [],
     },
+    layoutSettings: {
+      ...emptyBill.layoutSettings,
+      ...data.layoutSettings,
+    },
+    layoutSpacing: {
+      ...emptyBill.layoutSpacing,
+      ...data.layoutSpacing,
+    },
+    pageBreakAfter: data.pageBreakAfter ?? {},
+    tableSpacing: data.tableSpacing ?? {},
+    sectionOrder: data.sectionOrder ?? emptyBill.sectionOrder,
   };
 }
 

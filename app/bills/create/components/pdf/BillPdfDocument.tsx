@@ -340,7 +340,7 @@ function Footer({ bill }: { bill: ExaminationBillData["billInfo"] }) {
     </View>
   );
 }
-export default function BillPdfDocument({ bill }: { bill: ExaminationBillData }) {
+export function BillPdfPages({ bill }: { bill: ExaminationBillData }) {
   const isBacklog = bill.billInfo.examType === "backlog";
   const isThesisApplicable =
     bill.billInfo.examType === "semester" &&
@@ -839,7 +839,6 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
     return true;
   });
   return (
-    <Document>
       <Page
         size="LEGAL"
         style={[
@@ -885,6 +884,13 @@ export default function BillPdfDocument({ bill }: { bill: ExaminationBillData })
         ))}
         <Footer bill={bill.billInfo} />
       </Page>
+  );
+}
+
+export default function BillPdfDocument({ bill }: { bill: ExaminationBillData }) {
+  return (
+    <Document>
+      <BillPdfPages bill={bill} />
     </Document>
   );
 }

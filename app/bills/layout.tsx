@@ -8,6 +8,7 @@ const tabs = [
   { href: "/bills/create", label: "Bill" },
   { href: "/bills/preview", label: "Preview" },
   { href: "/bills/individual", label: "Individual Teacher Bill" },
+  { href: "/bills/individual-summary", label: "Individual Summary Bill" },
   { href: "/bills/combined", label: "Combined Teacher Bill" },
   { href: "/bills/summary", label: "Summary" },
   { href: "/bills/teachers", label: "Teacher Information" },
@@ -26,7 +27,7 @@ function NavLink({ href, label }: { href: string; label: string }) {
   // Before mount, always render the inactive state so the server-rendered
   // HTML matches the very first client render exactly (no hydration mismatch).
   // After mount, update to reflect the real active tab.
-  const active = mounted && pathname?.startsWith(href);
+  const active = mounted && (pathname === href || pathname?.startsWith(`${href}/`));
 
   return (
     <Link

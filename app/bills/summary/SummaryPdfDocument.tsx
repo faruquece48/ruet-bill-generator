@@ -2,6 +2,7 @@
 
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { ImportedSummaryBill, SummaryTeacher } from "./summaryData";
+import { BillPdfPages } from "../create/components/pdf/BillPdfDocument";
 import {
   aggregateTeachers,
   examinationIndexName,
@@ -147,6 +148,7 @@ export default function SummaryPdfDocument({
       </View>
       <Footer />
     </Page>
+    {bills.map(({ id, bill }) => <BillPdfPages key={`preview-${id}`} bill={bill} />)}
     {bills.map(({ id, bill }) => <Page key={id} size="A4" style={styles.page}>
       <Header title={examinationSummaryTitle(bill)} tableGap={tableGap} />
       <TeacherTable teachers={teachersForBill(bill)} />
