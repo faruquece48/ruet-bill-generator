@@ -27,12 +27,12 @@ const inputClass = "w-full rounded-md border border-slate-300 bg-white px-3 py-2
 export default function IndividualSummaryBillPage() {
   const [pages, setPages] = useState<IndividualSummaryPage[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("Dept. of BECM, RUET");
   const [message, setMessage] = useState("");
   const [downloading, setDownloading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const departments = useMemo(
-    () => Array.from(new Set(pages.map((page) => page.department).filter(Boolean)))
+    () => Array.from(new Set(["Dept. of BECM, RUET", ...pages.map((page) => page.department).filter(Boolean)]))
       .sort((left, right) => left.localeCompare(right)),
     [pages]
   );
