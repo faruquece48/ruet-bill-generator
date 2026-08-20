@@ -9,6 +9,7 @@ import {
   ChevronDown,
   ChevronRight,
   ClipboardList,
+  Download,
   FileText,
   Grid2X2,
   Megaphone,
@@ -30,6 +31,7 @@ const mainNavigation = [
   { label: "General Notice", icon: ClipboardList },
   { label: "Paper Setters", icon: SlidersHorizontal },
   { label: "Academic Calendar", icon: CalendarDays },
+  { label: "Video Downloader", icon: Download, href: "/download" },
 ];
 
 const quickLinks = [
@@ -108,7 +110,7 @@ export default function TeacherTestPage() {
 
           <nav className="space-y-0 px-4 py-2">
             {mainNavigation.map(({ label, icon: Icon, active, href }) => {
-              const classes = `flex w-full items-center gap-4 rounded-xl px-5 py-4 text-left text-sm font-medium transition ${
+              const classes = `flex w-full items-center gap-4 rounded-xl px-5 py-3 text-left text-sm font-medium transition ${
                 active
                   ? "bg-gradient-to-r from-violet-600 to-indigo-700 text-white shadow-lg shadow-indigo-200"
                   : href
@@ -125,9 +127,13 @@ export default function TeacherTestPage() {
             })}
           </nav>
 
-          <div className="mt-auto border-t border-white/10 px-4 py-5">
+          <div className="mt-auto border-t border-white/10 px-4 py-4">
             <SiteVisitorPanel />
-            <p className="mt-4 whitespace-nowrap border-t border-white/15 pt-4 text-center text-xs text-blue-200">© 2026 BECM, All rights reserved.</p>
+            <p className="mt-3 border-t border-white/15 pt-3 text-center text-xs leading-snug text-white">
+              Developed by Faruque Abdullah
+              <br />
+              Assistant Professor, Dept. of BECM, RUET
+            </p>
           </div>
         </aside>
 

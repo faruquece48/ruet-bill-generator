@@ -8,6 +8,7 @@ import {
   BookOpenText,
   CalendarDays,
   ClipboardList,
+  Download,
   FileText,
   Grid2X2,
   Megaphone,
@@ -45,6 +46,7 @@ const mainNavigation: NavigationItem[] = [
   { label: "General Notice", icon: ClipboardList },
   { label: "Paper Setters", icon: SlidersHorizontal },
   { label: "Academic Calendar", icon: CalendarDays },
+  { label: "Video Downloader", icon: Download, href: "/download" },
 ];
 
 function SidebarLink({ item, onNavigate }: { item: NavigationItem; onNavigate?: () => void }) {
@@ -53,7 +55,7 @@ function SidebarLink({ item, onNavigate }: { item: NavigationItem; onNavigate?: 
     ? item.activeFor(pathname)
     : item.href === pathname || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
   const Icon = item.icon;
-  const classes = `flex w-full items-center gap-4 rounded-xl px-5 py-3.5 text-left text-sm font-medium transition ${
+  const classes = `flex w-full items-center gap-4 rounded-xl px-5 py-2.5 text-left text-sm font-medium transition ${
     active
       ? "bg-gradient-to-r from-violet-600 to-indigo-700 text-white shadow-lg shadow-indigo-950/40"
       : item.href
@@ -96,9 +98,13 @@ export default function AppSidebar({ mobileOpen = false, onClose }: AppSidebarPr
         {mainNavigation.map((item) => <SidebarLink key={item.label} item={item} onNavigate={onClose} />)}
       </nav>
 
-      <div className="mt-auto border-t border-white/10 px-4 py-5">
+      <div className="mt-auto border-t border-white/10 px-4 py-4">
         <SiteVisitorPanel />
-        <p className="mt-4 whitespace-nowrap border-t border-white/15 pt-4 text-center text-xs text-blue-200">© 2026 BECM, All rights reserved.</p>
+        <p className="mt-3 border-t border-white/15 pt-3 text-center text-xs leading-snug text-white">
+          Developed by Faruque Abdullah
+          <br />
+          Assistant Professor, Dept. of BECM, RUET
+        </p>
       </div>
     </aside>
   );
